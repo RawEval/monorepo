@@ -1,0 +1,521 @@
+# RawEval Monorepo Cursor Rules
+
+## 🏗️ Architecture Overview
+
+**Turborepo monorepo** with Next.js apps and shared packages following **feature-based architecture**.
+
+### Structure:
+```
+apps/
+  ├── landing/      # www.raweval.com (public landing page)
+  ├── chat/         # chat.raweval.com (user chatbot interface)
+  ├── experts/      # experts.raweval.com (expert workbench)
+  └── admin/        # admin.raweval.com (internal admin/org dashboard)
+
+packages/
+  ├── ui/           # Shared Shadcn UI components
+  ├── types/        # Shared TypeScript types
+  ├── utils/        # Shared utilities
+  ├── config/       # Shared configs (tsconfig, eslint, prettier, tailwind)
+  ├── auth/         # Authentication & RBAC
+  └── db/           # Database client & schema
+```
+
+**See also:**
+- `.cursorrules.shadcn.md` - Shadcn MCP server optimization
+- `.cursorrules.architecture.md` - Detailed architecture patterns
+
+---
+
+## 🚨 CRITICAL RULES - NEVER VIOLATE
+
+### 1. **Cyclic Dependency Prevention (STRICT)**
+
+**ALLOWED Dependency Flow:**
+```
+apps/* → packages/* (✅ Apps can import from packages)
+packages/ui → packages/utils, packages/types (✅ UI can use utils/types)
+packages/utils → packages/types (✅ Utils can use types)
+packages/auth → packages/types (✅ Auth can use types)
+packages/db → packages/types (✅ DB can use types)
+```
+
+**FORBIDDEN:**
+```
+❌ packages/* → apps/*           (Packages NEVER import from apps)
+❌ apps/chat → apps/landing       (Apps NEVER import from other apps)
+❌ packages/types → packages/*   (Types should have no dependencies)
+❌ packages/auth → packages/db    (Auth should not depend on DB)
+❌ Circular imports between any two packages
+```
+
+**Validation:**
+- Before any import, verify the dependency direction
+- If you need shared code between apps, move it to `packages/`
+- If you need to share between packages, ensure it flows down the hierarchy
+
+---
+
+### 2. **Import Path Rules**
+
+**Workspace Packages (use `@raweval/*`):**
+```typescript
+// ✅ CORRECT
+import { Button } from '@raweval/ui/button';
+import { cn } from '@raweval/utils';
+import type { User, Expert } from '@raweval/types';
+import { hasPermission } from '@raweval/auth';
+import { db } from '@raweval/db';
+
+// ❌ WRONG
+import { Button } from '../../../packages/ui/src/button';
+import { Button } from 'packages/ui';
+import { Button, Card } from '@raweval/ui'; // No barrel imports!
+```
+
+**Internal Imports (use `@/`):**
+```typescript
+// ✅ CORRECT - Within same app
+import { ChatMessage } from '@/features/chat/components/chat-message';
+import { chatService } from '@/services/chat-service';
+import { Header } from '@/components/layout/header';
+
+// ❌ WRONG
+import { ChatMessage } from '../features/chat/components/chat-message';
+```
+
+---
+
+### 3. **Feature-Based Architecture (CRITICAL)**
+
+**App Structure:**
+```
+apps/chat/
+├── app/                    # Next.js App Router
+│   ├── (public)/          # Route groups (no auth)
+│   ├── (tenant)/          # Route groups (auth required)
+│   └── api/               # API routes
+├── features/               # Feature modules
+│   ├── chat/
+│   │   ├── components/     # Feature-specific components
+│   │   ├── hooks/         # Feature-specific hooks
+│   │   ├── services.ts    # Feature business logic
+│   │   └── types.ts       # Feature types
+│   ├── auth/
+│   └── workspace/
+├── components/
+│   ├── ui/                # Re-export shadcn (app-specific overrides)
+│   ├── shared/            # Cross-feature components
+│   ├── layout/            # Layout components
+│   └── providers/        # Context providers
+├── services/              # Business logic layer
+├── hooks/                 # Shared hooks
+├── lib/                   # App-specific utilities
+└── middleware.ts         # Auth & routing middleware
+```
+
+**Rules:**
+- ✅ Organize by **feature**, not by layer
+- ✅ Feature components in `features/*/components/`
+- ✅ Business logic in `services/` or `features/*/services.ts`
+- ✅ Shared components in `components/shared/` or `components/layout/`
+- ❌ Don't create `components/chat/` - use `features/chat/components/`
+
+---
+
+### 4. **Shadcn UI with MCP Server (OPTIMIZED)**
+
+**When using Shadcn MCP Server:**
+
+**✅ CORRECT Workflow:**
+1. Use MCP server to add components to `packages/ui/src/`
+2. Components are automatically exported with direct paths
+3. Import directly: `import { Button } from '@raweval/ui/button'`
+4. Never edit generated shadcn components directly in `packages/ui`
+
+**Component Location:**
+```
+packages/ui/src/
+├── button.tsx          # Shadcn component (DO NOT EDIT)
+├── card.tsx            # Shadcn component (DO NOT EDIT)
+└── ...
+```
+
+**App-Specific Overrides:**
+```
+apps/chat/components/ui/
+└── index.ts            # Re-export with app-specific overrides if needed
+```
+
+**Rules:**
+- ✅ All shadcn components go in `packages/ui/src/`
+- ✅ Each component is a separate file (no barrel exports)
+- ✅ Use MCP server to add new components
+- ✅ If you need to customize, create wrapper in `features/*/components/`
+- ❌ Never edit `packages/ui/src/*` components directly
+- ❌ Never create barrel exports in `packages/ui`
+
+**MCP Server Commands:**
+- Use MCP server to add components: "Add shadcn button component"
+- Components are automatically placed in `packages/ui/src/`
+- Import path is automatically `@raweval/ui/button`
+
+**See `.cursorrules.shadcn.md` for detailed shadcn rules.**
+
+---
+
+### 5. **Package Creation Rules**
+
+**When to create a new package:**
+- ✅ Component is used in 2+ apps
+- ✅ Utility function is shared across apps
+- ✅ Type definition is shared
+- ✅ Configuration is common
+- ✅ Business logic is shared (auth, db)
+
+**When NOT to create a package:**
+- ❌ Only used in one app (keep it in `features/` or `services/`)
+- ❌ App-specific business logic (keep in app's `services/`)
+- ❌ One-off utilities (keep in app's `lib/`)
+
+---
+
+### 6. **TypeScript Strictness**
+
+**All packages and apps MUST:**
+```json
+{
+  "strict": true,
+  "noUncheckedIndexedAccess": true,
+  "noImplicitOverride": true,
+  "noUnusedLocals": true,
+  "noUnusedParameters": true
+}
+```
+
+**Type Safety Rules:**
+- ✅ Always export types from `packages/types`
+- ✅ Use `interface` for object shapes, `type` for unions/primitives
+- ✅ Prefer `unknown` over `any`
+- ✅ Use generics for reusable components
+- ❌ Never use `any` (use `unknown` instead)
+- ❌ Never use `@ts-ignore` (use `@ts-expect-error` with comment)
+
+---
+
+### 7. **Component Organization**
+
+**Hierarchy:**
+1. **`packages/ui/src/`**: Shadcn components (generated, don't edit)
+2. **`components/ui/`**: Re-export shadcn (app-specific overrides)
+3. **`components/shared/`**: Cross-feature components (logo, empty-state)
+4. **`components/layout/`**: Layout components (header, sidebar, breadcrumbs)
+5. **`components/providers/`**: Context providers
+6. **`features/*/components/`**: Feature-specific components
+
+**Rules:**
+- ✅ Feature components in `features/*/components/`
+- ✅ Shared components in `components/shared/`
+- ✅ Layout components in `components/layout/`
+- ❌ Don't create `components/chat/` - use `features/chat/components/`
+
+---
+
+### 8. **Services Layer**
+
+**Business Logic Separation:**
+```
+apps/chat/services/
+├── chat-service.ts      # Chat business logic
+├── auth-service.ts      # Auth business logic (if app-specific)
+└── workspace-service.ts # Workspace business logic
+```
+
+**Rules:**
+- ✅ Business logic in `services/` or `features/*/services.ts`
+- ✅ Services are testable in isolation
+- ✅ Services are reusable across components
+- ❌ Don't put business logic in components
+- ❌ Don't put business logic in hooks (hooks call services)
+
+**Usage:**
+```typescript
+// ✅ CORRECT
+import { chatService } from '@/services/chat-service';
+await chatService.sendMessage(sessionId, message);
+
+// ❌ WRONG - Business logic in component
+const sendMessage = async () => {
+  await fetch('/api/chat', { ... }); // Move to service
+};
+```
+
+---
+
+### 9. **Authentication & Authorization**
+
+**Package: `@raweval/auth`**
+
+**Usage:**
+```typescript
+import { hasPermission, getSession, requireSession } from '@raweval/auth';
+import type { Permission, UserRole } from '@raweval/types';
+
+// Check permissions
+if (hasPermission('admin', 'admin:view')) {
+  // Show admin panel
+}
+
+// Get session (server component)
+const session = await getSession();
+if (!session) redirect('/login');
+
+// Require session (throws if not authenticated)
+const session = await requireSession();
+```
+
+**Rules:**
+- ✅ Use `@raweval/auth` for RBAC
+- ✅ Check permissions in middleware or server components
+- ✅ Use `getSession()` in server components
+- ❌ Don't implement auth logic in apps (use package)
+
+---
+
+### 10. **Database Access**
+
+**Package: `@raweval/db`**
+
+**Usage:**
+```typescript
+import { db } from '@raweval/db';
+
+// Use database (after setup)
+const users = await db.user.findMany();
+```
+
+**Rules:**
+- ✅ All database access through `@raweval/db`
+- ✅ Database logic in services, not components
+- ✅ Use types from `@raweval/types`
+- ❌ Don't create database clients in apps
+
+---
+
+### 11. **Route Groups & Middleware**
+
+**Route Groups:**
+```
+app/
+├── (public)/          # Public routes (no auth)
+│   ├── login/
+│   ├── signup/
+│   └── page.tsx
+├── (tenant)/         # Tenant-scoped routes (auth required)
+│   └── [workspaceSlug]/
+│       ├── chat/
+│       ├── settings/
+│       └── billing/
+└── api/              # API routes
+```
+
+**Middleware:**
+- ✅ Use `middleware.ts` for auth checks
+- ✅ Use route groups for organization
+- ✅ Protect routes in middleware, not components
+
+**See `.cursorrules.architecture.md` for detailed patterns.**
+
+---
+
+### 12. **Styling & Design Consistency**
+
+**Tailwind:**
+- Shared config in `packages/config/tailwind`
+- All apps extend the base config
+- Custom theme tokens defined once in base config
+- Never override core colors per-app
+
+**Global CSS:**
+- Base styles in `packages/config/global.css`
+- Apps import and extend with app-specific styles only
+- Animations defined in base config
+
+**Component Variants:**
+- Use `class-variance-authority` (cva) for component variants
+- Define variants in the component, not in apps
+
+---
+
+### 13. **Data Fetching & API**
+
+**Types First:**
+```typescript
+// 1. Define types in packages/types
+export interface Expert {
+  id: string;
+  tier: 1 | 2 | 3;
+  name: string;
+}
+
+// 2. Use in apps
+import type { Expert } from '@raweval/types';
+
+async function getExpert(id: string): Promise<Expert> {
+  // ...
+}
+```
+
+**API Routes:**
+- Each app has its own API routes in `app/api/`
+- Shared types for request/response
+- Use `packages/types` for API contracts
+- Business logic in services, not API routes
+
+---
+
+## 📦 Package-Specific Rules
+
+### `packages/ui`
+- ✅ Only React components (shadcn generated)
+- ✅ Each component in separate file
+- ✅ Direct exports: `@raweval/ui/button`
+- ❌ No business logic
+- ❌ No data fetching
+- ❌ No barrel exports
+- ❌ Don't edit generated components directly
+
+### `packages/types`
+- ✅ Pure TypeScript types/interfaces
+- ✅ No runtime code
+- ✅ No dependencies (except type-only imports)
+- ✅ Export everything explicitly (no `export *`)
+
+### `packages/utils`
+- ✅ Pure functions only
+- ✅ Fully tested (100% coverage goal)
+- ✅ No side effects
+- ✅ No React-specific code
+- ✅ Each utility in separate file
+
+### `packages/config`
+- ✅ Configuration only
+- ✅ No runtime code
+- ✅ Extend, don't override in apps
+
+### `packages/auth`
+- ✅ RBAC and session management
+- ✅ Can depend on `@raweval/types`
+- ❌ Cannot depend on `@raweval/db`
+- ✅ Use in middleware and server components
+
+### `packages/db`
+- ✅ Database client and schema
+- ✅ Can depend on `@raweval/types`
+- ❌ Cannot depend on other packages
+- ✅ Use in services, not components
+
+---
+
+## 🚀 Quick Commands Reference
+
+**⚠️ IMPORTANT: Only pnpm is allowed in this monorepo!**
+- ❌ `npm install` - FORBIDDEN
+- ❌ `yarn install` - FORBIDDEN
+- ✅ `pnpm install` - ONLY THIS WORKS
+
+```bash
+# Install dependencies
+pnpm install
+
+# Dev mode (all apps)
+pnpm dev
+
+# Dev mode (specific app)
+pnpm --filter @raweval/chat dev
+
+# Build all
+pnpm build
+
+# Build specific app
+pnpm --filter @raweval/landing build
+
+# Add dependency to app
+pnpm --filter @raweval/chat add axios
+
+# Add dependency to package
+pnpm --filter @raweval/ui add lucide-react
+
+# Add dependency to root (dev tools)
+pnpm add -Dw turbo
+
+# Format all
+pnpm format
+
+# Lint all
+pnpm lint
+
+# Type check all
+pnpm typecheck
+
+# Clean all builds
+pnpm clean
+```
+
+---
+
+## ✅ Before Every Commit Checklist
+
+- [ ] No cyclic dependencies introduced
+- [ ] Imports use correct paths (`@raweval/*`, `@/`)
+- [ ] Types exported from `packages/types`
+- [ ] Shared components in `packages/ui`
+- [ ] Feature components in `features/*/components/`
+- [ ] Business logic in `services/`
+- [ ] Code formatted (Prettier)
+- [ ] No linting errors
+- [ ] No TypeScript errors
+- [ ] Build succeeds (`pnpm build`)
+- [ ] Commit message follows convention
+
+---
+
+## 🆘 Common Issues & Solutions
+
+### Issue: "Cannot find module '@raweval/ui'"
+**Solution:** Run `pnpm install` at root to link workspace packages
+
+### Issue: "Circular dependency detected"
+**Solution:** Check import direction, move shared code to packages
+
+### Issue: "Type errors in app after package change"
+**Solution:** Rebuild packages first: `pnpm --filter '@raweval/*' build`
+
+### Issue: "Slow dev server"
+**Solution:** Use `pnpm --filter <app> dev` to run only one app
+
+### Issue: "Vercel build fails"
+**Solution:** Check `turbo.json` pipeline and app's `package.json` build script
+
+### Issue: "Shadcn component not found"
+**Solution:** Use MCP server to add component, it will be placed in `packages/ui/src/`
+
+---
+
+## 📚 Resources
+
+- [Turborepo Docs](https://turbo.build/repo/docs)
+- [pnpm Workspaces](https://pnpm.io/workspaces)
+- [Next.js App Router](https://nextjs.org/docs/app)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Feature-Sliced Design](https://feature-sliced.design/)
+
+**Additional Rules:**
+- `.cursorrules.shadcn.md` - Shadcn MCP server optimization
+- `.cursorrules.architecture.md` - Detailed architecture patterns
+
+---
+
+**Last Updated:** 2026-01-14
+**Monorepo Version:** 1.0.0
+**Architecture:** Feature-based with services layer

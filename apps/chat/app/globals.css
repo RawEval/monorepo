@@ -1,0 +1,31 @@
+@import '@raweval/config/theme';
+
+/* Chat-specific styles */
+.chat-message-enter {
+  animation: fade-in-up 0.3s ease-out forwards;
+  opacity: 0;
+}
+
+/* Typing indicator animation */
+@keyframes typing-indicator {
+  0%, 60%, 100% {
+    opacity: 0.4;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+.typing-dot {
+  animation: typing-indicator 1.4s ease-in-out infinite;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .chat-message-enter,
+  .typing-dot {
+    animation: none;
+  }
+}
