@@ -1,0 +1,6 @@
+# Vercel ignore file
+node_modules
+.turbo
+.next
+dist
+build

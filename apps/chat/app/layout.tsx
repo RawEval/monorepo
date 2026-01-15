@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, JetBrains_Mono } from 'next/font/google';
+import { Suspense } from 'react';
+import { StaffToolbar } from '../components/staff-toolbar';
 import './globals.css';
 
 const geistSans = Geist({
@@ -35,6 +37,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
+        <Suspense fallback={null}>
+          <StaffToolbar />
+        </Suspense>
       </body>
     </html>
   );
