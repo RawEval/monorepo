@@ -8,18 +8,22 @@ export function useChat() {
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
   const touchProject = useProjectsStore((s) => s.touchProject);
 
-  const getMessages = useChatStore((s) => s.getMessages);
-  const isTypingFn = useChatStore((s) => s.isTyping);
+  // Use Zustand selectors properly to subscribe to state changes
+  const projectId = selectedProjectId ?? 'p1';
+  
+  // Subscribe to messagesByProject to get reactive updates
+  const messagesByProject = useChatStore((s) => s.messagesByProject);
+  const typingByProject = useChatStore((s) => s.typingByProject);
   const sendUserMessage = useChatStore((s) => s.sendUserMessage);
   const appendAssistantMessage = useChatStore((s) => s.appendAssistantMessage);
   const setTyping = useChatStore((s) => s.setTyping);
 
-  const projectId = selectedProjectId ?? 'p1';
-  const messages = getMessages(projectId).map((m) => ({
+  // Get messages for current project - this will react to changes
+  const messages = (messagesByProject[projectId] ?? []).map((m) => ({
     ...m,
     createdAt: new Date(m.createdAt),
   }));
-  const isTyping = isTypingFn(projectId);
+  const isTyping = Boolean(typingByProject[projectId]);
 
   const sendMessage = useCallback(
     async (content: string, images?: string[]) => {
@@ -47,9 +51,22 @@ export function useChat() {
     ]
   );
 
-  const flagMessage = useCallback((messageId: string) => {
-    console.log('Flagging message:', messageId);
-  }, []);
+  const markAsWrong = useCallback((messageId: string) => {
+    // TODO: Mark message as wrong and send to workbench for QA
+    // This should:
+    // 1. Store the marked response with status 'pending' in the payouts store
+    // 2. Send to workbench queue for QA verification
+    // 3. Show confirmation to user
+    console.log('Marking message as wrong:', messageId);
+    
+    // Find the message
+    const message = messages.find((m) => m.id === messageId);
+    if (message && message.role === 'assistant') {
+      // TODO: Save to payouts store with status 'pending'
+      // TODO: Send to workbench QA queue
+      alert('Response marked as wrong! It will be reviewed by our workbench team. You\'ll be notified when QA is complete.');
+    }
+  }, [messages]);
 
   const approveMessage = useCallback((messageId: string) => {
     console.log('Approving message:', messageId);
@@ -59,7 +76,7 @@ export function useChat() {
     console.log('Requesting human assistance for message:', messageId);
   }, []);
 
-  return { messages, isTyping, sendMessage, flagMessage, approveMessage, requestHuman };
+  return { messages, isTyping, sendMessage, markAsWrong, approveMessage, requestHuman };
 }
 
 function generateMockResponse(content: string, images?: string[]): string {

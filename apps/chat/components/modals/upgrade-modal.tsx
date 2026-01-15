@@ -84,46 +84,54 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto"
       onClick={() => onOpenChange(false)}
     >
       <div
-        className="relative w-full max-w-6xl rounded-2xl border border-border bg-background p-8 shadow-2xl"
+        className="relative w-full max-w-6xl rounded-xl sm:rounded-2xl border border-border bg-background p-4 sm:p-8 shadow-2xl my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted"
+          className="absolute right-2 top-2 sm:right-4 sm:top-4 rounded-lg p-1.5 sm:p-2 text-muted-foreground transition-colors hover:bg-muted"
           aria-label="Close modal"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
 
         {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Upgrade Plans</span>
+        <div className="mb-6 sm:mb-8 text-center">
+          <div className="mb-3 sm:mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-border bg-muted px-3 sm:px-4 py-1.5 sm:py-2">
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-foreground">Upgrade Plans</span>
           </div>
-          <h2 className="mb-2 text-3xl font-bold text-foreground">
+          <h2 className="mb-2 text-2xl sm:text-3xl font-bold text-foreground">
             Choose your plan
           </h2>
           <p className="text-muted-foreground">
             Looking to find out what an upgrade you can get?{' '}
-            <button className="text-primary underline hover:no-underline">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenChange(false);
+                // Navigate to pricing page
+                window.location.href = '/pricing';
+              }}
+              className="text-primary underline hover:no-underline"
+            >
               More details
             </button>
           </p>
         </div>
 
         {/* Billing Toggle (no extra deps) */}
-        <div className="mb-8 flex items-center justify-center gap-3">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
           <div className="flex items-center rounded-lg border border-border bg-background p-1">
             <button
               type="button"
               onClick={() => setBillingCycle('monthly')}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-md px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium transition-colors ${
                 billingCycle === 'monthly'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -134,7 +142,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
             <button
               type="button"
               onClick={() => setBillingCycle('annually')}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`rounded-md px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium transition-colors ${
                 billingCycle === 'annually'
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -143,13 +151,13 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
               Annually
             </button>
           </div>
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs shrink-0">
             Save 30%
           </Badge>
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
           {plans.map((plan) => {
             const price = plan.price[billingCycle];
             const isPopular = plan.popular;
@@ -206,6 +214,13 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
                     className="w-full"
                     disabled={plan.current}
                     size="lg"
+                    onClick={() => {
+                      if (!plan.current) {
+                        // TODO: Implement actual upgrade logic
+                        alert(`Upgrade to ${plan.name} plan - Integration with payment system coming soon!`);
+                        onOpenChange(false);
+                      }
+                    }}
                   >
                     {plan.current ? (
                       'Current Plan'

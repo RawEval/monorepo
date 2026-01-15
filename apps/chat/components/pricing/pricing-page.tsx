@@ -81,17 +81,17 @@ export function PricingPage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-7xl px-6 py-12">
+      <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
-        <div className="mb-12 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Pricing Plans</span>
+        <div className="mb-8 sm:mb-12 text-center px-2">
+          <div className="mb-3 sm:mb-4 inline-flex items-center gap-1.5 sm:gap-2 rounded-full border border-border bg-muted px-3 sm:px-4 py-1.5 sm:py-2">
+            <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-medium text-foreground">Pricing Plans</span>
           </div>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+          <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Choose the perfect plan
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          <p className="mx-auto max-w-2xl text-sm sm:text-base lg:text-lg text-muted-foreground">
             Start with our free plan and upgrade as you grow. All plans include access to our expert-verified AI.
           </p>
         </div>
@@ -128,7 +128,7 @@ export function PricingPage() {
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
           {plans.map((plan) => {
             const price = plan.price[billingCycle];
             const isPopular = plan.popular;
@@ -185,6 +185,12 @@ export function PricingPage() {
                     className="w-full"
                     disabled={plan.current}
                     size="lg"
+                    onClick={() => {
+                      if (!plan.current) {
+                        // TODO: Implement actual upgrade logic
+                        alert(`Upgrade to ${plan.name} plan - Integration with payment system coming soon!`);
+                      }
+                    }}
                   >
                     {plan.current ? (
                       'Current Plan'

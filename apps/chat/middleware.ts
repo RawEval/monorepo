@@ -14,15 +14,31 @@ import type { NextRequest } from 'next/server';
  */
 
 export function middleware(_request: NextRequest) {
-  // TODO: Implement authentication check
+  // TODO: Implement actual authentication check
+  // const { pathname } = _request.nextUrl;
+  // Public routes that don't require authentication:
+  // const publicRoutes = ['/login', '/signup', '/forgot-password'];
+  // const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+  // For now, allow all routes but you can add auth logic here:
+  // 
   // const session = await getSession(request);
-  // if (!session && request.nextUrl.pathname.startsWith('/app')) {
-  //   return NextResponse.redirect(new URL('/login', request.url));
+  // const isAuthenticated = !!session;
+  //
+  // // Redirect unauthenticated users trying to access protected routes
+  // if (!isAuthenticated && !isPublicRoute) {
+  //   const loginUrl = new URL('/login', request.url);
+  //   loginUrl.searchParams.set('redirect', pathname);
+  //   return NextResponse.redirect(loginUrl);
+  // }
+  //
+  // // Redirect authenticated users away from auth pages
+  // if (isAuthenticated && isPublicRoute) {
+  //   return NextResponse.redirect(new URL('/chat', request.url));
   // }
 
   // TODO: Implement workspace/tenant routing
-  // if (request.nextUrl.pathname.startsWith('/[workspaceSlug]')) {
-  //   const workspaceSlug = request.nextUrl.pathname.split('/')[1];
+  // if (pathname.startsWith('/[workspaceSlug]')) {
+  //   const workspaceSlug = pathname.split('/')[1];
   //   // Validate workspace access
   // }
 

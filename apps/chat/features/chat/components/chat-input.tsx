@@ -1,50 +1,62 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, X, Paperclip, Mic, Search, Loader2 } from 'lucide-react';
+import { Send, Loader2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@raweval/utils';
+import { AttachmentPreview, Attachment } from './attachment-preview';
+import { VoiceRecorder } from './voice-recorder';
 
 interface ChatInputProps {
-  onSend: (message: string, images?: string[]) => void;
+  onSend: (message: string, images?: string[], files?: File[]) => void;
   placeholder?: string;
   disabled?: boolean;
 }
 
-const MAX_CHARACTERS = 3000;
+const MAX_CHARACTERS = 10000;
+const MAX_IMAGES = 5;
+const MAX_FILES = 5;
 
 export function ChatInput({
   onSend,
-  placeholder,
+  placeholder = 'Whatever you need, just ask RawEval!',
   disabled = false,
 }: ChatInputProps) {
   const [input, setInput] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const characterCount = input.length;
-  const remainingChars = MAX_CHARACTERS - characterCount;
+  const canSend = (input.trim().length > 0 || attachments.length > 0) && !disabled && !isSending && characterCount <= MAX_CHARACTERS;
 
   const handleSend = useCallback(async () => {
-    if ((!input.trim() && images.length === 0) || disabled || isSending) return;
+    if (!canSend) return;
 
     setIsSending(true);
     const message = input.trim();
-    const imageList = images.length > 0 ? images : undefined;
+    const imageAttachments = attachments.filter((a) => a.type === 'image');
+    const fileAttachments = attachments.filter((a) => a.type === 'file');
+
+    const images = imageAttachments.map((a) => a.url);
+    const files = fileAttachments.map((a) => a.file!).filter(Boolean);
 
     setInput('');
-    setImages([]);
+    setAttachments([]);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
 
     try {
-      await onSend(message, imageList);
+      await onSend(message, images.length > 0 ? images : undefined, files.length > 0 ? files : undefined);
     } finally {
       setIsSending(false);
     }
-  }, [input, images, onSend, disabled, isSending]);
+  }, [input, attachments, onSend, canSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -53,38 +65,104 @@ export function ChatInput({
     }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const imageFiles = files.filter((file) => file.type.startsWith('image/'));
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
 
-    if (imageFiles.length === 0) return;
+    const fileList = Array.from(files);
+    const imageFiles = fileList.filter((file) => file.type.startsWith('image/'));
+    const otherFiles = fileList.filter((file) => !file.type.startsWith('image/'));
+    
+    const remainingSlots = MAX_FILES - attachments.filter((a) => a.type === 'file').length;
+    const imageSlots = MAX_IMAGES - attachments.filter((a) => a.type === 'image').length;
 
-    const remainingSlots = 5 - images.length;
-    const filesToProcess = imageFiles.slice(0, remainingSlots);
-
-    filesToProcess.forEach((file) => {
+    // Process images
+    const imagesToProcess = imageFiles.slice(0, imageSlots);
+    imagesToProcess.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setImages((prev) => [...prev, result]);
+        const url = event.target?.result as string;
+        const attachment: Attachment = {
+          id: `${Date.now()}-${Math.random()}`,
+          type: 'image',
+          name: file.name,
+          size: file.size,
+          url,
+          file,
+        };
+        setAttachments((prev) => [...prev, attachment]);
       };
       reader.readAsDataURL(file);
     });
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    // Process other files
+    const filesToProcess = otherFiles.slice(0, remainingSlots);
+    filesToProcess.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const attachment: Attachment = {
+          id: `${Date.now()}-${Math.random()}`,
+          type: 'file',
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          file,
+        };
+        setAttachments((prev) => [...prev, attachment]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeAttachment = (id: string) => {
+    setAttachments((prev) => {
+      const attachment = prev.find((a) => a.id === id);
+      if (attachment?.url.startsWith('blob:')) {
+        URL.revokeObjectURL(attachment.url);
+      }
+      return prev.filter((a) => a.id !== id);
+    });
   };
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const minHeight = 52; // min-h-[52px]
+      const maxHeight = 200; // max-h-[200px]
+      textareaRef.current.style.height = `${Math.max(minHeight, Math.min(scrollHeight, maxHeight))}px`;
     }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  const handleVoiceRecordingComplete = (audioBlob: Blob) => {
+    const audioFile = new File([audioBlob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+    const attachment: Attachment = {
+      id: `${Date.now()}-${Math.random()}`,
+      type: 'file',
+      name: audioFile.name,
+      size: audioFile.size,
+      url: URL.createObjectURL(audioBlob),
+      file: audioFile,
+    };
+    setAttachments((prev) => [...prev, attachment]);
   };
 
   useEffect(() => {
@@ -95,139 +173,116 @@ export function ChatInput({
     }
   }, [disabled]);
 
-  const hasContent = input.trim().length > 0 || images.length > 0;
-  const canSend =
-    hasContent && !disabled && !isSending && characterCount <= MAX_CHARACTERS;
+  const fileCount = attachments.filter((a) => a.type === 'file').length;
+  const imageCount = attachments.filter((a) => a.type === 'image').length;
+  const canAddFiles = (fileCount + imageCount) < (MAX_FILES + MAX_IMAGES);
 
   return (
     <div className="space-y-3">
-      {/* Image Previews */}
-      {images.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {images.map((img, idx) => (
-            <div
-              key={idx}
-              className="border-border relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border"
-            >
-              <img
-                src={img}
-                alt={`Preview ${idx + 1}`}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-              <button
-                onClick={() => removeImage(idx)}
-                className="bg-background hover:bg-muted absolute top-1 right-1 rounded-full p-1 shadow-sm transition-colors"
-                type="button"
-              >
-                <X className="text-muted-foreground h-3 w-3" />
-              </button>
-            </div>
-          ))}
+      {/* Drag & Drop Overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="rounded-lg border-2 border-dashed border-primary bg-accent p-8 text-center">
+            <p className="text-lg font-medium text-foreground">Drop files here to attach</p>
+          </div>
         </div>
       )}
 
-      {/* Large Input Container */}
+      {/* Attachment Previews */}
+      {attachments.length > 0 && (
+        <div className="max-w-full overflow-hidden">
+          <AttachmentPreview attachments={attachments} onRemove={removeAttachment} />
+        </div>
+      )}
+
+      {/* Input Container - Clean minimal design like ChatGPT */}
       <div
-        className={`relative flex items-center gap-3 rounded-xl border-2 transition-all ${
+        className={cn(
+          'rounded-2xl border transition-all',
           isFocused
-            ? 'border-primary bg-background shadow-sm'
-            : 'border-input bg-background'
-        } ${disabled ? 'opacity-50' : ''}`}
+            ? 'border-primary/50 bg-background shadow-sm'
+            : 'border-border bg-muted/30',
+          isDragOver && 'border-primary border-dashed bg-primary/5',
+          disabled && 'opacity-50'
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
-        {/* Text Input */}
-        <textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => {
-            if (e.target.value.length <= MAX_CHARACTERS) {
-              setInput(e.target.value);
-              adjustTextareaHeight();
-            }
-          }}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          placeholder={placeholder || 'Summarize the latest...'}
-          rows={1}
-          disabled={disabled}
-          maxLength={MAX_CHARACTERS}
-          className="text-foreground placeholder:text-muted-foreground flex-1 resize-none border-0 bg-transparent px-4 py-3 text-base outline-none focus:ring-0 disabled:cursor-not-allowed"
-          style={{ height: 'auto', minHeight: '56px' }}
-        />
-
-        {/* Send Button */}
-        <button
-          onClick={handleSend}
-          disabled={!canSend}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 mr-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="Send message"
-        >
-          {isSending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </button>
-      </div>
-
-      {/* Action Buttons and Character Count */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
+        {/* Input Row - All in one line like ChatGPT */}
+        <div className="flex items-end gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+          {/* Left: Attach button */}
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => fileInputRef.current?.click()}
-            disabled={disabled || images.length >= 5}
-            className="text-muted-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Attach image"
+            disabled={disabled || !canAddFiles}
+            className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 active:scale-95 touch-manipulation"
+            aria-label="Attach file"
           >
-            <Paperclip className="h-4 w-4" />
-            Attach
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            className="text-muted-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Voice message (coming soon)"
-          >
-            <Mic className="h-4 w-4" />
-            Voice Message
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            className="text-muted-foreground hover:bg-muted flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label="Browse prompts"
-          >
-            <Search className="h-4 w-4" />
-            Browse Prompts
-          </button>
-        </div>
+            <Plus className="h-5 w-5" />
+          </Button>
 
-        {/* Character Count */}
-        <div
-          className={`text-sm ${remainingChars < 100 ? 'text-destructive' : 'text-muted-foreground'}`}
-        >
-          {characterCount} / {MAX_CHARACTERS.toLocaleString()}
+          {/* Center: Textarea */}
+          <textarea
+            ref={textareaRef}
+            value={input}
+            onChange={(e) => {
+              if (e.target.value.length <= MAX_CHARACTERS) {
+                setInput(e.target.value);
+                adjustTextareaHeight();
+              }
+            }}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            rows={1}
+            disabled={disabled}
+            maxLength={MAX_CHARACTERS}
+            className="flex-1 resize-none border-0 bg-transparent text-base text-foreground placeholder:text-muted-foreground outline-none focus:ring-0 disabled:cursor-not-allowed leading-6 min-h-[24px] max-h-[200px] touch-manipulation"
+            style={{ WebkitAppearance: 'none' }}
+          />
+
+          {/* Right: Voice & Send */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Voice Message Button */}
+            <VoiceRecorder
+              onRecordingComplete={handleVoiceRecordingComplete}
+              disabled={disabled}
+            />
+
+            {/* Send Button */}
+            {canSend && (
+              <Button
+                onClick={handleSend}
+                disabled={!canSend || isSending}
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition-all disabled:opacity-40 active:scale-95 touch-manipulation"
+                aria-label="Send message"
+              >
+                {isSending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Hidden File Input */}
+      {/* Hidden File Input - accepts both images and files */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.pdf,.doc,.docx,.txt"
         multiple
-        onChange={handleImageSelect}
+        onChange={(e) => handleFileSelect(e.target.files)}
         className="hidden"
-        disabled={disabled || images.length >= 5}
+        disabled={disabled || !canAddFiles}
       />
-
-      {/* Disclaimer */}
-      <p className="text-muted-foreground text-xs">
-        RawEval may generate inaccurate information about people, places, or
-        facts. Model: RawEval AI v1.0
-      </p>
     </div>
   );
 }

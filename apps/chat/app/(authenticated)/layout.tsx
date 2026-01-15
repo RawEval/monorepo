@@ -1,9 +1,9 @@
-import { SidebarLayout } from '@/components/layout/sidebar-layout';
+import { AppLayout } from '@/components/layout/app-layout';
 
 export default function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <SidebarLayout>{children}</SidebarLayout>;
+  return <AppLayout>{children}</AppLayout>;
 }

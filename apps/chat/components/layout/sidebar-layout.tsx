@@ -10,17 +10,15 @@ interface SidebarLayoutProps {
 }
 
 export function SidebarLayout({ children }: SidebarLayoutProps) {
-  const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const rightSidebarOpen = useUiStore((s) => s.rightSidebarOpen);
   const upgradeModalOpen = useUiStore((s) => s.upgradeModalOpen);
-  const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
   const toggleRightSidebar = useUiStore((s) => s.toggleRightSidebar);
   const closeUpgradeModal = useUiStore((s) => s.closeUpgradeModal);
 
   return (
     <div className="bg-background flex h-screen overflow-hidden">
       {/* Left Sidebar */}
-      <Sidebar isOpen={leftSidebarOpen} onToggle={toggleLeftSidebar} />
+      <Sidebar />
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
