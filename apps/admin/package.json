@@ -14,6 +14,7 @@
     "@raweval/types": "workspace:*",
     "@raweval/ui": "workspace:*",
     "@raweval/utils": "workspace:*",
+    "@vercel/toolbar": "^0.1.41",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "react": "19.2.3",

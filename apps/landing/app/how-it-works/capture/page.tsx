@@ -9,9 +9,7 @@ import {
   Database,
   CheckCircle2,
   AlertCircle,
-  TrendingUp,
   Users,
-  FileText,
   Filter,
 } from 'lucide-react';
 

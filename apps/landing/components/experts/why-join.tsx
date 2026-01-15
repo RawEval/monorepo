@@ -5,8 +5,6 @@ import {
   TrendingUp,
   Globe,
   Shield,
-  Users,
-  Zap,
   CheckCircle2,
   ArrowRight,
 } from 'lucide-react';
@@ -91,7 +89,7 @@ export function WhyJoin() {
         {/* Main reasons grid */}
         <div className="mb-16 grid gap-6 md:grid-cols-2">
           {reasons.map((reason) => {
-            const colors = colorMap[reason.color];
+            const colors = colorMap[reason.color] ?? colorMap.blue!;
             return (
               <div
                 key={reason.title}

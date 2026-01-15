@@ -6,12 +6,11 @@ import {
   FileText,
   CheckCircle2,
   Edit3,
-  Eye,
   Camera,
   Shield,
-  Send,
   MessageSquare,
-  ArrowRight,
+  Send,
+  Eye,
 } from 'lucide-react';
 
 export function WorkbenchPreview() {

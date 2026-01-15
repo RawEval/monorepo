@@ -4,15 +4,12 @@ import { Footer } from '@/components/footer';
 import { StepNav } from '@/components/step-nav';
 import {
   Video,
-  Shield,
   Brain,
   Clock,
   CheckCircle2,
-  Award,
   Eye,
   Fingerprint,
   MessageSquare,
-  TrendingUp,
 } from 'lucide-react';
 
 export const metadata: Metadata = {

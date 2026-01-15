@@ -7,7 +7,6 @@ import {
   ThumbsDown,
   Copy,
   Sparkles,
-  User,
   MessageCircle,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -30,7 +29,6 @@ export function ChatMessage({
   content,
   verified,
   images,
-  createdAt,
   onFlag,
   onApprove,
   onRequestHuman,

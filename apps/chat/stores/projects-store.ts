@@ -36,7 +36,7 @@ function newId(prefix: string) {
 
 export const useProjectsStore = create<ProjectsState & ProjectsActions>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       projects: seed,
       selectedProjectId: seed[0]?.id ?? null,
 

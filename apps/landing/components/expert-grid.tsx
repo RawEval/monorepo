@@ -134,7 +134,7 @@ export function ExpertGrid() {
 
           <div className="grid gap-4 md:grid-cols-3">
             {tiers.map((tier) => {
-              const colors = colorMap[tier.color];
+              const colors = colorMap[tier.color] ?? colorMap.slate!;
               return (
                 <div
                   key={tier.tier}

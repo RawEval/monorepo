@@ -20,13 +20,20 @@ For each Vercel project, you need to set a custom **Install Command** that insta
 Replace the default install command with:
 
 ```bash
-corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm install --frozen-lockfile
+npm install -g pnpm@9 && pnpm install --frozen-lockfile
 ```
 
-**Or use the script:**
+**Why this approach:**
+
+- ✅ More reliable than Corepack on Vercel
+- ✅ npm is always available on Vercel build images
+- ✅ Directly installs pnpm 9 globally
+- ✅ No Corepack dependency
+
+**Alternative (if the above doesn't work):**
 
 ```bash
-bash scripts/vercel-install.sh
+curl -fsSL https://get.pnpm.io/install.sh | sh - && export PATH="$HOME/.local/share/pnpm:$PATH" && pnpm install --frozen-lockfile
 ```
 
 ### Step 3: Configure Build Command

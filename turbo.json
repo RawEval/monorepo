@@ -3,8 +3,11 @@
   "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^typecheck"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build", "^typecheck"]
     },
     "dev": {
       "cache": false,
@@ -12,9 +15,6 @@
     },
     "lint": {
       "dependsOn": ["^lint"]
-    },
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
     },
     "clean": {
       "cache": false

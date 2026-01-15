@@ -2,7 +2,6 @@
 
 import { Zap, HelpCircle, Gift, Bot } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
-import { Badge } from '@raweval/ui/badge';
 import { useUiStore } from '@/stores/ui-store';
 
 export function ChatHeader() {

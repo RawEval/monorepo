@@ -1,11 +1,9 @@
 'use client';
 
 import {
-  DollarSign,
   FileText,
   Briefcase,
   Calculator,
-  ArrowRight,
   CheckCircle2,
 } from 'lucide-react';
 

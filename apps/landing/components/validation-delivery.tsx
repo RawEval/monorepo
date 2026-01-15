@@ -9,10 +9,8 @@ import {
   TrendingUp,
   Database,
   Send,
-  Shield,
   Award,
   BarChart3,
-  Clock,
   FileJson,
   Lock,
   ExternalLink,
@@ -21,7 +19,6 @@ import {
   Activity,
   Zap,
   Users,
-  Box,
 } from 'lucide-react';
 
 // Tier comparison data

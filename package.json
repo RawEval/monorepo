@@ -16,7 +16,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@vercel/toolbar": "^1.1.11"
+    "@vercel/toolbar": "^0.1.41"
   },
   "devDependencies": {
     "@types/node": "^20.11.5",

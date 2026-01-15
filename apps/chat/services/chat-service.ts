@@ -12,8 +12,8 @@ export class ChatService {
    * Send a message and get AI response
    */
   async sendMessage(
-    sessionId: string,
-    message: string,
+    _sessionId: string,
+    _message: string,
   ): Promise<ChatMessage> {
     // TODO: Implement actual API call
     // const response = await fetch('/api/chat', {
@@ -35,7 +35,7 @@ export class ChatService {
   /**
    * Flag a message as incorrect
    */
-  async flagMessage(messageId: string, reason?: string): Promise<void> {
+  async flagMessage(_messageId: string, _reason?: string): Promise<void> {
     // TODO: Implement API call
     // await fetch(`/api/chat/messages/${messageId}/flag`, {
     //   method: 'POST',
@@ -46,7 +46,7 @@ export class ChatService {
   /**
    * Approve a message as correct
    */
-  async approveMessage(messageId: string): Promise<void> {
+  async approveMessage(_messageId: string): Promise<void> {
     // TODO: Implement API call
     // await fetch(`/api/chat/messages/${messageId}/approve`, {
     //   method: 'POST',
@@ -56,7 +56,7 @@ export class ChatService {
   /**
    * Get chat session
    */
-  async getSession(sessionId: string): Promise<ChatSession | null> {
+  async getSession(_sessionId: string): Promise<ChatSession | null> {
     // TODO: Implement API call
     return null;
   }

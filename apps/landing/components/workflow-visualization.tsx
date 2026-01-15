@@ -7,19 +7,13 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  ArrowDown,
   Search,
   UserCheck,
   Shield,
   Database,
-  Zap,
-  AlertTriangle,
   XCircle,
   Play,
-  Pause,
-  RotateCcw,
   Lock,
-  Unlock,
   Activity,
   Timer,
   GitBranch,
@@ -115,14 +109,12 @@ function StatusDot({ status }: { status: keyof typeof STATUS_COLORS }) {
 
 // Workflow state node
 function WorkflowNode({
-  id,
   label,
   status,
   latency,
   isStart,
   isEnd,
 }: {
-  id: string;
   label: string;
   status: keyof typeof STATUS_COLORS;
   latency?: number;
@@ -716,7 +708,6 @@ function PhaseAccordionCard({ phase }: { phase: PhaseAccordion }) {
               {phase.stateGraph.map((node, index) => (
                 <div key={node.id} className="flex items-center gap-2">
                   <WorkflowNode
-                    id={node.id}
                     label={node.label}
                     status={node.status}
                     latency={node.latency}
@@ -812,7 +803,7 @@ export function WorkflowVisualization() {
               status: 'pending' as const,
               icon: <Circle className="h-3.5 w-3.5" />,
             },
-          ].map(({ status, icon }) => {
+          ].map(({ status }) => {
             const color = STATUS_COLORS[status];
             return (
               <div key={status} className="flex items-center gap-1.5">

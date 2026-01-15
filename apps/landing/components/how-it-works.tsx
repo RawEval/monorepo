@@ -6,7 +6,6 @@ import {
   UserCheck,
   Shield,
   Database,
-  Send,
   ArrowRight,
 } from 'lucide-react';
 
@@ -103,7 +102,7 @@ export function HowItWorks() {
         {/* Phases grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {phases.map((phase, index) => {
-            const colors = colorMap[phase.color];
+            const colors = colorMap[phase.color] ?? colorMap.blue!;
             return (
               <div key={phase.title} className="group relative">
                 <div

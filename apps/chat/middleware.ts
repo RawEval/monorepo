@@ -13,7 +13,7 @@ import type { NextRequest } from 'next/server';
  * - Setting headers
  */
 
-export function middleware(request: NextRequest) {
+export function middleware(_request: NextRequest) {
   // TODO: Implement authentication check
   // const session = await getSession(request);
   // if (!session && request.nextUrl.pathname.startsWith('/app')) {

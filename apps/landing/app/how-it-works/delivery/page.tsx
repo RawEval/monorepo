@@ -3,10 +3,8 @@ import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { StepNav } from '@/components/step-nav';
 import {
-  ArrowRight,
   Database,
   CheckCircle2,
-  TrendingUp,
   Zap,
   Users,
 } from 'lucide-react';

@@ -93,7 +93,7 @@ export function TierSystem() {
         {/* Tier progression */}
         <div className="mb-12 grid gap-6 md:grid-cols-3">
           {tiers.map((tier, index) => {
-            const colors = colorMap[tier.color];
+            const colors = colorMap[tier.color] ?? colorMap.slate!;
             return (
               <div
                 key={tier.tier}

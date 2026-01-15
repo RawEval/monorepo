@@ -8,6 +8,7 @@
     "./badge": "./src/badge.tsx"
   },
   "scripts": {
+    "build": "tsc",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
