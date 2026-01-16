@@ -2,7 +2,7 @@
 
 Infrastructure-as-code and deployment configurations.
 
-## Structure
+## Structuree
 
 ```
 infra/
@@ -17,6 +17,7 @@ infra/
 ## Purpose
 
 This directory contains infrastructure code that is:
+
 - **Not part of the application code**
 - **Deployed separately** from apps
 - **Environment-specific** (dev, staging, prod)
@@ -24,17 +25,20 @@ This directory contains infrastructure code that is:
 ## Examples
 
 ### Docker
+
 - Dockerfiles for apps
 - docker-compose.yml for local development
 - Multi-stage builds
 
 ### Terraform
+
 - AWS/GCP/Azure infrastructure
 - Database provisioning
 - Networking configuration
 - CI/CD pipelines
 
 ### Monitoring
+
 - Datadog/New Relic configs
 - Log aggregation setup
 - Alert definitions
