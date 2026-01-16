@@ -1,203 +1,216 @@
-# Vercel Deployment Troubleshooting Guide
+# Vercel Deployment Not Triggering - Troubleshooting Guide
 
-## Issue: Pushes Don't Trigger Deployments
+## Quick Checklist
 
-If you've connected your monorepo to Vercel but pushes don't trigger deployments, check these common issues:
+### 1. ✅ Verify Git Integration in Vercel Dashboard
 
-## ✅ Checklist
+For **each project** (landing and chat), check:
 
-### 1. **Git Integration**
-- [ ] Go to Vercel Dashboard → Your Project → Settings → Git
-- [ ] Verify the repository is connected: `RawEval/monorepo`
-- [ ] Check the connected branch (usually `main` or `master`)
-- [ ] Ensure "Production Branch" matches your default branch
+**Dashboard URLs:**
+- Landing: https://vercel.com/rawevals-projects/monorepo-landing/settings/git
+- Chat: https://vercel.com/rawevals-projects/monorepo-chat/settings/git
 
-### 2. **Root Directory Configuration**
-For **Landing App**:
-- Root Directory: `apps/landing`
-- Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/landing`
+**Required Settings:**
+- ✅ **Repository**: `RawEval/monorepo`
+- ✅ **Production Branch**: `main` (or your default branch)
+- ✅ **Root Directory**: 
+  - Landing: `apps/landing`
+  - Chat: `apps/chat`
+- ✅ **Auto-deploy**: **Enabled** (this is critical!)
 
-For **Chat App**:
-- Root Directory: `apps/chat`
-- Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/chat`
+### 2. ✅ Verify Root Directory in General Settings
 
-### 3. **Install Command**
-Both projects should have:
-```
-npm install -g pnpm@9 && pnpm install --frozen-lockfile
-```
+**Dashboard URLs:**
+- Landing: https://vercel.com/rawevals-projects/monorepo-landing/settings/general
+- Chat: https://vercel.com/rawevals-projects/monorepo-chat/settings/general
 
-### 4. **Missing pnpm-lock.yaml**
-If `pnpm-lock.yaml` is missing, Vercel won't deploy. Generate it:
+**Required:**
+- **Root Directory**: Must match Git Root Directory
+  - Landing: `apps/landing`
+  - Chat: `apps/chat`
+
+### 3. ✅ Check Branch Name
+
+Your local branch must match the Production Branch in Vercel:
 
 ```bash
-cd /Users/durgesh/Code/Orgs/RawEval/monorepo
-pnpm install
-git add pnpm-lock.yaml
-git commit -m "Add pnpm-lock.yaml"
-git push
+# Check current branch
+git branch --show-current
+
+# Should be 'main' (or whatever is set in Vercel)
 ```
 
-### 5. **Vercel Project Settings**
+### 4. ✅ Verify Push to Correct Remote
 
-#### Landing Project Settings:
-| Setting | Value |
-|---------|-------|
-| **Framework Preset** | Next.js |
-| **Root Directory** | `apps/landing` |
-| **Build Command** | `cd ../.. && pnpm turbo run build --filter=@raweval/landing` |
-| **Output Directory** | `.next` |
-| **Install Command** | `npm install -g pnpm@9 && pnpm install --frozen-lockfile` |
-| **Node.js Version** | 20.x |
-
-#### Chat Project Settings:
-| Setting | Value |
-|---------|-------|
-| **Framework Preset** | Next.js |
-| **Root Directory** | `apps/chat` |
-| **Build Command** | `cd ../.. && pnpm turbo run build --filter=@raweval/chat` |
-| **Output Directory** | `.next` |
-| **Install Command** | `npm install -g pnpm@9 && pnpm install --frozen-lockfile` |
-| **Node.js Version** | 20.x |
-
-### 6. **Git Branch Settings**
-- Go to Settings → Git
-- Check "Production Branch" matches your default branch (usually `main`)
-- Verify "Auto-deploy" is enabled
-- Check "Ignore Build Step" is empty or returns false
-
-### 7. **Webhook Configuration**
-- Go to Settings → Git → Deploy Hooks
-- Verify webhook is active
-- Check if webhook URL is correct: `https://api.vercel.com/v1/integrations/deploy/...`
-
-### 8. **Manual Trigger Test**
-Try triggering a deployment manually:
-1. Go to Deployments tab
-2. Click "Redeploy" on latest deployment
-3. Or use Vercel CLI: `vercel --prod`
-
-## 🔍 Debugging Steps
-
-### Step 1: Check Vercel Dashboard
-1. Go to your Vercel project
-2. Check "Deployments" tab - are there any failed deployments?
-3. Check "Settings" → "Git" - is the repo connected?
-4. Check "Settings" → "General" → "Build & Development Settings"
-
-### Step 2: Verify Git Push
 ```bash
-# Check if you're pushing to the correct branch
+# Check remote
+git remote -v
+
+# Should show: origin  git@github.com:RawEval/monorepo.git
+```
+
+### 5. ✅ Check Webhook Status
+
+In Vercel Dashboard → Settings → Git:
+- Look for webhook status
+- Should show "Connected" or "Active"
+- If disconnected, click "Reconnect" or "Connect Git Repository"
+
+## Common Issues & Fixes
+
+### Issue 1: Auto-deploy Disabled
+
+**Symptom**: Pushes don't trigger deployments
+
+**Fix:**
+1. Go to project Settings → Git
+2. Find "Auto-deploy" toggle
+3. Enable it
+4. Save
+
+### Issue 2: Wrong Root Directory
+
+**Symptom**: Builds fail or don't trigger
+
+**Fix:**
+1. Go to Settings → General
+2. Set Root Directory to `apps/landing` (or `apps/chat`)
+3. Go to Settings → Git
+4. Set Root Directory to match (must be same in both places)
+5. Save
+
+### Issue 3: Wrong Production Branch
+
+**Symptom**: Pushes to `main` don't trigger, but other branches do
+
+**Fix:**
+1. Go to Settings → Git
+2. Check "Production Branch"
+3. Should be `main` (or your default branch)
+4. If different, update it
+
+### Issue 4: Git Repository Not Connected
+
+**Symptom**: No deployments at all
+
+**Fix:**
+1. Go to Settings → Git
+2. If not connected, click "Connect Git Repository"
+3. Select `RawEval/monorepo`
+4. Select branch: `main`
+5. Set Root Directory: `apps/landing` or `apps/chat`
+6. Enable Auto-deploy
+7. Save
+
+### Issue 5: Webhook Issues
+
+**Symptom**: Vercel shows connected but deployments don't trigger
+
+**Fix:**
+1. Go to Settings → Git
+2. Click "Disconnect" (if connected)
+3. Click "Connect Git Repository" again
+4. Re-authenticate if needed
+5. Re-enable Auto-deploy
+
+## Step-by-Step Verification
+
+### For Landing Project
+
+1. **Check Git Integration:**
+   ```
+   https://vercel.com/rawevals-projects/monorepo-landing/settings/git
+   ```
+   - Repository: `RawEval/monorepo` ✅
+   - Production Branch: `main` ✅
+   - Root Directory: `apps/landing` ✅
+   - Auto-deploy: **Enabled** ✅
+
+2. **Check General Settings:**
+   ```
+   https://vercel.com/rawevals-projects/monorepo-landing/settings/general
+   ```
+   - Root Directory: `apps/landing` ✅
+   - Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/landing` ✅
+   - Install Command: `npm install -g pnpm@9 && pnpm install --frozen-lockfile` ✅
+
+### For Chat Project
+
+1. **Check Git Integration:**
+   ```
+   https://vercel.com/rawevals-projects/monorepo-chat/settings/git
+   ```
+   - Repository: `RawEval/monorepo` ✅
+   - Production Branch: `main` ✅
+   - Root Directory: `apps/chat` ✅
+   - Auto-deploy: **Enabled** ✅
+
+2. **Check General Settings:**
+   ```
+   https://vercel.com/rawevals-projects/monorepo-chat/settings/general
+   ```
+   - Root Directory: `apps/chat` ✅
+   - Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/chat` ✅
+   - Install Command: `npm install -g pnpm@9 && pnpm install --frozen-lockfile` ✅
+
+## Manual Test
+
+If auto-deploy still doesn't work, test manually:
+
+```bash
+# Test landing deployment
+cd apps/landing
+npx vercel --prod
+
+# Test chat deployment
+cd ../chat
+npx vercel --prod
+```
+
+## Debugging Commands
+
+```bash
+# Check current branch
 git branch --show-current
 
 # Check remote
 git remote -v
 
-# Push and watch for Vercel webhook
-git push origin main
+# Check recent commits
+git log --oneline -5
+
+# Check if vercel.json exists
+ls -la apps/*/vercel.json
+
+# Verify project links
+cd apps/landing && cat .vercel/project.json
+cd ../chat && cat .vercel/project.json
 ```
 
-### Step 3: Check Vercel Logs
-1. Go to Deployments tab
-2. Click on a deployment
-3. Check "Build Logs" for errors
-4. Common errors:
-   - `ERR_PNPM_UNSUPPORTED_ENGINE` → Fix Install Command
-   - `Cannot find module '@raweval/ui'` → Fix Root Directory
-   - `turbo: command not found` → Fix Build Command
+## Most Common Fix
 
-### Step 4: Test Build Locally
-```bash
-# Test landing build
-cd /Users/durgesh/Code/Orgs/RawEval/monorepo
-pnpm turbo run build --filter=@raweval/landing
+**90% of the time, the issue is:**
 
-# Test chat build
-pnpm turbo run build --filter=@raweval/chat
-```
+1. **Auto-deploy is disabled** → Enable it in Settings → Git
+2. **Root Directory mismatch** → Must match in both General and Git settings
+3. **Wrong branch** → Production Branch must match your default branch
 
-## 🚨 Common Issues & Fixes
+## After Fixing
 
-### Issue 1: "No deployments triggered"
-**Fix:**
-- Verify Git integration in Vercel Dashboard
-- Check branch name matches Production Branch
-- Ensure `pnpm-lock.yaml` exists and is committed
-- Try manual redeploy to test
+1. Make a test commit:
+   ```bash
+   git commit --allow-empty -m "Test deployment trigger"
+   git push origin main
+   ```
 
-### Issue 2: "Build fails immediately"
-**Fix:**
-- Check Install Command is set correctly
-- Verify Root Directory is `apps/landing` or `apps/chat`
-- Ensure Build Command includes `cd ../..`
+2. Check Vercel Dashboard → Deployments
+   - Should see 2 new deployments (one per project)
+   - Should show "Building" status
 
-### Issue 3: "Deployment stuck or cancelled"
-**Fix:**
-- Check Vercel build logs
-- Verify Node.js version is 20.x
-- Check for timeout issues (increase if needed)
+3. Monitor build logs
+   - Click on deployment
+   - Check build logs for errors
 
-### Issue 4: "Wrong app deployed"
-**Fix:**
-- Verify Root Directory matches the app
-- Check Build Command filter matches app name
-- Ensure separate Vercel projects for each app
+---
 
-## 📋 Quick Fix Commands
-
-### Generate pnpm-lock.yaml (if missing):
-```bash
-cd /Users/durgesh/Code/Orgs/RawEval/monorepo
-pnpm install
-git add pnpm-lock.yaml
-git commit -m "Add pnpm-lock.yaml for Vercel"
-git push
-```
-
-### Test deployment manually:
-```bash
-# Install Vercel CLI if not installed
-npm i -g vercel
-
-# Login
-vercel login
-
-# Deploy from root
-cd /Users/durgesh/Code/Orgs/RawEval/monorepo
-vercel --prod
-```
-
-## 🔧 Vercel Dashboard Settings Quick Reference
-
-### For Landing Project:
-1. Settings → General → Root Directory: `apps/landing`
-2. Settings → General → Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/landing`
-3. Settings → General → Install Command: `npm install -g pnpm@9 && pnpm install --frozen-lockfile`
-4. Settings → General → Output Directory: `.next`
-5. Settings → Git → Production Branch: `main` (or your default branch)
-6. Settings → Git → Auto-deploy: ✅ Enabled
-
-### For Chat Project:
-1. Settings → General → Root Directory: `apps/chat`
-2. Settings → General → Build Command: `cd ../.. && pnpm turbo run build --filter=@raweval/chat`
-3. Settings → General → Install Command: `npm install -g pnpm@9 && pnpm install --frozen-lockfile`
-4. Settings → General → Output Directory: `.next`
-5. Settings → Git → Production Branch: `main` (or your default branch)
-6. Settings → Git → Auto-deploy: ✅ Enabled
-
-## 🎯 Next Steps
-
-1. **Verify all settings** in Vercel Dashboard match the above
-2. **Generate pnpm-lock.yaml** if missing
-3. **Push a test commit** to trigger deployment
-4. **Check deployment logs** for any errors
-5. **Manually redeploy** if auto-deploy isn't working
-
-## 📞 Still Not Working?
-
-Check:
-- Vercel project is connected to the correct GitHub repo
-- Branch name in Vercel matches your default branch
-- `pnpm-lock.yaml` is committed to the repository
-- Build settings are saved in Vercel Dashboard
-- No "Ignore Build Step" script is blocking deployments
+**If deployments still don't trigger after checking all above, the issue is likely in Vercel Dashboard settings, not in code.**
