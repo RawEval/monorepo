@@ -114,7 +114,7 @@ export function Sidebar() {
 
   // Sidebar content component
   const SidebarContent = () => (
-    <>
+    <div className="flex h-full flex-col">
       {/* Header: Logo */}
       <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-3 sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
@@ -138,7 +138,7 @@ export function Sidebar() {
       </div>
 
       {/* Chat List - Scrollable */}
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-2 sm:p-3">
           {sortedProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -271,7 +271,7 @@ export function Sidebar() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 
   // Mobile: Use MobileSheet component

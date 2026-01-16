@@ -58,7 +58,7 @@ export function MobileSheet({
       {/* Sheet */}
       <div
         className={cn(
-          'fixed top-0 bottom-0 z-50 w-[280px] flex flex-col bg-background border-r border-border shadow-2xl transition-transform duration-300 ease-out lg:hidden',
+          'fixed top-0 bottom-0 z-50 w-[280px] flex h-full flex-col bg-background border-r border-border shadow-2xl transition-transform duration-300 ease-out lg:hidden',
           side === 'left' ? 'left-0' : 'right-0',
           open
             ? side === 'left'
