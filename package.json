@@ -8,6 +8,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
+    "start:clean": "./scripts/kill-ports.sh && pnpm start",
+    "kill-ports": "./scripts/kill-ports.sh",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
