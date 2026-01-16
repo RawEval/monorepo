@@ -92,7 +92,10 @@ export function Sidebar() {
     if (minutes < 60) return `${minutes}m`;
     if (hours < 24) return `${hours}h`;
     if (days < 7) return `${days}d`;
-    return new Date(timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   useEffect(() => {
@@ -113,18 +116,20 @@ export function Sidebar() {
   const SidebarContent = () => (
     <>
       {/* Header: Logo */}
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-3 sm:px-4">
-        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+      <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-3 sm:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
           {/* Logo with plus */}
-          <div className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-primary shadow-sm">
-            <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary-foreground" />
+          <div className="bg-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-lg shadow-sm sm:h-7 sm:w-7">
+            <Plus className="text-primary-foreground h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <span className="text-sm sm:text-base font-semibold text-foreground truncate">RawEval</span>
+          <span className="text-foreground truncate text-sm font-semibold sm:text-base">
+            RawEval
+          </span>
         </div>
         {isMobile && (
           <button
             onClick={toggleLeftSidebar}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors active:bg-muted active:text-foreground touch-manipulation"
+            className="text-muted-foreground active:bg-muted active:text-foreground flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-colors"
             aria-label="Close sidebar"
           >
             <X className="h-4 w-4" />
@@ -133,12 +138,12 @@ export function Sidebar() {
       </div>
 
       {/* Chat List - Scrollable */}
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="p-2 sm:p-3">
           {sortedProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="mb-3 h-8 w-8 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">No chats yet</p>
+              <MessageSquare className="text-muted-foreground mb-3 h-8 w-8" />
+              <p className="text-muted-foreground text-sm">No chats yet</p>
             </div>
           ) : (
             <div className="space-y-1">
@@ -153,7 +158,7 @@ export function Sidebar() {
                     className={cn(
                       'group relative flex items-center gap-2 rounded-lg px-2 py-2.5 transition-all',
                       isActive
-                        ? 'bg-accent text-accent-foreground border-l-2 border-primary'
+                        ? 'bg-accent text-accent-foreground border-primary border-l-2'
                         : 'hover:bg-muted/50'
                     )}
                   >
@@ -169,7 +174,7 @@ export function Sidebar() {
                             setEditValue('');
                           }
                         }}
-                        className="h-8 flex-1 rounded border border-border bg-background px-2 text-sm focus-visible:ring-ring focus-visible:ring-2 outline-none"
+                        className="border-border bg-background focus-visible:ring-ring h-8 flex-1 rounded border px-2 text-sm outline-none focus-visible:ring-2"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -177,15 +182,15 @@ export function Sidebar() {
                       <>
                         <button
                           onClick={() => handleSelectChat(project.id)}
-                          className="flex flex-1 items-center gap-2 overflow-hidden text-left min-w-0 touch-manipulation active:scale-[0.98] rounded-md"
+                          className="flex min-w-0 flex-1 touch-manipulation items-center gap-2 overflow-hidden rounded-md text-left active:scale-[0.98]"
                         >
-                          <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <MessageSquare className="text-muted-foreground h-4 w-4 shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">
                               {project.title}
                             </p>
                             {messages.length > 0 && (
-                              <p className="truncate text-xs text-muted-foreground">
+                              <p className="text-muted-foreground truncate text-xs">
                                 {formatTime(project.updatedAt)}
                               </p>
                             )}
@@ -198,7 +203,7 @@ export function Sidebar() {
                             <button
                               type="button"
                               className={cn(
-                                'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 touch-manipulation active:scale-95',
+                                'text-muted-foreground flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 active:scale-95',
                                 isActive && 'opacity-100'
                               )}
                               onClick={(e) => {
@@ -212,7 +217,9 @@ export function Sidebar() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => handleRename(project.id, project.title)}
+                              onClick={() =>
+                                handleRename(project.id, project.title)
+                              }
                             >
                               <Pencil className="h-4 w-4" />
                               Rename
@@ -246,17 +253,21 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* User Profile - Sticky at bottom */}
-      <div className="shrink-0 border-t border-border bg-background p-3 sm:p-4">
+      <div className="border-border bg-background shrink-0 border-t p-3 sm:p-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <Avatar
             src={user.avatar}
             alt={user.name}
             fallback={user.name[0]?.toUpperCase() || 'M'}
-            className="h-7 w-7 sm:h-8 sm:w-8 shrink-0"
+            className="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
           />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs sm:text-sm font-medium text-foreground">{user.name}</p>
-            <p className="truncate text-xs text-muted-foreground hidden sm:block">{user.email}</p>
+            <p className="text-foreground truncate text-xs font-medium sm:text-sm">
+              {user.name}
+            </p>
+            <p className="text-muted-foreground hidden truncate text-xs sm:block">
+              {user.email}
+            </p>
           </div>
         </div>
       </div>
@@ -279,7 +290,7 @@ export function Sidebar() {
 
   // Desktop: Regular sidebar
   return (
-    <aside className="relative z-auto flex h-screen w-[260px] flex-col border-r border-border bg-background lg:block">
+    <aside className="border-border bg-background relative z-auto flex h-screen w-[260px] flex-col border-r lg:block">
       <SidebarContent />
     </aside>
   );

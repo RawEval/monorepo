@@ -46,14 +46,14 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-14 border-b border-border bg-background/95 backdrop-blur-xl supports-backdrop-filter:bg-background/80 safe-area-inset-top">
+    <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/80 safe-area-inset-top sticky top-0 z-40 h-14 border-b backdrop-blur-xl">
       <div className="flex h-full items-center justify-between px-3 sm:px-4">
         {/* Left: Hamburger Menu + Model Selector */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           {/* Hamburger Menu - Mobile only */}
           <button
             onClick={toggleLeftSidebar}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-foreground transition-all active:scale-95 active:bg-muted touch-manipulation lg:hidden"
+            className="text-foreground active:bg-muted flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-all active:scale-95 lg:hidden"
             aria-label="Open sidebar"
           >
             <Menu className="h-5 w-5" />
@@ -70,11 +70,11 @@ export function Header() {
         </div>
 
         {/* Right: Options Menu */}
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           {/* New Chat Button - Desktop only */}
           <Button
             onClick={handleNewChat}
-            className="hidden sm:flex h-9 gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md transition-all px-3 active:scale-95 touch-manipulation"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 hidden h-9 touch-manipulation gap-2 px-3 shadow-sm transition-all hover:shadow-md active:scale-95 sm:flex"
           >
             <Plus className="h-4 w-4 shrink-0" />
             New Chat
@@ -82,9 +82,9 @@ export function Header() {
 
           {/* Options Menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="focus-visible:outline-none shrink-0">
+            <DropdownMenuTrigger className="shrink-0 focus-visible:outline-none">
               <button
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-foreground transition-all active:scale-95 active:bg-muted touch-manipulation"
+                className="text-foreground active:bg-muted flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg transition-all active:scale-95"
                 aria-label="More options"
               >
                 <MoreVertical className="h-5 w-5" />
@@ -92,8 +92,10 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <div className="px-2 py-1.5">
-                <p className="text-sm font-medium text-foreground">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
+                <p className="text-foreground text-sm font-medium">
+                  {user.name}
+                </p>
+                <p className="text-muted-foreground text-xs">{user.email}</p>
               </div>
               <Separator />
               <DropdownMenuItem
