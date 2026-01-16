@@ -139,14 +139,14 @@ export function Sidebar() {
 
       {/* Chat List - Scrollable */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="p-2 sm:p-3">
+        <div className="p-2">
           {sortedProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <MessageSquare className="text-muted-foreground mb-3 h-8 w-8" />
               <p className="text-muted-foreground text-sm">No chats yet</p>
             </div>
           ) : (
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               {sortedProjects.map((project) => {
                 const messages = getMessages(project.id);
                 const isActive = selectedProjectId === project.id;
@@ -156,10 +156,10 @@ export function Sidebar() {
                   <div
                     key={project.id}
                     className={cn(
-                      'group relative flex items-center gap-2 rounded-lg px-2 py-2.5 transition-all',
+                      'group relative flex items-center gap-2 rounded-md px-3 py-2.5 transition-colors',
                       isActive
-                        ? 'bg-accent text-accent-foreground border-primary border-l-2'
-                        : 'hover:bg-muted/50'
+                        ? 'bg-muted text-foreground'
+                        : 'hover:bg-muted/60 text-muted-foreground'
                     )}
                   >
                     {isEditing ? (
@@ -182,15 +182,21 @@ export function Sidebar() {
                       <>
                         <button
                           onClick={() => handleSelectChat(project.id)}
-                          className="flex min-w-0 flex-1 touch-manipulation items-center gap-2 overflow-hidden rounded-md text-left active:scale-[0.98]"
+                          className="flex min-w-0 flex-1 touch-manipulation items-center gap-3 overflow-hidden rounded-md text-left active:scale-[0.98]"
                         >
-                          <MessageSquare className="text-muted-foreground h-4 w-4 shrink-0" />
+                          <MessageSquare className={cn(
+                            "h-4 w-4 shrink-0 transition-colors",
+                            isActive ? "text-foreground" : "text-muted-foreground"
+                          )} />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">
+                            <p className={cn(
+                              "truncate text-sm transition-colors",
+                              isActive ? "font-medium text-foreground" : "font-normal text-muted-foreground"
+                            )}>
                               {project.title}
                             </p>
                             {messages.length > 0 && (
-                              <p className="text-muted-foreground truncate text-xs">
+                              <p className="text-muted-foreground truncate text-xs mt-0.5">
                                 {formatTime(project.updatedAt)}
                               </p>
                             )}
