@@ -1,7 +1,7 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd ../.. && pnpm turbo run build --filter=@raweval/chat",
   "installCommand": "npm install -g pnpm@9 && pnpm install --frozen-lockfile",
   "outputDirectory": ".next",
-  "framework": "nextjs",
-  "rootDirectory": "apps/chat"
+  "framework": "nextjs"
 }
