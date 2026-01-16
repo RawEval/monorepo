@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@raweval/landing",
+  "installCommand": "npm install -g pnpm@9 && pnpm install --frozen-lockfile",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "rootDirectory": "apps/landing"
+}
