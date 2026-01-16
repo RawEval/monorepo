@@ -2,7 +2,7 @@
 
 Infrastructure-as-code and deployment configurations.
 
-## Structuree
+## Structure
 
 ```
 infra/
