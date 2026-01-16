@@ -3,16 +3,20 @@
 ## What Was Done
 
 ### 1. ✅ Complete Cleanup
+
 - Removed all `.vercel` directories
 - Removed all `.env.local` files
 - Removed all `vercel.json` files (for fresh start)
 
 ### 2. ✅ Fresh Project Linking
+
 - **Landing**: Freshly linked to `monorepo-landing`
 - **Chat**: Freshly linked to `monorepo-chat`
 
 ### 3. ✅ Configuration Files Recreated
+
 All apps now have fresh `vercel.json` files:
+
 - ✅ `apps/landing/vercel.json`
 - ✅ `apps/chat/vercel.json`
 - ✅ `apps/experts/vercel.json`
@@ -20,12 +24,12 @@ All apps now have fresh `vercel.json` files:
 
 ## Current Status
 
-| App | Linked | Config File | Status |
-|-----|--------|-------------|--------|
-| Landing | ✅ Yes | ✅ `vercel.json` | Ready for Git connection |
-| Chat | ✅ Yes | ✅ `vercel.json` | Ready for Git connection |
-| Experts | ❌ No | ✅ `vercel.json` | Ready (no Vercel project yet) |
-| Admin | ❌ No | ✅ `vercel.json` | Ready (no Vercel project yet) |
+| App     | Linked | Config File      | Status                        |
+| ------- | ------ | ---------------- | ----------------------------- |
+| Landing | ✅ Yes | ✅ `vercel.json` | Ready for Git connection      |
+| Chat    | ✅ Yes | ✅ `vercel.json` | Ready for Git connection      |
+| Experts | ❌ No  | ✅ `vercel.json` | Ready (no Vercel project yet) |
+| Admin   | ❌ No  | ✅ `vercel.json` | Ready (no Vercel project yet) |
 
 ## ⚠️ CRITICAL: Connect to GitHub in Vercel Dashboard
 
@@ -66,9 +70,11 @@ Since you deleted all GitHub environments, you need to **reconnect each project 
 ## Also Configure General Settings
 
 ### Landing Project
+
 **URL**: https://vercel.com/rawevals-projects/monorepo-landing/settings/general
 
 **Required Settings:**
+
 - **Root Directory**: `apps/landing` ⚠️ **Must match Git Root Directory**
 - **Node.js Version**: `20.x` (change from 24.x if needed)
 - **Build Command**: `cd ../.. && pnpm turbo run build --filter=@raweval/landing`
@@ -76,9 +82,11 @@ Since you deleted all GitHub environments, you need to **reconnect each project 
 - **Output Directory**: `.next`
 
 ### Chat Project
+
 **URL**: https://vercel.com/rawevals-projects/monorepo-chat/settings/general
 
 **Required Settings:**
+
 - **Root Directory**: `apps/chat` ⚠️ **Must match Git Root Directory**
 - **Node.js Version**: `20.x` (change from 24.x if needed)
 - **Build Command**: `cd ../.. && pnpm turbo run build --filter=@raweval/chat`
@@ -88,17 +96,22 @@ Since you deleted all GitHub environments, you need to **reconnect each project 
 ## Important Notes
 
 ### Root Directory Must Match
+
 The **Root Directory** must be **identical** in:
+
 1. Settings → General → Root Directory
 2. Settings → Git → Root Directory
 
 If they don't match, deployments will fail!
 
 ### Auto-deploy Must Be Enabled
+
 Without Auto-deploy enabled, pushes won't trigger deployments.
 
 ### GitHub Webhook
+
 When you connect the repository, Vercel will:
+
 1. Create a webhook in your GitHub repository
 2. This webhook triggers deployments on push
 3. The webhook appears in: GitHub → Settings → Webhooks
@@ -106,6 +119,7 @@ When you connect the repository, Vercel will:
 ## Test After Connection
 
 1. **Make a test commit:**
+
    ```bash
    git commit --allow-empty -m "Test: Verify GitHub connection after reset"
    git push origin main
@@ -138,10 +152,12 @@ After connecting in Dashboard, verify:
 ## Quick Links
 
 **Landing:**
+
 - Git: https://vercel.com/rawevals-projects/monorepo-landing/settings/git
 - General: https://vercel.com/rawevals-projects/monorepo-landing/settings/general
 
 **Chat:**
+
 - Git: https://vercel.com/rawevals-projects/monorepo-chat/settings/git
 - General: https://vercel.com/rawevals-projects/monorepo-chat/settings/general
 
