@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react';
+import { authService } from '@/services/auth-service';
+import { storeToken } from '@raweval/auth';
+import { isApiError, ValidationError } from '@raweval/api-client';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -73,25 +76,48 @@ export default function SignupPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual signup API call
-      // const response = await fetch('/api/auth/signup', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     name: formData.name,
-      //     email: formData.email,
-      //     password: formData.password,
-      //   }),
-      // });
-      // if (!response.ok) throw new Error('Signup failed');
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+      // Register new user
+      await authService.register({
+        email: formData.email,
+        full_name: formData.name,
+        password: formData.password,
+      });
+
+      // Auto-login after registration
+      // According to OpenAPI spec: login expects { email, password }
+      const tokenResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Store token and refresh token
+      storeToken(
+        tokenResponse.access_token,
+        tokenResponse.expires_in,
+        tokenResponse.refresh_token,
+      );
+
       // Redirect to chat
       router.push('/chat');
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      if (isApiError(err)) {
+        if (err instanceof ValidationError) {
+          const validationErrors = err.validationErrors;
+          if (validationErrors) {
+            const firstError = Object.values(validationErrors)[0];
+            const errorMessage: string = Array.isArray(firstError) 
+              ? (firstError[0] || 'Validation error')
+              : (typeof firstError === 'string' ? firstError : 'Validation error');
+            setError(errorMessage);
+          } else {
+            setError(err.message || 'Validation error. Please check your input.');
+          }
+        } else {
+          setError(err.message || 'An error occurred during registration. Please try again.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setIsSubmitting(false);
     }
   };

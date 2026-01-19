@@ -2,6 +2,9 @@ import { Metadata } from 'next';
 import { Navbar } from '@/components/navbar';
 import { Footer } from '@/components/footer';
 import { Button } from '@raweval/ui/button';
+import { StatsCard } from '@raweval/ui/stats-card';
+import { FeatureCard } from '@raweval/ui/feature-card';
+import { SectionHeader } from '@raweval/ui/section-header';
 import {
   Building2,
   Shield,
@@ -69,22 +72,26 @@ export default function OrganizationsPage() {
 
           {/* Trust Indicators */}
           <div className="mt-16 grid gap-6 md:grid-cols-4">
-            <div className="text-center">
-              <div className="mb-2 text-3xl font-bold">96.8%</div>
-              <div className="text-sm text-blue-200">Avg Quality Score</div>
-            </div>
-            <div className="text-center">
-              <div className="mb-2 text-3xl font-bold">+34%</div>
-              <div className="text-sm text-blue-200">Accuracy Improvement</div>
-            </div>
-            <div className="text-center">
-              <div className="mb-2 text-3xl font-bold">47K+</div>
-              <div className="text-sm text-blue-200">Verified Prompts</div>
-            </div>
-            <div className="text-center">
-              <div className="mb-2 text-3xl font-bold">2,400+</div>
-              <div className="text-sm text-blue-200">Expert Network</div>
-            </div>
+            <StatsCard
+              value="96.8%"
+              label="Avg Quality Score"
+              className="text-white"
+            />
+            <StatsCard
+              value="+34%"
+              label="Accuracy Improvement"
+              className="text-white"
+            />
+            <StatsCard
+              value="47K+"
+              label="Verified Prompts"
+              className="text-white"
+            />
+            <StatsCard
+              value="2,400+"
+              label="Expert Network"
+              className="text-white"
+            />
           </div>
         </div>
       </section>
@@ -92,101 +99,101 @@ export default function OrganizationsPage() {
       {/* Data Quality Section */}
       <section className="py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="text-foreground mb-4 text-3xl font-bold">
-              Why RawEval Data is Different
-            </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-              Unlike synthetic or crowd-sourced data, every RawEval correction
+          <SectionHeader
+            title="Why RawEval Data is Different"
+            description="Unlike synthetic or crowd-sourced data, every RawEval correction
               is verified by vetted domain experts and scored against gold
-              standards.
-            </p>
-          </div>
+              standards."
+            className="mb-16"
+          />
 
           <div className="grid gap-8 lg:grid-cols-3">
-            <div className="border-border rounded-2xl border bg-white p-8 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                <Shield className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-foreground mb-3 text-xl font-semibold">
-                3-Tier Verification
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Every prompt reviewed by 9 experts across 3 tiers (PhD/10+ years
+            <FeatureCard
+              icon={<Shield className="h-6 w-6 text-blue-600" />}
+              iconBg="bg-blue-100"
+              title="3-Tier Verification"
+              description="Every prompt reviewed by 9 experts across 3 tiers (PhD/10+ years
                 → Master&apos;s/5+ years → Bachelor&apos;s/2+ years) for
-                multi-perspective validation.
-              </p>
-              <ul className="text-muted-foreground space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Tier 1 sets gold standard</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Tier 2/3 cross-validated</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Consensus scoring for confidence</span>
-                </li>
-              </ul>
-            </div>
+                multi-perspective validation."
+              features={[
+                {
+                  label: 'Tier 1 sets gold standard',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Tier 2/3 cross-validated',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Consensus scoring for confidence',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+              ]}
+            />
 
-            <div className="border-border rounded-2xl border bg-white p-8 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                <Lock className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-foreground mb-3 text-xl font-semibold">
-                Anti-AI Filtering
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Zero AI-generated corrections. Our Iron Dome security monitors
+            <FeatureCard
+              icon={<Lock className="h-6 w-6 text-blue-600" />}
+              iconBg="bg-blue-100"
+              title="Anti-AI Filtering"
+              description="Zero AI-generated corrections. Our Iron Dome security monitors
                 biometrics, keystrokes, and screen activity to ensure 100% human
-                input.
-              </p>
-              <ul className="text-muted-foreground space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Keystroke rhythm analysis</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Screen share monitoring</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Biometric heartbeat checks (60s)</span>
-                </li>
-              </ul>
-            </div>
+                input."
+              features={[
+                {
+                  label: 'Keystroke rhythm analysis',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Screen share monitoring',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Biometric heartbeat checks (60s)',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+              ]}
+            />
 
-            <div className="border-border rounded-2xl border bg-white p-8 shadow-sm">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-foreground mb-3 text-xl font-semibold">
-                Delta Metrics
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Every correction includes quantified improvement metrics,
+            <FeatureCard
+              icon={<BarChart3 className="h-6 w-6 text-blue-600" />}
+              iconBg="bg-blue-100"
+              title="Delta Metrics"
+              description="Every correction includes quantified improvement metrics,
                 showing exactly how much the expert enhanced the original model
-                output.
-              </p>
-              <ul className="text-muted-foreground space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Accuracy improvement (%)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Quality score (0-100)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
-                  <span>Consensus confidence level</span>
-                </li>
-              </ul>
-            </div>
+                output."
+              features={[
+                {
+                  label: 'Accuracy improvement (%)',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Quality score (0-100)',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+                {
+                  label: 'Consensus confidence level',
+                  icon: (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-500" />
+                  ),
+                },
+              ]}
+            />
           </div>
         </div>
       </section>
@@ -194,15 +201,12 @@ export default function OrganizationsPage() {
       {/* Data Delivery Options */}
       <section className="bg-slate-50 py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="text-foreground mb-4 text-3xl font-bold">
-              Flexible Data Delivery
-            </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-              Get data your way—real-time API, batch exports, or custom
-              integrations. We fit into your existing ML pipeline.
-            </p>
-          </div>
+          <SectionHeader
+            title="Flexible Data Delivery"
+            description="Get data your way—real-time API, batch exports, or custom
+              integrations. We fit into your existing ML pipeline."
+            className="mb-16"
+          />
 
           <div className="grid gap-8 md:grid-cols-3">
             <div className="rounded-2xl border-2 border-blue-200 bg-white p-8">
@@ -286,15 +290,12 @@ export default function OrganizationsPage() {
       {/* Use Cases */}
       <section className="py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="text-foreground mb-4 text-3xl font-bold">
-              Built for AI Leaders
-            </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-              From academic research to production LLMs, RawEval data powers the
-              most demanding AI applications.
-            </p>
-          </div>
+          <SectionHeader
+            title="Built for AI Leaders"
+            description="From academic research to production LLMs, RawEval data powers the
+              most demanding AI applications."
+            className="mb-16"
+          />
 
           <div className="grid gap-8 lg:grid-cols-2">
             <div className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-8">
@@ -425,13 +426,12 @@ export default function OrganizationsPage() {
       {/* Data Sample Preview */}
       <section className="bg-slate-900 py-24 text-white lg:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold">See the Data Structure</h2>
-            <p className="mx-auto max-w-2xl text-lg text-slate-300">
-              Every record includes the original prompt, model output, expert
-              corrections, quality scores, and metadata.
-            </p>
-          </div>
+          <SectionHeader
+            title="See the Data Structure"
+            description="Every record includes the original prompt, model output, expert
+              corrections, quality scores, and metadata."
+            className="mb-16"
+          />
 
           <div className="overflow-x-auto rounded-2xl border border-slate-700 bg-slate-800 p-8">
             <div className="mb-2 font-mono text-xs text-slate-400">
@@ -494,15 +494,12 @@ export default function OrganizationsPage() {
       {/* Pricing Tiers */}
       <section className="py-24 lg:py-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mb-16 text-center">
-            <h2 className="text-foreground mb-4 text-3xl font-bold">
-              Transparent Pricing
-            </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
-              Pay only for what you use. Volume discounts available for research
-              institutions and enterprise deployments.
-            </p>
-          </div>
+          <SectionHeader
+            title="Transparent Pricing"
+            description="Pay only for what you use. Volume discounts available for research
+              institutions and enterprise deployments."
+            className="mb-16"
+          />
 
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="border-border rounded-2xl border-2 bg-white p-8">

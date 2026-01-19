@@ -57,6 +57,12 @@ importers:
 
   apps/admin:
     dependencies:
+      '@raweval/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@raweval/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@raweval/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -115,6 +121,12 @@ importers:
 
   apps/chat:
     dependencies:
+      '@raweval/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@raweval/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@raweval/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -176,6 +188,12 @@ importers:
 
   apps/experts:
     dependencies:
+      '@raweval/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@raweval/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@raweval/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -234,6 +252,12 @@ importers:
 
   apps/landing:
     dependencies:
+      '@raweval/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@raweval/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@raweval/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -293,15 +317,101 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  apps/research:
+    dependencies:
+      '@raweval/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
+      '@raweval/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@raweval/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@raweval/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      '@raweval/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      '@vercel/toolbar':
+        specifier: ^0.1.41
+        version: 0.1.41(next@16.1.1(@babel/core@7.28.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      lucide-react:
+        specifier: ^0.562.0
+        version: 0.562.0(react@19.2.3)
+      next:
+        specifier: 16.1.1
+        version: 16.1.1(@babel/core@7.28.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react:
+        specifier: 19.2.3
+        version: 19.2.3
+      react-dom:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
+    devDependencies:
+      '@raweval/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.1.18
+      '@types/node':
+        specifier: ^20
+        version: 20.19.29
+      '@types/react':
+        specifier: ^19
+        version: 19.2.8
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.8)
+      eslint:
+        specifier: ^9
+        version: 9.39.2(jiti@2.6.1)
+      eslint-config-next:
+        specifier: 16.1.1
+        version: 16.1.1(@typescript-eslint/parser@8.53.0(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.3)
+      postcss:
+        specifier: ^8
+        version: 8.5.6
+      tailwindcss:
+        specifier: ^4
+        version: 4.1.18
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/api-client:
+    dependencies:
+      '@raweval/types':
+        specifier: workspace:*
+        version: link:../types
+      '@raweval/utils':
+        specifier: workspace:*
+        version: link:../utils
+    devDependencies:
+      '@types/node':
+        specifier: ^20
+        version: 20.19.29
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
   packages/auth:
     dependencies:
       '@raweval/types':
         specifier: workspace:*
         version: link:../types
+      js-cookie:
+        specifier: 3.0.5
+        version: 3.0.5
     devDependencies:
       '@raweval/config':
         specifier: workspace:*
         version: link:../config
+      '@types/js-cookie':
+        specifier: 3.0.6
+        version: 3.0.6
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -935,6 +1045,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/js-cookie@3.0.6':
+    resolution: {integrity: sha512-wkw9yd1kEXOPnvEeEV1Go1MmxtBJL0RR79aOTAApecWFVu7w0NNXNqhcWgvw2YgZDYadliXkl14pa3WXw5jlCQ==}
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
@@ -1981,6 +2094,10 @@ packages:
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
+
+  js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -3354,6 +3471,8 @@ snapshots:
 
   '@types/estree@1.0.8': {}
 
+  '@types/js-cookie@3.0.6': {}
+
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
@@ -4546,6 +4665,8 @@ snapshots:
       set-function-name: 2.0.2
 
   jiti@2.6.1: {}
+
+  js-cookie@3.0.5: {}
 
   js-tokens@4.0.0: {}
 

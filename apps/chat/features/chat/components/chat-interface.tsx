@@ -47,13 +47,10 @@ export function ChatInterface() {
     });
   };
 
-  const handleSend = async (message: string, images?: string[], files?: File[]) => {
-    // For now, just pass images - files can be handled in the service layer
+  const handleSend = async (message: string, images?: string[]) => {
+    // Send message with images
+    // Files are converted to images in the use-chat hook
     await sendMessage(message, images);
-    // TODO: Handle file attachments in the service
-    if (files && files.length > 0) {
-      console.log('Files to send:', files);
-    }
   };
 
   const handleWrong = (messageId: string) => {

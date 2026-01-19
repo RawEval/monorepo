@@ -1,0 +1,2 @@
+# This directory will contain generated types from OpenAPI/Swagger specs
+# Run: ./scripts/generate-api-types.sh <openapi-url>

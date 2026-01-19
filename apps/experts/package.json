@@ -11,6 +11,8 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
+    "@raweval/api-client": "workspace:*",
+    "@raweval/auth": "workspace:*",
     "@raweval/types": "workspace:*",
     "@raweval/ui": "workspace:*",
     "@raweval/utils": "workspace:*",

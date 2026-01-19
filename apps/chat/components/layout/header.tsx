@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Settings,
   CreditCard,
@@ -22,6 +22,14 @@ import { ModelSelector, type ModelType } from '@/components/model-selector';
 import { useUiStore } from '@/stores/ui-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useRouter } from 'next/navigation';
+import { authService } from '@/services/auth-service';
+import {
+  clearToken,
+  getStoredToken,
+  getStoredRefreshToken,
+  storeToken,
+} from '@raweval/auth';
+import type { UserResponse } from '@raweval/types';
 
 export function Header() {
   const router = useRouter();
@@ -30,14 +38,79 @@ export function Header() {
   const createProject = useProjectsStore((s) => s.createProject);
   const selectProject = useProjectsStore((s) => s.selectProject);
   const [selectedModel, setSelectedModel] = useState<ModelType>('gpt-4');
+  const [user, setUser] = useState<UserResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock user data - replace with actual auth
-  const user = {
-    name: 'Mark Anderson',
-    email: 'markanderson@gmail.com',
-    avatar: undefined,
-    subscription: 'Free' as 'Free' | 'Pro' | 'Team',
-  };
+  useEffect(() => {
+    const loadUser = async () => {
+      let token = getStoredToken();
+
+      // If no access token, try to refresh if we have a refresh token
+      if (!token) {
+        const refreshToken = getStoredRefreshToken();
+        if (refreshToken) {
+          try {
+            const tokenResponse = await authService.refreshToken(refreshToken);
+            storeToken(
+              tokenResponse.access_token,
+              tokenResponse.expires_in,
+              tokenResponse.refresh_token
+            );
+            token = tokenResponse.access_token;
+          } catch (error) {
+            console.error('Failed to refresh token:', error);
+            clearToken();
+            router.push('/login');
+            return;
+          }
+        }
+      }
+
+      if (!token) {
+        // No token and no valid refresh token
+        router.push('/login');
+        return;
+      }
+
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        // If getting user fails, check if it's a 401
+        // (Though auth interceptor might have handled it, we should be safe)
+        console.error('Failed to load user:', error);
+
+        // Try one more refresh if we have a refresh token (in case token expired just now)
+        const refreshToken = getStoredRefreshToken();
+        if (refreshToken) {
+          try {
+            const tokenResponse = await authService.refreshToken(refreshToken);
+            storeToken(
+              tokenResponse.access_token,
+              tokenResponse.expires_in,
+              tokenResponse.refresh_token
+            );
+            // Retry get user
+            const userDataRetry = await authService.getCurrentUser();
+            setUser(userDataRetry);
+            return;
+          } catch (refreshError) {
+            // Refresh failed
+            clearToken();
+            router.push('/login');
+          }
+        } else {
+          // No refresh token, clear and redirect
+          clearToken();
+          router.push('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [router]);
 
   const handleNewChat = () => {
     const newId = createProject();
@@ -91,12 +164,18 @@ export function Header() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-foreground text-sm font-medium">
-                  {user.name}
-                </p>
-                <p className="text-muted-foreground text-xs">{user.email}</p>
-              </div>
+              {loading ? (
+                <div className="px-2 py-1.5">
+                  <p className="text-muted-foreground text-sm">Loading...</p>
+                </div>
+              ) : user ? (
+                <div className="px-2 py-1.5">
+                  <p className="text-foreground text-sm font-medium">
+                    {user.full_name}
+                  </p>
+                  <p className="text-muted-foreground text-xs">{user.email}</p>
+                </div>
+              ) : null}
               <Separator />
               <DropdownMenuItem
                 onClick={handleNewChat}
@@ -126,8 +205,24 @@ export function Header() {
               <Separator />
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => {
-                  // TODO: Implement actual logout logic
+                onClick={async () => {
+                  // Get refresh token before clearing
+                  const refreshToken = getStoredRefreshToken();
+
+                  // Clear tokens immediately
+                  clearToken();
+
+                  // Call logout API if refresh token exists
+                  if (refreshToken) {
+                    try {
+                      await authService.logout(refreshToken);
+                    } catch (error) {
+                      // Ignore errors on logout (token may already be invalid)
+                      console.warn('Logout API call failed:', error);
+                    }
+                  }
+
+                  // Redirect to login
                   router.push('/login');
                 }}
                 className="cursor-pointer"

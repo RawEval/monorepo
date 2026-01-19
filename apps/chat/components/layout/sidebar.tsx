@@ -24,6 +24,7 @@ import { useUiStore } from '@/stores/ui-store';
 import { cn } from '@raweval/utils';
 import { Avatar } from '@/components/ui/avatar';
 import { MobileSheet } from './mobile-sheet';
+import { authService } from '@/services/auth-service';
 
 export function Sidebar() {
   const router = useRouter();
@@ -105,12 +106,23 @@ export function Sidebar() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Mock user data
-  const user = {
-    name: 'Mark Anderson',
-    email: 'markanderson@gmail.com',
-    avatar: undefined,
-  };
+  // Get user data from auth (simplified - in production, use context or store)
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser({
+          name: userData.full_name,
+          email: userData.email,
+        });
+      } catch {
+        // User not authenticated, will be handled by middleware
+      }
+    };
+    loadUser();
+  }, []);
 
   // Sidebar content component
   const SidebarContent = () => (
@@ -138,7 +150,7 @@ export function Sidebar() {
       </div>
 
       {/* Chat List - Scrollable */}
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="min-h-0 flex-1">
         <div className="p-2">
           {sortedProjects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -184,19 +196,27 @@ export function Sidebar() {
                           onClick={() => handleSelectChat(project.id)}
                           className="flex min-w-0 flex-1 touch-manipulation items-center gap-3 overflow-hidden rounded-md text-left active:scale-[0.98]"
                         >
-                          <MessageSquare className={cn(
-                            "h-4 w-4 shrink-0 transition-colors",
-                            isActive ? "text-foreground" : "text-muted-foreground"
-                          )} />
+                          <MessageSquare
+                            className={cn(
+                              'h-4 w-4 shrink-0 transition-colors',
+                              isActive
+                                ? 'text-foreground'
+                                : 'text-muted-foreground'
+                            )}
+                          />
                           <div className="min-w-0 flex-1">
-                            <p className={cn(
-                              "truncate text-sm transition-colors",
-                              isActive ? "font-medium text-foreground" : "font-normal text-muted-foreground"
-                            )}>
+                            <p
+                              className={cn(
+                                'truncate text-sm transition-colors',
+                                isActive
+                                  ? 'text-foreground font-medium'
+                                  : 'text-muted-foreground font-normal'
+                              )}
+                            >
                               {project.title}
                             </p>
                             {messages.length > 0 && (
-                              <p className="text-muted-foreground truncate text-xs mt-0.5">
+                              <p className="text-muted-foreground mt-0.5 truncate text-xs">
                                 {formatTime(project.updatedAt)}
                               </p>
                             )}
@@ -260,22 +280,32 @@ export function Sidebar() {
 
       {/* User Profile - Sticky at bottom */}
       <div className="border-border bg-background shrink-0 border-t p-3 sm:p-4">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Avatar
-            src={user.avatar}
-            alt={user.name}
-            fallback={user.name[0]?.toUpperCase() || 'M'}
-            className="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-foreground truncate text-xs font-medium sm:text-sm">
-              {user.name}
-            </p>
-            <p className="text-muted-foreground hidden truncate text-xs sm:block">
-              {user.email}
-            </p>
+        {user ? (
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Avatar
+              src={undefined}
+              alt={user.name}
+              fallback={user.name[0]?.toUpperCase() || 'U'}
+              className="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-foreground truncate text-xs font-medium sm:text-sm">
+                {user.name}
+              </p>
+              <p className="text-muted-foreground hidden truncate text-xs sm:block">
+                {user.email}
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="bg-muted h-7 w-7 shrink-0 animate-pulse rounded-full sm:h-8 sm:w-8" />
+            <div className="min-w-0 flex-1">
+              <div className="bg-muted h-3 w-20 animate-pulse rounded sm:h-4" />
+              <div className="bg-muted mt-1 hidden h-2 w-32 animate-pulse rounded sm:block" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

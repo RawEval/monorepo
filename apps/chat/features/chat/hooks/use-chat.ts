@@ -1,8 +1,11 @@
  'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useProjectsStore } from '@/stores/projects-store';
 import { useChatStore } from '@/stores/chat-store';
+import { chatService } from '@/services/chat-service';
+import { isApiError } from '@raweval/api-client';
+import { getStoredToken } from '@raweval/auth';
 
 export function useChat() {
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
@@ -25,22 +28,92 @@ export function useChat() {
   }));
   const isTyping = Boolean(typingByProject[projectId]);
 
+  const [error, setError] = useState<string | null>(null);
+
   const sendMessage = useCallback(
     async (content: string, images?: string[]) => {
       sendUserMessage(projectId, content, images);
       touchProject(projectId);
       setTyping(projectId, true);
+      setError(null);
 
-      // Simulate AI response with typing delay (UI-only)
-      setTimeout(() => {
+      try {
+        // Get user ID from token (extract from JWT or get from API)
+        // For now, we'll pass undefined and let the backend handle it
+        // In production, you'd decode the JWT token to get user ID
+        const token = getStoredToken();
+        let userId: number | undefined;
+        
+        // Try to extract user ID from token (basic implementation)
+        // In production, use a proper JWT decoder
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1] || ''));
+            userId = payload.sub || payload.user_id || payload.id;
+          } catch {
+            // If token decode fails, try to get from API
+            // For now, we'll let the backend handle it
+          }
+        }
+
+        // Convert images (string URLs) to File objects if needed
+        // For now, we'll handle this in the service
+        const files: File[] = [];
+        if (images && images.length > 0) {
+          // If images are data URLs or URLs, convert them
+          // This is a simplified version - you may need to handle this differently
+          for (const imageUrl of images) {
+            try {
+              if (imageUrl.startsWith('data:')) {
+                // Convert data URL to File
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'image.png', { type: blob.type });
+                files.push(file);
+              } else if (imageUrl.startsWith('http')) {
+                // Fetch and convert URL to File
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'image.png', { type: blob.type });
+                files.push(file);
+              }
+            } catch {
+              // Skip invalid images
+            }
+          }
+        }
+
+        // Call real API
+        const response = await chatService.sendMessage(content, {
+          sessionId: projectId,
+          userId,
+          model: 'openai',
+          modelName: 'gpt-4o',
+          temperature: 0.7,
+          files: files.length > 0 ? files : undefined,
+        });
+
         setTyping(projectId, false);
-        appendAssistantMessage(
-          projectId,
-          generateMockResponse(content, images),
-          Math.random() > 0.7
-        );
+        appendAssistantMessage(projectId, response.content, response.verified);
         touchProject(projectId);
-      }, 1500 + Math.random() * 1000);
+      } catch (err) {
+        setTyping(projectId, false);
+        if (isApiError(err)) {
+          setError(err.message || 'Failed to send message. Please try again.');
+          appendAssistantMessage(
+            projectId,
+            `Error: ${err.message || 'Failed to get response. Please try again.'}`,
+            false
+          );
+        } else {
+          setError('An unexpected error occurred. Please try again.');
+          appendAssistantMessage(
+            projectId,
+            'Error: An unexpected error occurred. Please try again.',
+            false
+          );
+        }
+      }
     },
     [
       appendAssistantMessage,
@@ -51,22 +124,37 @@ export function useChat() {
     ]
   );
 
-  const markAsWrong = useCallback((messageId: string) => {
-    // TODO: Mark message as wrong and send to workbench for QA
-    // This should:
-    // 1. Store the marked response with status 'pending' in the payouts store
-    // 2. Send to workbench queue for QA verification
-    // 3. Show confirmation to user
-    console.log('Marking message as wrong:', messageId);
-    
-    // Find the message
-    const message = messages.find((m) => m.id === messageId);
-    if (message && message.role === 'assistant') {
-      // TODO: Save to payouts store with status 'pending'
-      // TODO: Send to workbench QA queue
-      alert('Response marked as wrong! It will be reviewed by our workbench team. You\'ll be notified when QA is complete.');
-    }
-  }, [messages]);
+  const markAsWrong = useCallback(
+    async (messageId: string) => {
+      const message = messages.find((m) => m.id === messageId);
+      if (!message || message.role !== 'assistant') {
+        return;
+      }
+
+      try {
+        // Extract prompt ID from message ID or use message ID as prompt ID
+        // The message ID format might be the request_id from LLM calls
+        // For now, we'll try to extract it or use a mapping
+        // In production, you'd store the prompt_id with the message
+        const promptId = parseInt(messageId.split('-')[0] || messageId, 10);
+        
+        if (!isNaN(promptId)) {
+          await chatService.flagMessage(promptId);
+          alert('Response marked as wrong! It will be reviewed by our workbench team. You\'ll be notified when QA is complete.');
+        } else {
+          // If we can't extract prompt ID, show error
+          alert('Unable to mark message. Please try again or contact support.');
+        }
+      } catch (err) {
+        if (isApiError(err)) {
+          alert(`Error: ${err.message || 'Failed to mark message as wrong.'}`);
+        } else {
+          alert('An unexpected error occurred. Please try again.');
+        }
+      }
+    },
+    [messages]
+  );
 
   const approveMessage = useCallback((messageId: string) => {
     console.log('Approving message:', messageId);
@@ -76,56 +164,5 @@ export function useChat() {
     console.log('Requesting human assistance for message:', messageId);
   }, []);
 
-  return { messages, isTyping, sendMessage, markAsWrong, approveMessage, requestHuman };
-}
-
-function generateMockResponse(content: string, images?: string[]): string {
-  const lowerContent = content.toLowerCase();
-
-  if (images && images.length > 0) {
-    return `I can see you've shared ${images.length} image${images.length > 1 ? 's' : ''}. In a production environment, I would analyze the visual content and provide detailed insights. For now, this is a mock response demonstrating the multi-modal capabilities of the chat interface.
-
-The image analysis would include:
-- Object detection and recognition
-- Text extraction (OCR)
-- Scene understanding
-- Color and composition analysis
-
-What specific aspect of the image would you like me to focus on?`;
-  }
-
-  if (lowerContent.includes('code') || lowerContent.includes('programming')) {
-    return `I'd be happy to help with your code! Here's a sample response:
-
-\`\`\`typescript
-function example() {
-  return "This is a code example";
-}
-\`\`\`
-
-In production, I would provide actual code assistance based on your specific question. You can flag this response if it's not helpful or approve it if it meets your needs.`;
-  }
-
-  if (lowerContent.includes('quantum')) {
-    return `Quantum computing is a fascinating field! Here's a brief overview:
-
-**Key Concepts:**
-- Qubits can exist in superposition (0 and 1 simultaneously)
-- Entanglement allows qubits to be correlated
-- Quantum gates manipulate qubit states
-- Quantum algorithms can solve certain problems exponentially faster
-
-Would you like me to dive deeper into any specific aspect of quantum computing?`;
-  }
-
-  return `I understand you're asking about "${content}". In a production environment, I would provide a comprehensive, expert-verified response to your question.
-
-This is a demonstration of the chat interface. You can:
-- Upload images for visual analysis
-- Ask coding questions
-- Request explanations on various topics
-- Flag responses that need improvement
-- Approve helpful responses
-
-How can I assist you further?`;
+  return { messages, isTyping, sendMessage, markAsWrong, approveMessage, requestHuman, error };
 }

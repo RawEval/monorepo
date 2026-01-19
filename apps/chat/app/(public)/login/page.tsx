@@ -6,6 +6,9 @@ import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { authService } from '@/services/auth-service';
+import { storeToken } from '@raweval/auth';
+import { isApiError, UnauthorizedError } from '@raweval/api-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -51,26 +54,37 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Implement actual authentication API call
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
-      // if (!response.ok) throw new Error('Login failed');
-      
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+      // Call auth service to login
+      // According to OpenAPI spec: expects { email, password }
+      const tokenResponse = await authService.login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // Store token and refresh token
+      storeToken(
+        tokenResponse.access_token,
+        tokenResponse.expires_in,
+        tokenResponse.refresh_token,
+      );
+
       // Store remember me preference
       if (formData.rememberMe) {
         localStorage.setItem('rememberMe', 'true');
       }
-      
+
       // Redirect to chat
       router.push('/chat');
     } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      if (isApiError(err)) {
+        if (err instanceof UnauthorizedError) {
+          setError('Invalid email or password. Please try again.');
+        } else {
+          setError(err.message || 'An error occurred during login. Please try again.');
+        }
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
       setIsSubmitting(false);
     }
   };

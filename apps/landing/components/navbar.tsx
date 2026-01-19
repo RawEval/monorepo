@@ -12,6 +12,10 @@ import {
   UserCheck,
   Shield,
   Database,
+  MessageSquare,
+  Briefcase,
+  Building2,
+  ArrowRight,
 } from 'lucide-react';
 
 const howItWorksLinks = [
@@ -45,6 +49,33 @@ const howItWorksLinks = [
   },
 ];
 
+const platformLinks = [
+  {
+    label: 'Chat Platform',
+    getHref: () => appUrls.chat(),
+    description: 'AI assistant with human feedback',
+    icon: <MessageSquare className="h-4 w-4" />,
+    color: 'text-blue-600',
+    badge: 'For Users',
+  },
+  {
+    label: 'Workbench',
+    getHref: () => appUrls.experts(),
+    description: 'Expert evaluation workbench',
+    icon: <Briefcase className="h-4 w-4" />,
+    color: 'text-purple-600',
+    badge: 'For Experts',
+  },
+  {
+    label: 'Organizations',
+    getHref: () => appUrls.landing('/organizations'),
+    description: 'Enterprise evaluation platform',
+    icon: <Building2 className="h-4 w-4" />,
+    color: 'text-emerald-600',
+    badge: 'For Teams',
+  },
+];
+
 const navLinks = [
   { label: 'Chat', getHref: () => appUrls.chat() },
   { label: 'For Experts', getHref: () => appUrls.experts() },
@@ -57,7 +88,9 @@ const navLinks = [
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [platformsDropdownOpen, setPlatformsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const platformsDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -66,6 +99,12 @@ export function Navbar() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setDropdownOpen(false);
+      }
+      if (
+        platformsDropdownRef.current &&
+        !platformsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setPlatformsDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -88,6 +127,60 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden items-center gap-8 md:flex">
+            {/* Platforms Dropdown */}
+            <div className="relative" ref={platformsDropdownRef}>
+              <button
+                onClick={() => setPlatformsDropdownOpen(!platformsDropdownOpen)}
+                className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm font-medium transition-colors"
+              >
+                Platforms
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${
+                    platformsDropdownOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Platforms Dropdown Menu */}
+              {platformsDropdownOpen && (
+                <div className="border-border animate-fade-in-up absolute top-full left-0 mt-2 w-80 rounded-xl border bg-white py-2 shadow-lg">
+                  <div className="px-3 py-2">
+                    <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                      Our Platforms
+                    </p>
+                  </div>
+                  {platformLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.getHref()}
+                      onClick={() => setPlatformsDropdownOpen(false)}
+                      className="group flex items-start gap-3 px-3 py-3 transition-colors hover:bg-blue-50"
+                    >
+                      <div
+                        className={`border-border flex h-9 w-9 items-center justify-center rounded-lg border bg-slate-50 group-hover:bg-white ${link.color} shrink-0`}
+                      >
+                        {link.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="text-foreground text-sm font-medium group-hover:text-blue-600">
+                            {link.label}
+                          </div>
+                          <span className="text-muted-foreground/60 text-[10px] font-medium uppercase tracking-wider">
+                            {link.badge}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground text-xs leading-relaxed">
+                          {link.description}
+                        </div>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-blue-600 shrink-0 mt-1" />
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* How it Works Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -162,7 +255,7 @@ export function Navbar() {
               <Link href={appUrls.chat()}>Sign in</Link>
             </Button>
             <Button size="sm" asChild>
-              <Link href={appUrls.landing('/organizations')}>Book a demo</Link>
+              <Link href={appUrls.landing('/#platforms')}>Explore</Link>
             </Button>
           </div>
 
@@ -207,6 +300,35 @@ export function Navbar() {
                 ))}
               </div>
 
+              {/* Platforms Section */}
+              <div className="border-border border-t pt-4">
+                <div className="px-2 py-2">
+                  <p className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
+                    Platforms
+                  </p>
+                </div>
+                {platformLinks.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.getHref()}
+                    className="text-muted-foreground hover:text-foreground flex items-center gap-3 px-2 py-2.5 text-sm transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div
+                      className={`border-border flex h-7 w-7 items-center justify-center rounded-lg border bg-slate-50 ${link.color} shrink-0`}
+                    >
+                      {link.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{link.label}</div>
+                      <div className="text-muted-foreground text-xs">
+                        {link.description}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
               {/* Other Nav Links */}
               <div className="border-border border-t pt-4">
                 {navLinks.map((link) => (
@@ -232,8 +354,8 @@ export function Navbar() {
                   <Link href={appUrls.chat()}>Sign in</Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link href={appUrls.landing('/organizations')}>
-                    Book a demo
+                  <Link href={appUrls.landing('/#platforms')}>
+                    Explore Platforms
                   </Link>
                 </Button>
               </div>

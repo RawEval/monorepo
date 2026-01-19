@@ -39,14 +39,15 @@ export function HeroSection() {
             className={`text-muted-foreground mx-auto mb-8 max-w-2xl text-lg md:text-xl ${mounted ? 'animate-fade-in-up delay-100' : 'opacity-0'} `}
           >
             Capture, validate, and deliver gold-standard training data through
-            secure expert networks. All in one platform.
+            secure expert networks. Multi-platform ecosystem for users, experts,
+            and organizations.
           </p>
           <div
             className={`flex flex-col items-center justify-center gap-4 sm:flex-row ${mounted ? 'animate-fade-in-up delay-200' : 'opacity-0'} `}
           >
             <Button size="lg" className="h-12 gap-2 px-6 text-base" asChild>
-              <Link href={appUrls.landing('/organizations')}>
-                Book a demo
+              <Link href={appUrls.landing('/#platforms')}>
+                Explore Platforms
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -57,7 +58,7 @@ export function HeroSection() {
               asChild
             >
               <Link href={appUrls.landing('/#how-it-works')}>
-                View documentation
+                Learn How It Works
               </Link>
             </Button>
           </div>

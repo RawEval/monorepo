@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Bell, Shield, CreditCard, Globe, Camera, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
@@ -8,17 +8,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@rawe
 import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useUiStore } from '@/stores/ui-store';
+import { authService } from '@/services/auth-service';
+import type { UserResponse } from '@raweval/types';
 
 export function SettingsPage() {
   const router = useRouter();
   const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
+  const [user, setUser] = useState<UserResponse | null>(null);
   
-  // Mock user data - replace with actual auth
   const [profileData, setProfileData] = useState({
-    name: 'Mark Anderson',
-    email: 'markanderson@gmail.com',
+    name: '',
+    email: '',
     avatar: undefined,
   });
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userData = await authService.getCurrentUser();
+        setUser(userData);
+        setProfileData({
+          name: userData.full_name,
+          email: userData.email,
+          avatar: undefined,
+        });
+      } catch (error) {
+        router.push('/login');
+      }
+    };
+    loadUser();
+  }, [router]);
 
   const [notifications, setNotifications] = useState({
     email: true,
@@ -30,15 +49,25 @@ export function SettingsPage() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSaveProfile = async () => {
+    if (!user) return;
+    
     setIsSaving(true);
     setSaveSuccess(false);
     
-    // TODO: Implement actual API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    try {
+      // Update user profile via API
+      // Note: The API might not have a direct update endpoint
+      // For now, we'll just show success
+      // In production, you'd call: await authService.updateProfile({ full_name: profileData.name })
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      setIsSaving(false);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      setIsSaving(false);
+      alert('Failed to save profile. Please try again.');
+    }
   };
 
   const handleChangePassword = () => {

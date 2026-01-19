@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/navbar';
 import { HeroSection } from '@/components/hero-section';
 import { LogosSection } from '@/components/logos-section';
+import { PlatformsShowcase } from '@/components/platforms-showcase';
 import { HowItWorks } from '@/components/how-it-works';
 import { WorkflowVisualization } from '@/components/workflow-visualization';
 import { ExpertGrid } from '@/components/expert-grid';
@@ -17,6 +18,7 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <LogosSection />
+      <PlatformsShowcase />
       <HowItWorks />
       <WorkflowVisualization />
       <ExpertGrid />

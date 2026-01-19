@@ -1,50 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Folder, Plus, MoreVertical, Search } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  updatedAt: Date;
-  messageCount: number;
-}
-
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'AI Chat Copywriter',
-    description: 'Generate engaging copy for chat interfaces',
-    updatedAt: new Date(),
-    messageCount: 24,
-  },
-  {
-    id: '2',
-    name: 'Learning From 100 Years',
-    description: 'Research on historical learning patterns',
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60),
-    messageCount: 18,
-  },
-  {
-    id: '3',
-    name: 'Research Officiants',
-    description: 'Maxwell equations foundation study',
-    updatedAt: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    messageCount: 12,
-  },
-];
+import { useProjectsStore } from '@/stores/projects-store';
+import { useChatStore } from '@/stores/chat-store';
+import { useRouter } from 'next/navigation';
 
 export function ProjectsPage() {
-  const [projects] = useState(mockProjects);
+  const router = useRouter();
+  const projects = useProjectsStore((s) => s.projects);
+  const createProject = useProjectsStore((s) => s.createProject);
+  const selectProject = useProjectsStore((s) => s.selectProject);
+  const getMessages = useChatStore((s) => s.getMessages);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredProjects = projects.filter((project) =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const projectsWithCounts = useMemo(() => {
+    return projects.map((project) => ({
+      ...project,
+      messageCount: getMessages(project.id).length,
+      updatedAt: new Date(project.updatedAt),
+    }));
+  }, [projects, getMessages]);
+
+  const filteredProjects = useMemo(() => {
+    return projectsWithCounts.filter((project) =>
+      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.description.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [projectsWithCounts, searchQuery]);
+
+  const handleNewProject = () => {
+    const newId = createProject();
+    selectProject(newId);
+    router.push('/chat');
+  };
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">
@@ -57,7 +48,7 @@ export function ProjectsPage() {
               Organize and manage your chat projects
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleNewProject}>
             <Plus className="h-4 w-4" />
             New Project
           </Button>
@@ -100,7 +91,7 @@ export function ProjectsPage() {
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </div>
-                <h3 className="mb-2 font-semibold text-foreground">{project.name}</h3>
+                <h3 className="mb-2 font-semibold text-foreground">{project.title}</h3>
                 <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
                   {project.description}
                 </p>

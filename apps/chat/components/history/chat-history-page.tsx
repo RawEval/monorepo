@@ -1,48 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { MessageSquare, Search, Calendar, Trash2 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface ChatHistoryItem {
-  id: string;
-  title: string;
-  preview: string;
-  timestamp: Date;
-  messageCount: number;
-}
-
-const mockHistory: ChatHistoryItem[] = [
-  {
-    id: '1',
-    title: 'Generate 5 attention-grabbing headlines',
-    preview: 'Here are 5 attention-grabbing headlines for your article...',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-    messageCount: 8,
-  },
-  {
-    id: '2',
-    title: 'Explain quantum computing',
-    preview: 'Quantum computing is a fascinating field that...',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    messageCount: 12,
-  },
-  {
-    id: '3',
-    title: 'Debug React code',
-    preview: 'I can help you debug your React code. Let me analyze...',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    messageCount: 15,
-  },
-  {
-    id: '4',
-    title: 'Write Python function',
-    preview: 'Here is a Python function that accomplishes...',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-    messageCount: 6,
-  },
-];
+import { useProjectsStore } from '@/stores/projects-store';
+import { useChatStore } from '@/stores/chat-store';
 
 function formatTimestamp(date: Date): string {
   const now = new Date();
@@ -59,13 +22,33 @@ function formatTimestamp(date: Date): string {
 
 export function ChatHistoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [history] = useState(mockHistory);
+  const projects = useProjectsStore((s) => s.projects);
+  const getMessages = useChatStore((s) => s.getMessages);
 
-  const filteredHistory = history.filter(
-    (item) =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.preview.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Convert projects to history items
+  const history = useMemo(() => {
+    return projects.map((project) => {
+      const messages = getMessages(project.id);
+      const firstMessage = messages.find((m) => m.role === 'user');
+      const preview = firstMessage?.content || project.description || 'No messages yet';
+      
+      return {
+        id: project.id,
+        title: project.title,
+        preview: preview.length > 100 ? preview.substring(0, 100) + '...' : preview,
+        timestamp: new Date(project.updatedAt),
+        messageCount: messages.length,
+      };
+    });
+  }, [projects, getMessages]);
+
+  const filteredHistory = useMemo(() => {
+    return history.filter(
+      (item) =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.preview.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [history, searchQuery]);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-background">

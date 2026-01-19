@@ -5,7 +5,10 @@
   "exports": {
     "./button": "./src/button.tsx",
     "./card": "./src/card.tsx",
-    "./badge": "./src/badge.tsx"
+    "./badge": "./src/badge.tsx",
+    "./stats-card": "./src/stats-card.tsx",
+    "./feature-card": "./src/feature-card.tsx",
+    "./section-header": "./src/section-header.tsx"
   },
   "scripts": {
     "build": "tsc",

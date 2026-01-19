@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   DollarSign,
   Clock,
@@ -39,48 +39,7 @@ interface FailedResponse {
   qaNotes?: string;
 }
 
-// Mock data - replace with actual data from store/API
-const mockResponses: FailedResponse[] = [
-  {
-    id: '1',
-    messageId: 'msg-1',
-    prompt: 'Explain quantum computing',
-    response: 'Quantum computing uses classical bits...',
-    status: 'paid',
-    markedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-    qaCompletedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    paidAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    payoutAmount: 5.0,
-  },
-  {
-    id: '2',
-    messageId: 'msg-2',
-    prompt: 'How does photosynthesis work?',
-    response: 'Photosynthesis is a process where plants convert sunlight...',
-    status: 'approved',
-    markedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    qaCompletedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    payoutAmount: 5.0,
-  },
-  {
-    id: '3',
-    messageId: 'msg-3',
-    prompt: 'Write a Python function to sort a list',
-    response: 'def sort_list(lst): return sorted(lst)',
-    status: 'pending',
-    markedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: '4',
-    messageId: 'msg-4',
-    prompt: 'What is the capital of France?',
-    response: 'The capital of France is London...',
-    status: 'rejected',
-    markedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-    qaCompletedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-    qaNotes: 'Response was actually correct',
-  },
-];
+// Failed responses will be loaded from API via promptsService
 
 const statusConfig: Record<ResponseStatus, { label: string; icon: typeof Clock; color: string }> = {
   pending: {
@@ -108,10 +67,27 @@ const statusConfig: Record<ResponseStatus, { label: string; icon: typeof Clock; 
 export function PayoutsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ResponseStatus | 'all'>('all');
+  const [responses, setResponses] = useState<FailedResponse[]>([]);
+
+  // Fetch failed prompts from API
+  useEffect(() => {
+    const loadFailedPrompts = async () => {
+      try {
+        // TODO: Map failed prompts API response to FailedResponse format
+        // For now, using empty array
+        // const failedPrompts = await promptsService.getFailedPrompts();
+        // Map to FailedResponse format
+        setResponses([]);
+      } catch (error) {
+        console.error('Failed to load payouts:', error);
+      }
+    };
+    loadFailedPrompts();
+  }, []);
 
   // Filter responses
   const filteredResponses = useMemo(() => {
-    let filtered = mockResponses;
+    let filtered = responses;
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter((r) => r.status === statusFilter);
@@ -131,16 +107,16 @@ export function PayoutsPage() {
 
   // Calculate stats
   const stats = useMemo(() => {
-    const total = mockResponses.length;
-    const pending = mockResponses.filter((r) => r.status === 'pending').length;
-    const approved = mockResponses.filter((r) => r.status === 'approved').length;
-    const paid = mockResponses.filter((r) => r.status === 'paid').length;
-    const totalEarned = mockResponses
+    const total = responses.length;
+    const pending = responses.filter((r) => r.status === 'pending').length;
+    const approved = responses.filter((r) => r.status === 'approved').length;
+    const paid = responses.filter((r) => r.status === 'paid').length;
+    const totalEarned = responses
       .filter((r) => r.status === 'paid')
-      .reduce((sum, r) => sum + (r.payoutAmount || 0), 0);
-    const pendingEarnings = mockResponses
+      .reduce((sum: number, r) => sum + (r.payoutAmount || 0), 0);
+    const pendingEarnings = responses
       .filter((r) => r.status === 'approved')
-      .reduce((sum, r) => sum + (r.payoutAmount || 0), 0);
+      .reduce((sum: number, r) => sum + (r.payoutAmount || 0), 0);
 
     return {
       total,
