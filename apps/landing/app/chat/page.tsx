@@ -1,7 +1,5 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { Button } from '@raweval/ui/button';
 import { appUrls } from '@raweval/utils/urls';
 import {
@@ -31,8 +29,6 @@ export const metadata: Metadata = {
 export default function ChatPage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-blue-50/50 via-white to-white pt-32 pb-20 lg:pt-40 lg:pb-32">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -454,8 +450,6 @@ class BST:
           </div>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }

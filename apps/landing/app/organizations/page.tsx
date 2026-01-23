@@ -1,6 +1,4 @@
 import { Metadata } from 'next';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { Button } from '@raweval/ui/button';
 import { StatsCard } from '@raweval/ui/stats-card';
 import { FeatureCard } from '@raweval/ui/feature-card';
@@ -31,8 +29,6 @@ export const metadata: Metadata = {
 export default function OrganizationsPage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
-
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 pt-32 pb-20 text-white lg:pt-40 lg:pb-32">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
@@ -113,7 +109,7 @@ export default function OrganizationsPage() {
               iconBg="bg-blue-100"
               title="3-Tier Verification"
               description="Every prompt reviewed by 9 experts across 3 tiers (PhD/10+ years
-                → Master&apos;s/5+ years → Bachelor&apos;s/2+ years) for
+                → Master's/5+ years → Bachelor's/2+ years) for
                 multi-perspective validation."
               features={[
                 {
@@ -664,8 +660,6 @@ export default function OrganizationsPage() {
           </p>
         </div>
       </section>
-
-      <Footer />
     </main>
   );
 }

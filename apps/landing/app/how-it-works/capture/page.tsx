@@ -1,5 +1,3 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { StepNav } from '@/components/step-nav';
 import {
   Search,
@@ -24,7 +22,6 @@ export const metadata: Metadata = {
 export default function CapturePage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
       <div className="pt-16">
         <StepNav
           currentStep={1}
@@ -359,7 +356,6 @@ export default function CapturePage() {
           </div>
         </section>
       </div>
-      <Footer />
     </main>
   );
 }

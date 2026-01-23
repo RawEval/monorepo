@@ -1,13 +1,6 @@
 import { Metadata } from 'next';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { StepNav } from '@/components/step-nav';
-import {
-  Database,
-  CheckCircle2,
-  Zap,
-  Users,
-} from 'lucide-react';
+import { Database, CheckCircle2, Zap, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'RawEval | Validation & Delivery',
@@ -18,7 +11,6 @@ export const metadata: Metadata = {
 export default function DeliveryPage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
       <div className="pt-16">
         <StepNav
           currentStep={4}
@@ -377,7 +369,6 @@ export default function DeliveryPage() {
           </div>
         </section>
       </div>
-      <Footer />
     </main>
   );
 }

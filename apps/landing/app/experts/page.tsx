@@ -1,5 +1,3 @@
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { ExpertsHero } from '@/components/experts/experts-hero';
 import { WhyJoin } from '@/components/experts/why-join';
 import { EarningsSection } from '@/components/experts/earnings-section';
@@ -16,14 +14,12 @@ export const metadata = {
 export default function ExpertsPage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
       <ExpertsHero />
       <WhyJoin />
       <EarningsSection />
       <WorkbenchPreview />
       <TierSystem />
       <ExpertsCTA />
-      <Footer />
     </main>
   );
 }

@@ -3,6 +3,8 @@ import Script from 'next/script';
 import { Geist, Geist_Mono, JetBrains_Mono } from 'next/font/google';
 import { Suspense } from 'react';
 import { StaffToolbar } from '../components/staff-toolbar';
+import { Navbar } from '../components/navbar';
+import { Footer } from '../components/footer';
 import './globals.css';
 
 const geistSans = Geist({
@@ -49,7 +51,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`
@@ -74,7 +76,9 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+        <Navbar />
         {children}
+        <Footer />
         <Suspense fallback={null}>
           <StaffToolbar />
         </Suspense>

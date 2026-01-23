@@ -1,6 +1,4 @@
 import { Metadata } from 'next';
-import { Navbar } from '@/components/navbar';
-import { Footer } from '@/components/footer';
 import { StepNav } from '@/components/step-nav';
 import {
   Monitor,
@@ -22,7 +20,6 @@ export const metadata: Metadata = {
 export default function WorkbenchPage() {
   return (
     <main className="bg-background min-h-screen">
-      <Navbar />
       <div className="pt-16">
         <StepNav
           currentStep={3}
@@ -428,7 +425,6 @@ export default function WorkbenchPage() {
           </div>
         </section>
       </div>
-      <Footer />
     </main>
   );
 }
