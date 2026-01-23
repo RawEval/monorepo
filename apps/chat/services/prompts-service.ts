@@ -1,6 +1,6 @@
 /**
  * Prompts Service
- * 
+ *
  * Service for managing prompts and failed prompts
  */
 
@@ -32,7 +32,7 @@ export class PromptsService extends ApiService {
    */
   async getPrompts(skip = 0, limit = 100): Promise<PromptResponseFromAPI[]> {
     const response = await this.client.get<PromptResponseFromAPI[]>(
-      `/prompts?skip=${skip}&limit=${limit}`,
+      `/prompts?skip=${skip}&limit=${limit}`
     );
     return this.handleResponse(response);
   }
@@ -42,7 +42,7 @@ export class PromptsService extends ApiService {
    */
   async getPromptById(promptId: number): Promise<PromptResponseFromAPI> {
     const response = await this.client.get<PromptResponseFromAPI>(
-      `/prompts/${promptId}`,
+      `/prompts/${promptId}`
     );
     return this.handleResponse(response);
   }
@@ -61,7 +61,7 @@ export class PromptsService extends ApiService {
     skip = 0,
     limit = 100,
     status?: string,
-    priority?: string,
+    priority?: string
   ): Promise<FailedPromptResponse[]> {
     const params = new URLSearchParams({
       skip: skip.toString(),
@@ -71,7 +71,7 @@ export class PromptsService extends ApiService {
     if (priority) params.append('priority', priority);
 
     const response = await this.client.get<FailedPromptResponse[]>(
-      `/failed-prompts?${params.toString()}`,
+      `/failed-prompts?${params.toString()}`
     );
     return this.handleResponse(response);
   }
@@ -81,11 +81,27 @@ export class PromptsService extends ApiService {
    */
   async getFailedPromptById(
     failedPromptId: number,
-    includeConversations = true,
+    includeConversations = true
   ): Promise<FailedPromptResponse> {
     const response = await this.client.get<FailedPromptResponse>(
-      `/failed-prompts/${failedPromptId}?include_conversations=${includeConversations}`,
+      `/failed-prompts/${failedPromptId}?include_conversations=${includeConversations}`
     );
+    return this.handleResponse(response);
+  }
+
+  /**
+   * Ingest a prompt into the Main API (for syncing from LLM Host)
+   */
+  async ingestPrompt(data: {
+    query_text: string;
+    domain?: string | null;
+    model_responses?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+  }): Promise<{ prompt_id: number; status: string }> {
+    const response = await this.client.post<{
+      prompt_id: number;
+      status: string;
+    }>('/data/ingest', data);
     return this.handleResponse(response);
   }
 }

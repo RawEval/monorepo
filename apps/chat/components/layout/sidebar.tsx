@@ -107,7 +107,9 @@ export function Sidebar() {
   }, []);
 
   // Get user data from auth (simplified - in production, use context or store)
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(
+    null
+  );
 
   useEffect(() => {
     const loadUser = async () => {
@@ -225,22 +227,20 @@ export function Sidebar() {
 
                         {/* Context Menu */}
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              type="button"
-                              className={cn(
-                                'text-muted-foreground flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 active:scale-95',
-                                isActive && 'opacity-100'
-                              )}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              aria-label="More options"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </button>
+                          <DropdownMenuTrigger
+                            className={cn(
+                              'text-muted-foreground flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 active:scale-95',
+                              isActive && 'opacity-100'
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                            }}
+                            aria-label="More options"
+                          >
+                            <MoreVertical className="h-4 w-4" />
                           </DropdownMenuTrigger>
+
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() =>

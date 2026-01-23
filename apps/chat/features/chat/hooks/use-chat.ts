@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useCallback, useState } from 'react';
 import { useProjectsStore } from '@/stores/projects-store';
@@ -13,7 +13,7 @@ export function useChat() {
 
   // Use Zustand selectors properly to subscribe to state changes
   const projectId = selectedProjectId ?? 'p1';
-  
+
   // Subscribe to messagesByProject to get reactive updates
   const messagesByProject = useChatStore((s) => s.messagesByProject);
   const typingByProject = useChatStore((s) => s.typingByProject);
@@ -43,7 +43,7 @@ export function useChat() {
         // In production, you'd decode the JWT token to get user ID
         const token = getStoredToken();
         let userId: number | undefined;
-        
+
         // Try to extract user ID from token (basic implementation)
         // In production, use a proper JWT decoder
         if (token) {
@@ -126,25 +126,32 @@ export function useChat() {
 
   const markAsWrong = useCallback(
     async (messageId: string) => {
-      const message = messages.find((m) => m.id === messageId);
+      const messageIndex = messages.findIndex((m) => m.id === messageId);
+      const message = messages[messageIndex];
+
       if (!message || message.role !== 'assistant') {
         return;
       }
 
+      // Find the preceding user message (the prompt)
+      // This assumes messages are ordered chronologically
+      const precedingUserMessage = messages[messageIndex - 1];
+      const userContent =
+        precedingUserMessage?.role === 'user'
+          ? precedingUserMessage.content
+          : 'Unknown prompt';
+
       try {
-        // Extract prompt ID from message ID or use message ID as prompt ID
-        // The message ID format might be the request_id from LLM calls
-        // For now, we'll try to extract it or use a mapping
-        // In production, you'd store the prompt_id with the message
-        const promptId = parseInt(messageId.split('-')[0] || messageId, 10);
-        
-        if (!isNaN(promptId)) {
-          await chatService.flagMessage(promptId);
-          alert('Response marked as wrong! It will be reviewed by our workbench team. You\'ll be notified when QA is complete.');
-        } else {
-          // If we can't extract prompt ID, show error
-          alert('Unable to mark message. Please try again or contact support.');
-        }
+        // Use ingestAndFlagMessage to handle ID resolution between LLM Host and Main API
+        // We default to 'gpt-4o' since we don't store model name in messages yet
+        await chatService.ingestAndFlagMessage(
+          userContent,
+          message.content,
+          'gpt-4o'
+        );
+        alert(
+          "Response marked as wrong! It will be reviewed by our workbench team. You'll be notified when QA is complete."
+        );
       } catch (err) {
         if (isApiError(err)) {
           alert(`Error: ${err.message || 'Failed to mark message as wrong.'}`);
@@ -164,5 +171,13 @@ export function useChat() {
     console.log('Requesting human assistance for message:', messageId);
   }, []);
 
-  return { messages, isTyping, sendMessage, markAsWrong, approveMessage, requestHuman, error };
+  return {
+    messages,
+    isTyping,
+    sendMessage,
+    markAsWrong,
+    approveMessage,
+    requestHuman,
+    error,
+  };
 }

@@ -1,6 +1,6 @@
 /**
  * LLM Calls Service
- * 
+ *
  * Service for interacting with the LLM Call Host API
  * Handles chat, multi-model queries, and workflow execution
  */
@@ -10,11 +10,30 @@ import { getLlmCallsApiUrl } from '@raweval/api-client';
 
 export interface WorkflowRequest {
   workflow_name: string;
-  workflow_type: 'single_model' | 'multi_model_comparison' | 'parallel_processing' | 'file_processing' | 'autograder' | 'dynamic_model_call' | 'research' | 'code_analysis' | 'sentiment_analysis' | 'summarization' | 'translation' | 'classification' | 'qa_generation';
+  workflow_type:
+    | 'single_model'
+    | 'multi_model_comparison'
+    | 'parallel_processing'
+    | 'file_processing'
+    | 'autograder'
+    | 'dynamic_model_call'
+    | 'research'
+    | 'code_analysis'
+    | 'sentiment_analysis'
+    | 'summarization'
+    | 'translation'
+    | 'classification'
+    | 'qa_generation';
   user_prompt: string;
   system_prompt?: string | null;
   models: Array<{
-    provider: 'openai' | 'claude' | 'gemini' | 'grok' | 'deepseek' | 'openrouter';
+    provider:
+      | 'openai'
+      | 'claude'
+      | 'gemini'
+      | 'grok'
+      | 'deepseek'
+      | 'openrouter';
     model: string;
     system_prompt?: string | null;
     temperature?: number;
@@ -110,7 +129,7 @@ export class LLMCallsService extends ApiService {
    * Endpoint: /llm-calls/health
    */
   async checkHealth(): Promise<HealthResponse> {
-    // Health endpoint is at /llm-calls/health (not /health)
+    // Helper adds /llm-calls prefix automatically, so we just need /health
     const url = getLlmCallsApiUrl('/health');
     const response = await this.client.get<HealthResponse>(url, {
       skipAuth: true,
@@ -120,63 +139,74 @@ export class LLMCallsService extends ApiService {
 
   /**
    * Execute a workflow-based LLM call
+   * Endpoint: /llm-calls/execute
    */
   async executeWorkflow(
     request: WorkflowRequest,
-    userId?: number,
+    userId?: number
   ): Promise<WorkflowResponse> {
-    const url = getLlmCallsApiUrl('/llm-calls/execute');
+    // Helper adds /llm-calls prefix automatically, so we just need /execute
+    const url = getLlmCallsApiUrl('/execute');
     const queryParams = userId ? `?user_id=${userId}` : '';
-    
+
     const response = await this.client.post<WorkflowResponse>(
       `${url}${queryParams}`,
-      request,
+      request
     );
     return this.handleResponse(response);
   }
 
   /**
    * Execute a direct LLM call (fastest, single model)
+   * Endpoint: /llm-calls/dynamic/execute
    */
   async executeDirect(
     request: DynamicLLMRequest,
-    userId?: number,
+    userId?: number
   ): Promise<WorkflowResponse> {
-    const url = getLlmCallsApiUrl('/dynamic-llm-calls/execute');
+    // Helper adds /llm-calls prefix automatically
+    // Spec path: /dynamic/execute
+    // Result: /llm-calls/dynamic/execute
+    const url = getLlmCallsApiUrl('/dynamic/execute');
     const queryParams = userId ? `?user_id=${userId}` : '';
-    
+
     const response = await this.client.post<WorkflowResponse>(
       `${url}${queryParams}`,
-      request,
+      request
     );
     return this.handleResponse(response);
   }
 
   /**
    * Execute batch LLM calls
+   * Endpoint: /llm-calls/dynamic/batch
    */
   async executeBatch(
     requests: DynamicLLMRequest[],
     parallel: boolean = false,
     userId?: number,
-    timeout?: number,
+    timeout?: number
   ): Promise<WorkflowResponse> {
-    const url = getLlmCallsApiUrl('/dynamic-llm-calls/batch');
+    // Helper adds /llm-calls prefix automatically
+    // Spec path: /dynamic/batch
+    // Result: /llm-calls/dynamic/batch
+    const url = getLlmCallsApiUrl('/dynamic/batch');
     const queryParams = userId ? `?user_id=${userId}` : '';
-    
+
     const response = await this.client.post<WorkflowResponse>(
       `${url}${queryParams}`,
       {
         requests,
         parallel,
         timeout,
-      },
+      }
     );
     return this.handleResponse(response);
   }
 
   /**
    * Get request status
+   * Endpoint: /llm-calls/status/{request_id}
    */
   async getStatus(requestId: string): Promise<{
     status: string;
@@ -194,6 +224,7 @@ export class LLMCallsService extends ApiService {
 
   /**
    * Get request results
+   * Endpoint: /llm-calls/results/{request_id}
    */
   async getResults(requestId: string): Promise<WorkflowResponse> {
     const url = getLlmCallsApiUrl(`/results/${requestId}`);
@@ -203,6 +234,7 @@ export class LLMCallsService extends ApiService {
 
   /**
    * Get session conversation history
+   * Endpoint: /llm-calls/sessions/{request_id}/conversation
    */
   async getConversation(requestId: string): Promise<{
     session_id: number;
@@ -219,7 +251,34 @@ export class LLMCallsService extends ApiService {
   }
 
   /**
+   * Get session attachments
+   * Endpoint: /llm-calls/sessions/{request_id}/attachments
+   */
+  async getSessionAttachments(requestId: string): Promise<{
+    files: Array<{
+      s3_key: string;
+      s3_url: string;
+      filename: string;
+      file_type: string;
+      file_size_bytes: number;
+    }>;
+  }> {
+    const url = getLlmCallsApiUrl(`/sessions/${requestId}/attachments`);
+    const response = await this.client.get<{
+      files: Array<{
+        s3_key: string;
+        s3_url: string;
+        filename: string;
+        file_type: string;
+        file_size_bytes: number;
+      }>;
+    }>(url);
+    return this.handleResponse(response);
+  }
+
+  /**
    * Upload files for LLM processing
+   * Endpoint: /llm-calls/upload-files
    */
   async uploadFiles(files: File[]): Promise<{
     files: Array<{
@@ -230,8 +289,9 @@ export class LLMCallsService extends ApiService {
       file_size_bytes: number;
     }>;
   }> {
-    const url = getLlmCallsApiUrl('/llm-calls/upload-files');
-    
+    // Helper adds /llm-calls prefix automatically, so we just need /upload-files
+    const url = getLlmCallsApiUrl('/upload-files');
+
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('files', file);

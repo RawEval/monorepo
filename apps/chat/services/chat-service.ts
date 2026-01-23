@@ -1,12 +1,13 @@
 /**
  * Chat Service
- * 
+ *
  * Business logic for chat functionality
  * Separated from UI components for better testability
  */
 
 import { ApiService } from './api-service';
 import { llmCallsService } from './llm-calls-service';
+import { promptsService } from './prompts-service';
 import type { ChatMessage, ChatSession } from '@/features/chat/types';
 
 export interface SendMessageOptions {
@@ -25,7 +26,7 @@ export class ChatService extends ApiService {
    */
   async sendMessage(
     message: string,
-    options: SendMessageOptions = {},
+    options: SendMessageOptions = {}
   ): Promise<ChatMessage> {
     const {
       userId,
@@ -39,7 +40,14 @@ export class ChatService extends ApiService {
     try {
       // If files are provided, upload them first
       let fileInputs: Array<{
-        file_type: 'pdf' | 'csv' | 'json' | 'image' | 'video' | 'audio' | 'text';
+        file_type:
+          | 'pdf'
+          | 'csv'
+          | 'json'
+          | 'image'
+          | 'video'
+          | 'audio'
+          | 'text';
         s3_key?: string | null;
         s3_url?: string | null;
         filename?: string | null;
@@ -68,7 +76,7 @@ export class ChatService extends ApiService {
           files: fileInputs.length > 0 ? fileInputs : null,
           temperature,
         },
-        userId,
+        userId
       );
 
       // Convert response to ChatMessage
@@ -98,10 +106,16 @@ export class ChatService extends ApiService {
   async sendMessageWithComparison(
     message: string,
     models: Array<{
-      provider: 'openai' | 'claude' | 'gemini' | 'grok' | 'deepseek' | 'openrouter';
+      provider:
+        | 'openai'
+        | 'claude'
+        | 'gemini'
+        | 'grok'
+        | 'deepseek'
+        | 'openrouter';
       model: string;
     }>,
-    options: Omit<SendMessageOptions, 'model' | 'modelName'> = {},
+    options: Omit<SendMessageOptions, 'model' | 'modelName'> = {}
   ): Promise<ChatMessage[]> {
     const { sessionId, userId, systemPrompt, temperature = 0.7 } = options;
 
@@ -119,7 +133,7 @@ export class ChatService extends ApiService {
           })),
           session_id: sessionId ? parseInt(sessionId, 10) : null,
         },
-        userId,
+        userId
       );
 
       // Convert all results to ChatMessages
@@ -138,12 +152,49 @@ export class ChatService extends ApiService {
 
   /**
    * Flag a message as incorrect (mark prompt as wrong)
+   *
+   * If promptId is a number, it calls the API directly.
+   * If promptId is a string (UUID from LLM Host), it throws an error or requires ingestion.
+   *
+   * @deprecated Use ingestAndFlagMessage instead for LLM Host compatibility
    */
   async flagMessage(promptId: number): Promise<void> {
     try {
-      await this.client.post(`/prompts/${promptId}/mark-wrong`, {});
+      await promptsService.markPromptAsWrong(promptId);
     } catch (error) {
       console.error('Error flagging message:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ingest a chat message to Main API and then flag it
+   * This bridges the gap between LLM Host (UUID) and Main API (Integer ID)
+   */
+  async ingestAndFlagMessage(
+    userMessage: string,
+    assistantMessage: string,
+    modelName: string,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      // 1. Ingest into Main API to get a prompt_id
+      const result = await promptsService.ingestPrompt({
+        query_text: userMessage,
+        model_responses: {
+          [modelName]: {
+            response: assistantMessage,
+            model: modelName,
+            status: 'completed',
+          },
+        },
+        metadata,
+      });
+
+      // 2. Mark as wrong using the returned integer ID
+      await this.flagMessage(result.prompt_id);
+    } catch (error) {
+      console.error('Error ingesting and flagging message:', error);
       throw error;
     }
   }
@@ -162,17 +213,19 @@ export class ChatService extends ApiService {
   async getSession(requestId: string): Promise<ChatSession | null> {
     try {
       const conversation = await llmCallsService.getConversation(requestId);
-      
+
       // Convert conversation to ChatSession format
-      const messages: ChatMessage[] = (conversation.conversation_messages || []).map(
-        (msg: Record<string, unknown>, index: number) => ({
-          id: `${requestId}-${index}`,
-          role: (msg.role as 'user' | 'assistant') || 'user',
-          content: (msg.content as string) || '',
-          verified: false,
-          createdAt: new Date((msg.timestamp as string) || new Date().toISOString()),
-        }),
-      );
+      const messages: ChatMessage[] = (
+        conversation.conversation_messages || []
+      ).map((msg: Record<string, unknown>, index: number) => ({
+        id: `${requestId}-${index}`,
+        role: (msg.role as 'user' | 'assistant') || 'user',
+        content: (msg.content as string) || '',
+        verified: false,
+        createdAt: new Date(
+          (msg.timestamp as string) || new Date().toISOString()
+        ),
+      }));
 
       return {
         id: requestId,
@@ -190,13 +243,16 @@ export class ChatService extends ApiService {
   /**
    * Helper to determine file type from filename
    */
-  private getFileType(filename: string): 'pdf' | 'csv' | 'json' | 'image' | 'video' | 'audio' | 'text' {
+  private getFileType(
+    filename: string
+  ): 'pdf' | 'csv' | 'json' | 'image' | 'video' | 'audio' | 'text' {
     const ext = filename.split('.').pop()?.toLowerCase() || '';
-    
+
     if (['pdf'].includes(ext)) return 'pdf';
     if (['csv'].includes(ext)) return 'csv';
     if (['json'].includes(ext)) return 'json';
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) return 'image';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext))
+      return 'image';
     if (['mp4', 'avi', 'mov', 'webm'].includes(ext)) return 'video';
     if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio';
     return 'text';

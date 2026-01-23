@@ -1,6 +1,6 @@
 /**
  * Users Service
- * 
+ *
  * Service for user management operations
  */
 
@@ -52,9 +52,7 @@ export class UsersService extends ApiService {
    * Get user by ID
    */
   async getUser(userId: number): Promise<UserResponse> {
-    const response = await this.client.get<UserResponse>(
-      `/users/${userId}`,
-    );
+    const response = await this.client.get<UserResponse>(`/users/${userId}`);
     return this.handleResponse(response);
   }
 
@@ -64,7 +62,7 @@ export class UsersService extends ApiService {
   async updateProfile(data: UserProfile): Promise<UserResponse> {
     const response = await this.client.put<UserResponse>(
       '/users/me/profile',
-      data,
+      data
     );
     return this.handleResponse(response);
   }
@@ -73,22 +71,11 @@ export class UsersService extends ApiService {
    * Get user metadata
    */
   async getMetadata(): Promise<UserMetadata> {
-    const response = await this.client.get<UserMetadata>(
-      '/users/me/metadata',
-    );
+    const response = await this.client.get<UserMetadata>('/users/me/metadata');
     return this.handleResponse(response);
   }
 
-  /**
-   * Update user metadata
-   */
-  async updateMetadata(metadata: UserMetadata): Promise<UserMetadata> {
-    const response = await this.client.put<UserMetadata>(
-      '/users/me/metadata',
-      metadata,
-    );
-    return this.handleResponse(response);
-  }
+  // updateMetadata is not supported by the API currently
 
   /**
    * Get profile completion status
@@ -111,7 +98,7 @@ export class UsersService extends ApiService {
    */
   async getAccessiblePages(): Promise<AccessiblePage[]> {
     const response = await this.client.get<AccessiblePage[]>(
-      '/users/me/accessible-pages',
+      '/users/me/accessible-pages'
     );
     return this.handleResponse(response);
   }
@@ -121,7 +108,7 @@ export class UsersService extends ApiService {
    */
   async getUserDomains(userId: number): Promise<UserDomain[]> {
     const response = await this.client.get<UserDomain[]>(
-      `/users/${userId}/domains`,
+      `/users/${userId}/domains`
     );
     return this.handleResponse(response);
   }
@@ -131,7 +118,7 @@ export class UsersService extends ApiService {
    */
   async getUserMetadata(userId: number): Promise<UserMetadata> {
     const response = await this.client.get<UserMetadata>(
-      `/users/${userId}/metadata`,
+      `/users/${userId}/metadata`
     );
     return this.handleResponse(response);
   }
