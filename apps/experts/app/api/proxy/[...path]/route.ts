@@ -127,8 +127,9 @@ async function handleRequest(
       }
     }
 
-    // Build target URL - api-client already includes /api/v1/ in paths
-    // Check if path already starts with api/v1 or /api/v1
+    // Build target URL
+    // LLM calls go to /llm-calls/* (no /api/v1 prefix)
+    // Other API calls go to /api/v1/*
     let normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
     // Defensive: Strip protocol and domain if included in path (prevent double-prefixing)
@@ -146,10 +147,21 @@ async function handleRequest(
         normalizedPath = `/${normalizedPath}`;
     }
 
-    const versionedPath = normalizedPath.startsWith('/api/v1')
-      ? normalizedPath
-      : `/api/v1${normalizedPath}`;
-    const targetUrl = `${API_BASE_URL}${versionedPath}${queryString}`;
+    // LLM calls API uses /llm-calls prefix (not /api/v1/llm-calls)
+    // The backend middleware strips /llm-calls prefix internally
+    let targetPath: string;
+    if (normalizedPath.startsWith('/llm-calls/') || normalizedPath === '/llm-calls') {
+      // Keep /llm-calls prefix as-is (backend will strip it)
+      targetPath = normalizedPath;
+    } else if (normalizedPath.startsWith('/api/v1')) {
+      // Already has /api/v1 prefix
+      targetPath = normalizedPath;
+    } else {
+      // Add /api/v1 prefix for regular API calls
+      targetPath = `/api/v1${normalizedPath}`;
+    }
+    
+    const targetUrl = `${API_BASE_URL}${targetPath}${queryString}`;
 
     // Log request details in development
     if (process.env.NODE_ENV === 'development') {
@@ -157,7 +169,7 @@ async function handleRequest(
         method,
         path,
         normalizedPath,
-        versionedPath,
+        targetPath,
         targetUrl,
         hasBody: !!body,
         bodyLength: body?.length,
