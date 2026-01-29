@@ -88,17 +88,41 @@ async function handleRequest(
     // Get body for POST/PUT/PATCH
     let body: string | undefined;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      try {
-        const requestBody = await request.json();
-        body = JSON.stringify(requestBody);
-      } catch (error) {
-        // If not JSON, try to get as text
+      const contentType = request.headers.get('content-type') || '';
+      
+      // For form-encoded data, read as text directly
+      if (contentType.includes('application/x-www-form-urlencoded')) {
         try {
           body = await request.text();
-        } catch (textError) {
-          // If both fail, log and continue without body
-          console.error('Failed to read request body:', { error, textError });
-          body = undefined;
+          // Validate body is not empty
+          if (!body || body.trim().length === 0) {
+            console.error('Form-encoded body is empty');
+            return NextResponse.json(
+              { error: 'Request body is empty' },
+              { status: 400 }
+            );
+          }
+        } catch (error) {
+          console.error('Failed to read form-encoded body:', error);
+          return NextResponse.json(
+            { error: 'Failed to read request body' },
+            { status: 400 }
+          );
+        }
+      } else {
+        // For JSON or other content types, try JSON first, then text
+        try {
+          const requestBody = await request.json();
+          body = JSON.stringify(requestBody);
+        } catch (error) {
+          // If not JSON, try to get as text
+          try {
+            body = await request.text();
+          } catch (textError) {
+            // If both fail, log and continue without body
+            console.error('Failed to read request body:', { error, textError });
+            body = undefined;
+          }
         }
       }
     }
@@ -150,15 +174,16 @@ async function handleRequest(
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
+      // Build fetch headers - don't set Content-Length manually, let fetch handle it
+      const fetchHeaders: Record<string, string> = { ...headers };
+      
+      // Remove Content-Length if we set it manually - fetch will set it correctly
+      delete fetchHeaders['Content-Length'];
+      delete fetchHeaders['content-length'];
+
       response = await fetch(targetUrl, {
         method,
-        headers: {
-          ...headers,
-          // Only set Content-Length if we have a body
-          ...(body && {
-            'Content-Length': String(Buffer.byteLength(body, 'utf8')),
-          }),
-        },
+        headers: fetchHeaders,
         body: body || undefined,
         signal: controller.signal,
       });

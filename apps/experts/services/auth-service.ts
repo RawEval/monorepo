@@ -8,7 +8,7 @@ import { ApiService } from './api-service';
 import type { TokenResponse, UserResponse, UserCreate } from '@raweval/types';
 
 export interface LoginRequest {
-  username: string; // email
+  email: string;
   password: string;
 }
 
@@ -31,19 +31,22 @@ export class AuthService extends ApiService {
 
   /**
    * Login and get access token
+   * 
+   * According to OpenAPI spec: https://api.raweval.com/openapi.json
+   * POST /api/v1/auth/login expects: { email: string, password: string }
+   * Returns: TokenResponse with access_token, refresh_token, expires_in
    */
   async login(credentials: LoginRequest): Promise<TokenResponse> {
-    const formData = new URLSearchParams();
-    formData.append('username', credentials.username);
-    formData.append('password', credentials.password);
-
     const response = await this.client.post<TokenResponse>(
       '/auth/login',
-      formData.toString(),
+      {
+        email: credentials.email,
+        password: credentials.password,
+      },
       {
         skipAuth: true,
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
       },
     );
@@ -52,9 +55,12 @@ export class AuthService extends ApiService {
 
   /**
    * Get current user information
+   * 
+   * According to OpenAPI spec: https://api.raweval.com/openapi.json
+   * GET /api/v1/users/me (requires Bearer token in Authorization header)
    */
   async getCurrentUser(): Promise<UserResponse> {
-    const response = await this.client.get<UserResponse>('/auth/me');
+    const response = await this.client.get<UserResponse>('/users/me');
     return this.handleResponse(response);
   }
 

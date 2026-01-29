@@ -48,7 +48,7 @@ export function Navbar() {
           {/* Desktop CTA */}
           <div className="hidden items-center gap-3 md:flex">
             <Button variant="ghost" size="sm" asChild>
-              <Link href={appUrls.chat()}>Sign in</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button size="sm" asChild>
               <Link href="/workbench">Access Workbench</Link>
@@ -100,7 +100,7 @@ export function Navbar() {
                   className="justify-start"
                   asChild
                 >
-                  <Link href={appUrls.chat()}>Sign in</Link>
+                  <Link href="/login">Sign in</Link>
                 </Button>
                 <Button size="sm" asChild>
                   <Link href="/workbench">Access Workbench</Link>

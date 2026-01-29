@@ -27,7 +27,7 @@ export function getApiConfig(): ApiConfig {
     ? '' // Browser: Use relative paths (proxied by Next.js)
     : process.env.NEXT_PUBLIC_API_URL ||
       process.env.API_URL ||
-      'http://raweval-alb-1123950706.ap-northeast-1.elb.amazonaws.com';
+      'https://api.raweval.com';
 
   // Base URL for LLM calls
   // CRITICAL: In browser, this MUST be empty to let the proxy handle routing

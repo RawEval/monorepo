@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.API_URL ||
-  'http://raweval-alb-1123950706.ap-northeast-1.elb.amazonaws.com';
+  'https://api.raweval.com';
 
 export async function POST(request: NextRequest) {
   try {
