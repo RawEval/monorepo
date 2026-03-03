@@ -37,3 +37,14 @@ export {
   type PaymentTransaction,
   type PaymentStatistics,
 } from './payments-service';
+export {
+  InterviewService,
+  interviewService,
+  type CreateSessionRequest,
+  type CreateSessionResponse,
+  type InterviewQuestionResponse,
+  type SubmitAnswerRequest,
+  type SubmitAnswerResponse,
+  type SessionSummary,
+  type CompleteSessionResponse,
+} from './interview-service';

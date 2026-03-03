@@ -23,6 +23,7 @@ export interface UserProfile {
   full_name?: string;
   bio?: string | null;
   avatar_url?: string | null;
+  professional_background?: string;
 }
 
 export interface UserDomain {
