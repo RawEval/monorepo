@@ -6,6 +6,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "turbo run dev",
+    "dev:chat": "turbo run dev --filter=@raweval/chat",
     "build": "turbo run build",
     "start": "turbo run start",
     "start:clean": "./scripts/kill-ports.sh && pnpm start",

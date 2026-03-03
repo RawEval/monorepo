@@ -78,11 +78,14 @@ export function VoiceRecorder({
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      if (mediaRecorderRef.current && isRecording) {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state === 'recording'
+      ) {
         mediaRecorderRef.current.stop();
       }
     };
-  }, [isRecording]);
+  }, []);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
@@ -98,7 +101,7 @@ export function VoiceRecorder({
         size="icon"
         onClick={startRecording}
         disabled={disabled}
-        className="h-9 w-9 text-muted-foreground hover:text-foreground disabled:opacity-50"
+        className="text-muted-foreground hover:text-foreground h-9 w-9 disabled:opacity-50"
         aria-label="Start voice recording"
       >
         <Mic className="h-4 w-4" />
@@ -107,17 +110,19 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-primary/50 bg-primary/5 px-3 py-1.5">
+    <div className="border-primary/50 bg-primary/5 flex items-center gap-2 rounded-lg border px-3 py-1.5">
       {/* Pulse indicator */}
       <div className="relative flex h-8 w-8 items-center justify-center">
-        <div className="absolute h-8 w-8 animate-ping rounded-full bg-primary/30" />
-        <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-primary">
-          <Square className="h-3 w-3 text-primary-foreground" />
+        <div className="bg-primary/30 absolute h-8 w-8 animate-ping rounded-full" />
+        <div className="bg-primary relative flex h-6 w-6 items-center justify-center rounded-full">
+          <Square className="text-primary-foreground h-3 w-3" />
         </div>
       </div>
 
       {/* Timer */}
-      <span className="text-sm font-medium text-foreground">{formatTime(recordingTime)}</span>
+      <span className="text-foreground text-sm font-medium">
+        {formatTime(recordingTime)}
+      </span>
 
       {/* Stop button */}
       <Button
@@ -137,7 +142,7 @@ export function VoiceRecorder({
           variant="ghost"
           size="sm"
           onClick={cancelRecording}
-          className="h-7 px-2 text-sm text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-7 px-2 text-sm"
         >
           Cancel
         </Button>

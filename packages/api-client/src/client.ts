@@ -1,15 +1,11 @@
 /**
  * API Client
- * 
+ *
  * Main API client with request/response handling, retries, and interceptors
  */
 
 import { getApiConfig, getApiUrl, type ApiConfig } from './config';
-import {
-  createApiError,
-  NetworkError,
-  TimeoutError,
-} from './errors';
+import { createApiError, NetworkError, TimeoutError } from './errors';
 import {
   InterceptorManager,
   createAuthInterceptor,
@@ -86,9 +82,13 @@ export class ApiClient {
    */
   private async executeRequest<T>(
     config: RequestConfig,
-    attempt = 0,
+    attempt = 0
   ): Promise<T> {
-    const fullUrl = getApiUrl(config.url, this.config);
+    const isAbsolute =
+      config.url.startsWith('http://') || config.url.startsWith('https://');
+    const fullUrl = isAbsolute
+      ? config.url
+      : getApiUrl(config.url, this.config);
     const timeout = config.timeout ?? this.config.timeout;
     const retries = config.retries ?? this.config.retries;
     const retryDelay = config.retryDelay ?? this.config.retryDelay;
@@ -128,7 +128,7 @@ export class ApiClient {
             response.statusText ||
             'Request failed',
           response.status,
-          errorData,
+          errorData
         );
 
         // Retry on server errors (5xx) or network errors
@@ -137,7 +137,7 @@ export class ApiClient {
           (response.status >= 500 || response.status === 0)
         ) {
           await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
+            setTimeout(resolve, retryDelay * Math.pow(2, attempt))
           );
           return this.executeRequest<T>(config, attempt + 1);
         }
@@ -157,7 +157,7 @@ export class ApiClient {
       // Apply response interceptors
       const result = await this.interceptors.executeResponseInterceptors<T>(
         data,
-        finalConfig,
+        finalConfig
       );
 
       return result;
@@ -169,13 +169,13 @@ export class ApiClient {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         const networkError = new NetworkError(
           'Network error - please check your connection',
-          error as Error,
+          error as Error
         );
 
         // Retry on network errors
         if (attempt < retries) {
           await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
+            setTimeout(resolve, retryDelay * Math.pow(2, attempt))
           );
           return this.executeRequest<T>(config, attempt + 1);
         }
@@ -187,7 +187,7 @@ export class ApiClient {
       if (error instanceof TimeoutError) {
         if (attempt < retries) {
           await new Promise((resolve) =>
-            setTimeout(resolve, retryDelay * Math.pow(2, attempt)),
+            setTimeout(resolve, retryDelay * Math.pow(2, attempt))
           );
           return this.executeRequest<T>(config, attempt + 1);
         }
@@ -196,7 +196,7 @@ export class ApiClient {
       // Apply error interceptors
       const finalError = await this.interceptors.executeErrorInterceptors(
         error as Error,
-        config,
+        config
       );
 
       throw finalError;
@@ -208,7 +208,7 @@ export class ApiClient {
    */
   async get<T = unknown>(
     url: string,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<T> {
     return this.executeRequest<T>({
       ...config,
@@ -223,7 +223,7 @@ export class ApiClient {
   async post<T = unknown>(
     url: string,
     data?: unknown,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<T> {
     // Handle FormData
     let body: string | FormData | undefined;
@@ -269,7 +269,7 @@ export class ApiClient {
   async put<T = unknown>(
     url: string,
     data?: unknown,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<T> {
     return this.executeRequest<T>({
       ...config,
@@ -289,7 +289,7 @@ export class ApiClient {
   async patch<T = unknown>(
     url: string,
     data?: unknown,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<T> {
     return this.executeRequest<T>({
       ...config,
@@ -308,7 +308,7 @@ export class ApiClient {
    */
   async delete<T = unknown>(
     url: string,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<T> {
     return this.executeRequest<T>({
       ...config,
@@ -322,7 +322,7 @@ export class ApiClient {
    */
   async getApiResponse<T>(
     url: string,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<ApiResponse<T>> {
     const response = await this.get<ApiResponse<T>>(url, config);
     return response;
@@ -333,7 +333,7 @@ export class ApiClient {
    */
   async getPaginated<T>(
     url: string,
-    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>,
+    config?: Omit<RequestConfig, 'url' | 'method' | 'body'>
   ): Promise<PaginatedResponse<T>> {
     const response = await this.get<PaginatedResponse<T>>(url, config);
     return response;
@@ -342,7 +342,7 @@ export class ApiClient {
 
 /**
  * Default API client instance
- * 
+ *
  * Note: Token retrieval is handled via interceptor system.
  * The getAuthToken is set to use @raweval/auth package's getStoredToken.
  * This is done at runtime to avoid circular dependencies.

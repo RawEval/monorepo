@@ -1,108 +1,55 @@
 /**
  * Prompts Service
  *
- * Service for managing prompts and failed prompts
+ * Service for managing prompts and failed prompts.
+ * All endpoints under /api/v1/chat/prompts/*.
  */
 
-import { ApiService } from './api-service';
+import { api } from '@/lib/api';
+import type {
+  PromptResponseFromAPI,
+  FailedPromptResponse,
+} from '@raweval/types';
 
-export interface PromptResponseFromAPI {
-  id: number;
-  query_text: string;
-  original_response: string | null;
-  status: string;
-  domain: string | null;
-}
-
-export interface FailedPromptResponse {
-  id: number;
-  prompt_id: number;
-  original_prompt_id: number;
-  query_text: string;
-  original_response: string;
-  status: string;
-  priority: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export class PromptsService extends ApiService {
-  /**
-   * Get all prompts
-   */
-  async getPrompts(skip = 0, limit = 100): Promise<PromptResponseFromAPI[]> {
-    const response = await this.client.get<PromptResponseFromAPI[]>(
-      `/prompts?skip=${skip}&limit=${limit}`
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Get prompt by ID
-   */
-  async getPromptById(promptId: number): Promise<PromptResponseFromAPI> {
-    const response = await this.client.get<PromptResponseFromAPI>(
-      `/prompts/${promptId}`
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Mark prompt as wrong
-   */
-  async markPromptAsWrong(promptId: number): Promise<void> {
-    await this.client.post(`/prompts/${promptId}/mark-wrong`, {});
-  }
-
-  /**
-   * Get failed prompts
-   */
-  async getFailedPrompts(
+class PromptsService {
+  /** Get all prompts (paginated) */
+  async getPrompts(
     skip = 0,
     limit = 100,
-    status?: string,
-    priority?: string
-  ): Promise<FailedPromptResponse[]> {
+    status?: string
+  ): Promise<PromptResponseFromAPI[]> {
     const params = new URLSearchParams({
       skip: skip.toString(),
       limit: limit.toString(),
     });
     if (status) params.append('status', status);
-    if (priority) params.append('priority', priority);
-
-    const response = await this.client.get<FailedPromptResponse[]>(
-      `/failed-prompts?${params.toString()}`
+    return api.get<PromptResponseFromAPI[]>(
+      `/chat/prompts/?${params.toString()}`
     );
-    return this.handleResponse(response);
   }
 
-  /**
-   * Get failed prompt by ID
-   */
-  async getFailedPromptById(
-    failedPromptId: number,
-    includeConversations = true
-  ): Promise<FailedPromptResponse> {
-    const response = await this.client.get<FailedPromptResponse>(
-      `/failed-prompts/${failedPromptId}?include_conversations=${includeConversations}`
-    );
-    return this.handleResponse(response);
+  /** Get prompt by ID */
+  async getPromptById(promptId: number): Promise<PromptResponseFromAPI> {
+    return api.get<PromptResponseFromAPI>(`/chat/prompts/${promptId}`);
   }
 
-  /**
-   * Ingest a prompt into the Main API (for syncing from LLM Host)
-   */
-  async ingestPrompt(data: {
-    query_text: string;
-    domain?: string | null;
-    model_responses?: Record<string, unknown>;
-    metadata?: Record<string, unknown>;
-  }): Promise<{ prompt_id: number; status: string }> {
-    const response = await this.client.post<{
-      prompt_id: number;
-      status: string;
-    }>('/data/ingest', data);
-    return this.handleResponse(response);
+  /** Get prompt edit history */
+  async getPromptEditHistory(
+    promptId: number
+  ): Promise<Record<string, unknown>[]> {
+    return api.get<Record<string, unknown>[]>(
+      `/chat/prompts/${promptId}/edit-history`
+    );
+  }
+
+  /** Get failed prompts list */
+  async getFailedPrompts(
+    skip = 0,
+    limit = 100
+  ): Promise<FailedPromptResponse[]> {
+    return api.get<FailedPromptResponse[]>(
+      `/chat/prompts/failed/list?skip=${skip}&limit=${limit}`
+    );
   }
 }
 

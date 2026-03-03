@@ -4,11 +4,17 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@raweval/ui/card';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authService } from '@/services/auth-service';
-import { storeToken } from '@raweval/auth';
-import { isApiError, UnauthorizedError } from '@raweval/api-client';
+import { storeToken } from '@/lib/auth';
+import { isApiError, UnauthorizedError } from '@/lib/errors';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -65,7 +71,7 @@ export default function LoginPage() {
       storeToken(
         tokenResponse.access_token,
         tokenResponse.expires_in,
-        tokenResponse.refresh_token,
+        tokenResponse.refresh_token
       );
 
       // Store remember me preference
@@ -80,7 +86,9 @@ export default function LoginPage() {
         if (err instanceof UnauthorizedError) {
           setError('Invalid email or password. Please try again.');
         } else {
-          setError(err.message || 'An error occurred during login. Please try again.');
+          setError(
+            err.message || 'An error occurred during login. Please try again.'
+          );
         }
       } else {
         setError('An unexpected error occurred. Please try again.');
@@ -119,7 +127,9 @@ export default function LoginPage() {
           className={`border-border shadow-xl ${mounted ? 'animate-fade-in-up delay-100' : 'opacity-0'}`}
         >
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-semibold">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-semibold">
+              Welcome back
+            </CardTitle>
             <CardDescription>
               Sign in to your account to continue chatting
             </CardDescription>
@@ -127,7 +137,7 @@ export default function LoginPage() {
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+                <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-3 text-sm">
                   {error}
                 </div>
               )}
@@ -141,7 +151,7 @@ export default function LoginPage() {
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="email"
                     type="email"
@@ -151,7 +161,7 @@ export default function LoginPage() {
                       setError('');
                     }}
                     placeholder="you@example.com"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
@@ -167,7 +177,7 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -177,14 +187,14 @@ export default function LoginPage() {
                       setError('');
                     }}
                     placeholder="Enter your password"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     disabled={isSubmitting}
                   >
                     {showPassword ? (
@@ -198,12 +208,14 @@ export default function LoginPage() {
 
               {/* Remember & Forgot */}
               <div className="flex items-center justify-between">
-                <label className="text-muted-foreground flex items-center gap-2 text-sm cursor-pointer">
+                <label className="text-muted-foreground flex cursor-pointer items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     checked={formData.rememberMe}
-                    onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-                    className="border-input rounded border cursor-pointer"
+                    onChange={(e) =>
+                      setFormData({ ...formData, rememberMe: e.target.checked })
+                    }
+                    className="border-input cursor-pointer rounded border"
                     disabled={isSubmitting}
                   />
                   Remember me
@@ -247,7 +259,9 @@ export default function LoginPage() {
 
             {/* Sign up link */}
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">Don't have an account? </span>
+              <span className="text-muted-foreground">
+                Don't have an account?{' '}
+              </span>
               <Link
                 href="/signup"
                 className="text-primary hover:text-primary/80 font-medium transition-colors"
@@ -263,11 +277,17 @@ export default function LoginPage() {
           className={`text-muted-foreground mt-6 text-center text-xs ${mounted ? 'animate-fade-in-up delay-200' : 'opacity-0'}`}
         >
           By signing in, you agree to our{' '}
-          <Link href="/terms" className="hover:text-foreground underline transition-colors">
+          <Link
+            href="/terms"
+            className="hover:text-foreground underline transition-colors"
+          >
             Terms of Service
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="hover:text-foreground underline transition-colors">
+          <Link
+            href="/privacy"
+            className="hover:text-foreground underline transition-colors"
+          >
             Privacy Policy
           </Link>
         </p>

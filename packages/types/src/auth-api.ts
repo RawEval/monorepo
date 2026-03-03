@@ -1,12 +1,12 @@
 /**
  * Authentication API Types
- * 
+ *
  * Types for authentication endpoints from the backend API
  */
 
 /**
  * Token Response from login/refresh endpoint
- * 
+ *
  * According to OpenAPI spec: https://api.raweval.com/openapi.json
  * OAuth2-compliant with access_token and refresh_token
  */
@@ -36,4 +36,12 @@ export interface UserResponse {
   role: string;
   is_active: boolean;
   created_at: string;
+}
+
+/**
+ * Login Request
+ */
+export interface LoginRequest {
+  email: string;
+  password: string;
 }

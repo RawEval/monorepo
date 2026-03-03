@@ -9,14 +9,19 @@ interface AppLayoutProps {
   children: React.ReactNode;
 }
 
+import { usePathname } from 'next/navigation';
+
 export function AppLayout({ children }: AppLayoutProps) {
   const upgradeModalOpen = useUiStore((s) => s.upgradeModalOpen);
   const closeUpgradeModal = useUiStore((s) => s.closeUpgradeModal);
+  const pathname = usePathname();
+
+  const isChatPage = pathname === '/chat' || pathname === '/';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="bg-background flex h-screen overflow-hidden">
       {/* Left Sidebar - Chat List */}
-      <Sidebar />
+      {isChatPage && <Sidebar />}
 
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col overflow-hidden">

@@ -4,11 +4,25 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
-import { ArrowRight, Mail, Lock, Eye, EyeOff, User, Loader2 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@raweval/ui/card';
+import {
+  ArrowRight,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  User,
+  Loader2,
+} from 'lucide-react';
 import { authService } from '@/services/auth-service';
-import { storeToken } from '@raweval/auth';
-import { isApiError, ValidationError } from '@raweval/api-client';
+import { storeToken } from '@/lib/auth';
+import { isApiError, ValidationError } from '@/lib/errors';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -31,9 +45,12 @@ export default function SignupPage() {
 
   const validatePassword = (password: string) => {
     if (password.length < 8) return 'Password must be at least 8 characters';
-    if (!/[A-Z]/.test(password)) return 'Password must contain at least one uppercase letter';
-    if (!/[a-z]/.test(password)) return 'Password must contain at least one lowercase letter';
-    if (!/[0-9]/.test(password)) return 'Password must contain at least one number';
+    if (!/[A-Z]/.test(password))
+      return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(password))
+      return 'Password must contain at least one lowercase letter';
+    if (!/[0-9]/.test(password))
+      return 'Password must contain at least one number';
     return null;
   };
 
@@ -94,7 +111,7 @@ export default function SignupPage() {
       storeToken(
         tokenResponse.access_token,
         tokenResponse.expires_in,
-        tokenResponse.refresh_token,
+        tokenResponse.refresh_token
       );
 
       // Redirect to chat
@@ -105,15 +122,22 @@ export default function SignupPage() {
           const validationErrors = err.validationErrors;
           if (validationErrors) {
             const firstError = Object.values(validationErrors)[0];
-            const errorMessage: string = Array.isArray(firstError) 
-              ? (firstError[0] || 'Validation error')
-              : (typeof firstError === 'string' ? firstError : 'Validation error');
+            const errorMessage: string = Array.isArray(firstError)
+              ? firstError[0] || 'Validation error'
+              : typeof firstError === 'string'
+                ? firstError
+                : 'Validation error';
             setError(errorMessage);
           } else {
-            setError(err.message || 'Validation error. Please check your input.');
+            setError(
+              err.message || 'Validation error. Please check your input.'
+            );
           }
         } else {
-          setError(err.message || 'An error occurred during registration. Please try again.');
+          setError(
+            err.message ||
+              'An error occurred during registration. Please try again.'
+          );
         }
       } else {
         setError('An unexpected error occurred. Please try again.');
@@ -152,7 +176,9 @@ export default function SignupPage() {
           className={`border-border shadow-xl ${mounted ? 'animate-fade-in-up delay-100' : 'opacity-0'}`}
         >
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-semibold">Create an account</CardTitle>
+            <CardTitle className="text-2xl font-semibold">
+              Create an account
+            </CardTitle>
             <CardDescription>
               Get started with AI-powered conversations
             </CardDescription>
@@ -160,7 +186,7 @@ export default function SignupPage() {
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+                <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-3 text-sm">
                   {error}
                 </div>
               )}
@@ -174,7 +200,7 @@ export default function SignupPage() {
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <User className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="name"
                     type="text"
@@ -184,7 +210,7 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="John Doe"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
@@ -200,7 +226,7 @@ export default function SignupPage() {
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="email"
                     type="email"
@@ -210,7 +236,7 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="you@example.com"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
@@ -226,7 +252,7 @@ export default function SignupPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -236,14 +262,14 @@ export default function SignupPage() {
                       setError('');
                     }}
                     placeholder="Create a password"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     disabled={isSubmitting}
                   >
                     {showPassword ? (
@@ -254,7 +280,8 @@ export default function SignupPage() {
                   </button>
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  Must be at least 8 characters with uppercase, lowercase, and number
+                  Must be at least 8 characters with uppercase, lowercase, and
+                  number
                 </p>
               </div>
 
@@ -267,24 +294,27 @@ export default function SignupPage() {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                  <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="confirm-password"
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => {
-                      setFormData({ ...formData, confirmPassword: e.target.value });
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      });
                       setError('');
                     }}
                     placeholder="Confirm your password"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isSubmitting}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     disabled={isSubmitting}
                   >
                     {showConfirmPassword ? (
@@ -297,15 +327,18 @@ export default function SignupPage() {
               </div>
 
               {/* Terms */}
-              <label className="text-muted-foreground flex items-start gap-2 text-sm cursor-pointer">
+              <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={formData.agreedToTerms}
                   onChange={(e) => {
-                    setFormData({ ...formData, agreedToTerms: e.target.checked });
+                    setFormData({
+                      ...formData,
+                      agreedToTerms: e.target.checked,
+                    });
                     setError('');
                   }}
-                  className="border-input mt-0.5 rounded border cursor-pointer"
+                  className="border-input mt-0.5 cursor-pointer rounded border"
                   disabled={isSubmitting}
                 />
                 <span>
@@ -357,7 +390,9 @@ export default function SignupPage() {
 
             {/* Sign in link */}
             <div className="text-center text-sm">
-              <span className="text-muted-foreground">Already have an account? </span>
+              <span className="text-muted-foreground">
+                Already have an account?{' '}
+              </span>
               <Link
                 href="/login"
                 className="text-primary hover:text-primary/80 font-medium transition-colors"

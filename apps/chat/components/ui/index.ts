@@ -1,12 +1,19 @@
 /**
  * UI Components
- * 
+ *
  * Re-export shadcn components from @raweval/ui
  * This allows for app-specific overrides if needed
  */
 
 export { Button } from '@raweval/ui/button';
-export { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@raweval/ui/card';
+export {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@raweval/ui/card';
 export { Badge } from '@raweval/ui/badge';
 export { Input } from './input';
 export { Avatar } from './avatar';
@@ -19,3 +26,18 @@ export {
   DropdownMenuContent,
   DropdownMenuItem,
 } from './dropdown-menu';
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from './dialog';
+export { Label } from './label';
+export {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from './select';

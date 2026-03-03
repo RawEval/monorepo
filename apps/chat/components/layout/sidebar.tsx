@@ -10,6 +10,11 @@ import {
   Archive,
   X,
   Plus,
+  Search,
+  Menu,
+  Wallet,
+  Settings,
+  Crown,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -31,10 +36,13 @@ export function Sidebar() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const projects = useProjectsStore((s) => s.projects);
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
   const selectProject = useProjectsStore((s) => s.selectProject);
+  const createProject = useProjectsStore((s) => s.createProject);
   const renameProject = useProjectsStore((s) => s.renameProject);
   const deleteProject = useProjectsStore((s) => s.deleteProject);
   const getMessages = useChatStore((s) => s.getMessages);
@@ -42,14 +50,13 @@ export function Sidebar() {
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
 
-  // Sort projects by updatedAt (most recent first)
-  const sortedProjects = useMemo(() => {
-    return [...projects].sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [projects]);
-
   const handleSelectChat = (id: string) => {
     selectProject(id);
-    router.push('/chat');
+    if (id === 'p1') {
+      router.push('/chat');
+    } else {
+      router.push(`/chat?id=${id}`);
+    }
     if (isMobile) {
       toggleLeftSidebar();
     }
@@ -74,7 +81,11 @@ export function Sidebar() {
       const nextProject = remaining[0];
       if (nextProject) {
         selectProject(nextProject.id);
-        router.push('/chat');
+        if (nextProject.id === 'p1') {
+          router.push('/chat');
+        } else {
+          router.push(`/chat?id=${nextProject.id}`);
+        }
       } else {
         router.push('/chat');
       }
@@ -83,19 +94,11 @@ export function Sidebar() {
   };
 
   const formatTime = (timestamp: number) => {
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m`;
-    if (hours < 24) return `${hours}h`;
-    if (days < 7) return `${days}d`;
     return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
     });
   };
 
@@ -106,7 +109,29 @@ export function Sidebar() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Get user data from auth (simplified - in production, use context or store)
+  const isLoading = useProjectsStore((s) => s.isLoading);
+  const loadProjects = useProjectsStore((s) => s.loadProjects);
+
+  // Filter and sort projects
+  const filteredProjects = useMemo(() => {
+    let result = [...projects];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q)
+      );
+    }
+    return result.sort((a, b) => b.updatedAt - a.updatedAt);
+  }, [projects, searchQuery]);
+
+  // Load chat history from backend on mount
+  useEffect(() => {
+    loadProjects();
+  }, [loadProjects]);
+
+  // Get user data from auth
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
@@ -129,39 +154,118 @@ export function Sidebar() {
   // Sidebar content component
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      {/* Header: Logo */}
-      <div className="border-border flex h-14 shrink-0 items-center justify-between border-b px-3 sm:px-4">
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5">
-          {/* Logo with plus */}
-          <div className="bg-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-lg shadow-sm sm:h-7 sm:w-7">
-            <Plus className="text-primary-foreground h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </div>
-          <span className="text-foreground truncate text-sm font-semibold sm:text-base">
-            RawEval
-          </span>
-        </div>
-        {isMobile && (
-          <button
-            onClick={toggleLeftSidebar}
-            className="text-muted-foreground active:bg-muted active:text-foreground flex h-8 w-8 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-colors"
-            aria-label="Close sidebar"
+      {/* Header: Actions like Gemini (Menu, New Chat, Search) */}
+      <div className="flex h-14 shrink-0 items-center justify-between px-3">
+        {/* Toggle Sidebar */}
+        <button
+          onClick={toggleLeftSidebar}
+          className="text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Right side group: Search & New Chat */}
+        <div className="flex items-center gap-1">
+          {/* Animated Search */}
+          <div
+            className={cn(
+              'text-muted-foreground relative flex h-9 items-center rounded-lg border-transparent transition-all',
+              isSearchExpanded
+                ? 'bg-background border-border ring-primary/20 z-10 w-44 shadow-sm ring-1'
+                : 'hover:bg-muted/80 w-9 cursor-pointer justify-center border'
+            )}
+            onClick={() => {
+              if (!isSearchExpanded) {
+                setIsSearchExpanded(true);
+              }
+            }}
           >
-            <X className="h-4 w-4" />
+            <Search
+              className={cn(
+                'h-4 w-4 shrink-0 transition-all',
+                isSearchExpanded ? 'text-primary absolute left-2.5' : ''
+              )}
+            />
+            {isSearchExpanded && (
+              <>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onBlur={() => {
+                    if (!searchQuery) setIsSearchExpanded(false);
+                  }}
+                  className="text-foreground placeholder:text-muted-foreground h-full w-full bg-transparent pr-8 pl-8 text-sm outline-none"
+                />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearchQuery('');
+                    setIsSearchExpanded(false);
+                  }}
+                  className="hover:bg-muted text-muted-foreground hover:text-foreground absolute right-1.5 rounded-md p-1"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* New Chat Action */}
+          <button
+            onClick={() => {
+              const newId = createProject();
+              selectProject(newId);
+              router.push('/chat');
+              if (isMobile) {
+                toggleLeftSidebar();
+              }
+            }}
+            className={cn(
+              'text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
+              isSearchExpanded ? 'hidden' : 'flex'
+            )}
+            aria-label="New Chat"
+            title="New Chat"
+          >
+            <Plus className="h-5 w-5" />
           </button>
-        )}
+        </div>
       </div>
 
       {/* Chat List - Scrollable */}
       <ScrollArea className="min-h-0 flex-1">
-        <div className="p-2">
-          {sortedProjects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <MessageSquare className="text-muted-foreground mb-3 h-8 w-8" />
-              <p className="text-muted-foreground text-sm">No chats yet</p>
+        <div className="p-2 pt-0">
+          {isLoading ? (
+            <div className="space-y-1.5 p-1 px-2">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex h-9 items-center gap-3 opacity-60">
+                  <div
+                    className="bg-muted h-4 w-4 shrink-0 animate-pulse rounded-full"
+                    style={{ animationDelay: `${i * 100}ms` }}
+                  />
+                  <div className="flex flex-1 flex-col justify-center gap-1.5">
+                    <div
+                      className="bg-muted h-2.5 w-3/4 animate-pulse rounded"
+                      style={{ animationDelay: `${i * 100}ms` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center opacity-80">
+              <Search className="text-muted-foreground mb-3 h-6 w-6" />
+              <p className="text-muted-foreground text-sm">
+                {searchQuery ? 'No chats match your search' : 'No chats yet'}
+              </p>
             </div>
           ) : (
             <div className="space-y-0.5">
-              {sortedProjects.map((project) => {
+              {filteredProjects.map((project) => {
                 const messages = getMessages(project.id);
                 const isActive = selectedProjectId === project.id;
                 const isEditing = editingId === project.id;
@@ -252,8 +356,10 @@ export function Sidebar() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
-                                // TODO: Implement archive functionality
-                                alert('Archive functionality coming soon!');
+                                // Archive = remove from list locally.
+                                // No dedicated archive endpoint yet — uses same
+                                // flow as delete but semantically distinct.
+                                handleDelete(project.id);
                               }}
                             >
                               <Archive className="h-4 w-4" />
@@ -277,6 +383,42 @@ export function Sidebar() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Quick Nav Links */}
+      <div className="border-border shrink-0 border-t px-2 py-2">
+        <div className="space-y-0.5">
+          <button
+            onClick={() => {
+              router.push('/wallet');
+              if (isMobile) toggleLeftSidebar();
+            }}
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+          >
+            <Wallet className="h-4 w-4 shrink-0" />
+            Wallet
+          </button>
+          <button
+            onClick={() => {
+              router.push('/pricing');
+              if (isMobile) toggleLeftSidebar();
+            }}
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+          >
+            <Crown className="h-4 w-4 shrink-0" />
+            Upgrade Plan
+          </button>
+          <button
+            onClick={() => {
+              router.push('/settings');
+              if (isMobile) toggleLeftSidebar();
+            }}
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            Settings
+          </button>
+        </div>
+      </div>
 
       {/* User Profile - Sticky at bottom */}
       <div className="border-border bg-background shrink-0 border-t p-3 sm:p-4">
@@ -325,6 +467,8 @@ export function Sidebar() {
   }
 
   // Desktop: Regular sidebar
+  if (!leftSidebarOpen) return null;
+
   return (
     <aside className="border-border bg-background relative z-auto flex h-screen w-[260px] flex-col border-r lg:block">
       <SidebarContent />

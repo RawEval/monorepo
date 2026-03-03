@@ -1,14 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  CheckCircle2,
-  ThumbsUp,
-  XCircle,
-  Copy,
-  Sparkles,
-  MessageCircle,
-} from 'lucide-react';
+import { CheckCircle2, XCircle, Copy, Sparkle, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
 import { cn } from '@raweval/utils';
@@ -20,9 +17,9 @@ interface ChatMessageProps {
   verified?: boolean;
   images?: string[];
   createdAt: Date;
+  /** Whether the failure-analysis API call is currently in flight */
+  isMarkingWrong?: boolean;
   onWrong?: () => void;
-  onApprove?: () => void;
-  onRequestHuman?: () => void;
 }
 
 export function ChatMessage({
@@ -30,12 +27,10 @@ export function ChatMessage({
   content,
   verified,
   images,
+  isMarkingWrong = false,
   onWrong,
-  onApprove,
-  onRequestHuman,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
-  const [helpfulClicked, setHelpfulClicked] = useState(false);
   const [wrongClicked, setWrongClicked] = useState(false);
 
   const handleCopy = () => {
@@ -44,12 +39,8 @@ export function ChatMessage({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleApprove = () => {
-    setHelpfulClicked(true);
-    onApprove?.();
-  };
-
   const handleWrong = () => {
+    if (isMarkingWrong || wrongClicked) return;
     setWrongClicked(true);
     onWrong?.();
   };
@@ -57,14 +48,14 @@ export function ChatMessage({
   if (role === 'user') {
     return (
       <div className="flex justify-end">
-        <div className="flex max-w-[90%] sm:max-w-[85%] md:max-w-[80%] flex-col gap-2">
+        <div className="flex max-w-[90%] flex-col gap-2 sm:max-w-[85%] md:max-w-[80%]">
           {/* User Images */}
           {images && images.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {images.map((img, idx) => (
                 <div
                   key={idx}
-                  className="group relative h-24 w-24 sm:h-32 sm:w-32 overflow-hidden rounded-xl border border-border transition-shadow hover:shadow-md shrink-0"
+                  className="group border-border relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md sm:h-32 sm:w-32"
                 >
                   <img
                     src={img}
@@ -79,8 +70,8 @@ export function ChatMessage({
 
           {/* User Message */}
           {content && (
-            <div className="rounded-2xl rounded-tr-sm bg-primary px-3 sm:px-4 py-2.5 sm:py-3 text-primary-foreground shadow-sm">
-              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+            <div className="bg-muted text-foreground rounded-3xl px-5 py-2.5 shadow-none sm:py-3">
+              <p className="text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">
                 {content}
               </p>
             </div>
@@ -92,33 +83,120 @@ export function ChatMessage({
 
   return (
     <div className="flex justify-start">
-      <div className="flex max-w-[90%] sm:max-w-[85%] md:max-w-[80%] gap-2 sm:gap-3">
+      <div className="flex max-w-[90%] gap-2 sm:max-w-[85%] sm:gap-3 md:max-w-[80%]">
         {/* Assistant Avatar */}
-        <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-muted shadow-sm">
-          <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
+        <div className="bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-full shadow-sm sm:h-8 sm:w-8">
+          <Sparkle
+            className="text-muted-foreground h-3.5 w-3.5 sm:h-4 sm:w-4"
+            fill="currentColor"
+          />
         </div>
 
         {/* Message Content */}
-        <div className="flex-1 space-y-2 sm:space-y-2.5 min-w-0">
-          <div className="rounded-2xl rounded-tl-sm border border-border bg-card px-3 sm:px-5 py-3 sm:py-4 shadow-sm">
-            {/* Header */}
-            <div className="mb-2.5 flex items-center gap-2">
-              <span className="text-xs font-semibold text-card-foreground">
-                RawEval AI
-              </span>
-              {verified && (
+        <div className="min-w-0 flex-1 space-y-2 pt-1 sm:space-y-2.5">
+          <div className="px-1 sm:px-2">
+            {/* Header / Verified Badge Layout */}
+            {verified && (
+              <div className="mb-2.5 flex items-center gap-2">
                 <Badge variant="secondary" className="h-5 gap-1 text-xs">
                   <CheckCircle2 className="h-3 w-3" />
                   Verified
                 </Badge>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Content */}
-            <div className="prose prose-sm max-w-none">
-              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-card-foreground">
+            {/* Content with Markdown */}
+            <div className="prose prose-sm sm:prose-base dark:prose-invert text-card-foreground max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ node, inline, className, children, ...props }: any) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const language = match ? match[1] : '';
+                    const isInline = inline || !match;
+
+                    if (isInline) {
+                      return (
+                        <code
+                          className="bg-muted text-foreground rounded-md px-1.5 py-0.5 font-mono text-[0.85em]"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      );
+                    }
+
+                    const codeString = String(children).replace(/\n$/, '');
+
+                    return (
+                      <div className="border-border relative my-4 overflow-hidden rounded-xl border bg-[#1E1E1E] shadow-sm">
+                        <div className="flex items-center justify-between bg-[#2D2D2D] px-4 py-2">
+                          <span className="text-xs font-medium text-gray-300">
+                            {language || 'code'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 gap-1.5 rounded-md px-2 text-[10px] text-gray-300 hover:bg-white/10 hover:text-white"
+                            onClick={() => {
+                              navigator.clipboard.writeText(codeString);
+                              // Could add a small local state just for this button, but reusing top level copied is okay for simple UI
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                            Copy
+                          </Button>
+                        </div>
+                        <div className="overflow-x-auto p-4 text-[13px] leading-relaxed">
+                          <SyntaxHighlighter
+                            {...props}
+                            style={vscDarkPlus}
+                            language={language}
+                            PreTag="div"
+                            customStyle={{
+                              margin: 0,
+                              padding: 0,
+                              background: 'transparent',
+                            }}
+                          >
+                            {codeString}
+                          </SyntaxHighlighter>
+                        </div>
+                      </div>
+                    );
+                  },
+                  p: ({ children }) => (
+                    <p className="mb-4 text-[15px] leading-relaxed last:mb-0">
+                      {children}
+                    </p>
+                  ),
+                  ul: ({ children }) => (
+                    <ul className="mb-4 list-disc pl-6 last:mb-0">
+                      {children}
+                    </ul>
+                  ),
+                  ol: ({ children }) => (
+                    <ol className="mb-4 list-decimal pl-6 last:mb-0">
+                      {children}
+                    </ol>
+                  ),
+                  li: ({ children }) => (
+                    <li className="mb-1 text-[15px]">{children}</li>
+                  ),
+                  a: ({ href, children }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:text-primary/80 font-medium underline underline-offset-4"
+                    >
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
                 {content}
-              </p>
+              </ReactMarkdown>
             </div>
           </div>
 
@@ -129,7 +207,7 @@ export function ChatMessage({
               size="sm"
               onClick={handleCopy}
               className={cn(
-                'h-8 gap-1.5 rounded-lg px-2.5 text-xs transition-colors shrink-0 touch-manipulation',
+                'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs transition-colors',
                 copied
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:bg-muted active:bg-muted'
@@ -138,48 +216,33 @@ export function ChatMessage({
             >
               <Copy className="h-3.5 w-3.5 shrink-0" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleApprove}
-              className={cn(
-                'h-8 gap-1.5 rounded-lg px-2.5 text-xs transition-colors shrink-0 touch-manipulation',
-                helpfulClicked
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-muted active:bg-muted'
-              )}
-              aria-label="Mark as helpful"
-            >
-              <ThumbsUp className="h-3.5 w-3.5 shrink-0" />
-            </Button>
-            {/* Wrong button - Priority, more prominent */}
+            {/* Wrong button — priority action, sends to failure analysis pipeline */}
             <Button
               variant="ghost"
               size="sm"
               onClick={handleWrong}
+              disabled={isMarkingWrong || wrongClicked}
               className={cn(
-                'h-8 gap-1.5 rounded-lg px-2.5 text-xs transition-colors shrink-0 touch-manipulation font-medium',
+                'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
                 wrongClicked
-                  ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                  ? 'bg-destructive/10 text-destructive border-destructive/20 border'
                   : 'text-muted-foreground hover:bg-destructive/5 hover:text-destructive active:bg-destructive/10 active:text-destructive'
               )}
               aria-label="Mark as wrong"
             >
-              <XCircle className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden xs:inline">{wrongClicked ? 'Marked' : 'Wrong'}</span>
+              {isMarkingWrong ? (
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              ) : (
+                <XCircle className="h-3.5 w-3.5 shrink-0" />
+              )}
+              <span className="xs:inline hidden">
+                {isMarkingWrong
+                  ? 'Marking…'
+                  : wrongClicked
+                    ? 'Marked'
+                    : 'Wrong'}
+              </span>
             </Button>
-            {onRequestHuman && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onRequestHuman}
-                className="h-8 gap-1.5 rounded-lg px-2.5 text-xs text-foreground transition-colors hover:bg-muted active:bg-muted shrink-0 touch-manipulation hidden sm:flex"
-                aria-label="Talk to human"
-              >
-                <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden sm:inline">Human</span>
-              </Button>
-            )}
           </div>
         </div>
       </div>

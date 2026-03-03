@@ -1,26 +1,81 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Bell, Shield, CreditCard, Globe, Camera, Loader2, CheckCircle2 } from 'lucide-react';
+import { formatDate } from '@/helpers/formatters';
+import {
+  User,
+  Shield,
+  Camera,
+  Loader2,
+  CheckCircle2,
+  ArrowLeft,
+  AlertCircle,
+  CreditCard,
+  Key,
+  Copy,
+  Trash2,
+  Plus,
+  ExternalLink,
+  Wallet,
+} from 'lucide-react';
 import { Button } from '@raweval/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
+import { Badge } from '@raweval/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@raweval/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useUiStore } from '@/stores/ui-store';
 import { authService } from '@/services/auth-service';
-import type { UserResponse } from '@raweval/types';
+import { usersService } from '@/services/users-service';
+import { subscriptionsService } from '@/services/subscriptions-service';
+import type {
+  UserResponse,
+  UserModelSubscription,
+  UserUsageStats,
+  ApiKey,
+} from '@raweval/types';
 
 export function SettingsPage() {
   const router = useRouter();
-  const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [user, setUser] = useState<UserResponse | null>(null);
-  
+
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
-    avatar: undefined,
+    avatar: undefined as string | undefined,
   });
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Subscriptions
+  const [subscriptions, setSubscriptions] = useState<UserModelSubscription[]>(
+    []
+  );
+  const [usage, setUsage] = useState<UserUsageStats | null>(null);
+  const [subsLoading, setSubsLoading] = useState(true);
+
+  // API Keys
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [apiKeysLoading, setApiKeysLoading] = useState(true);
+  const [creatingKey, setCreatingKey] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [showNewKeyInput, setShowNewKeyInput] = useState(false);
+  const [copiedKeyId, setCopiedKeyId] = useState<number | null>(null);
+
+  // Password
+  const [changePasswordMode, setChangePasswordMode] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    current: '',
+    new_password: '',
+    confirm: '',
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -32,70 +87,224 @@ export function SettingsPage() {
           email: userData.email,
           avatar: undefined,
         });
-      } catch (error) {
+      } catch {
         router.push('/login');
       }
     };
     loadUser();
   }, [router]);
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    marketing: false,
-  });
+  useEffect(() => {
+    const loadSubscriptions = async () => {
+      try {
+        const [subs, stats] = await Promise.all([
+          subscriptionsService.getMySubscriptions(),
+          subscriptionsService.getMyUsage(),
+        ]);
+        console.log('Subs', subs);
+
+        setSubscriptions(
+          Array.isArray(subs) ? subs : (subs as any)?.subscriptions || []
+        );
+        setUsage(stats);
+      } catch (err) {
+        console.error('Failed to load subscriptions', err);
+      } finally {
+        setSubsLoading(false);
+      }
+    };
+    loadSubscriptions();
+  }, []);
+
+  useEffect(() => {
+    const loadApiKeys = async () => {
+      try {
+        const keys = await subscriptionsService.getApiKeys();
+        setApiKeys(keys);
+      } catch (err) {
+        console.error('Failed to load API keys', err);
+      } finally {
+        setApiKeysLoading(false);
+      }
+    };
+    loadApiKeys();
+  }, []);
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    
     setIsSaving(true);
     setSaveSuccess(false);
-    
+
     try {
-      // Update user profile via API
-      // Note: The API might not have a direct update endpoint
-      // For now, we'll just show success
-      // In production, you'd call: await authService.updateProfile({ full_name: profileData.name })
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+      if (profileData.name && profileData.name !== user.full_name) {
+        await usersService.updateFullName({ full_name: profileData.name });
+      }
+      if (profileData.email && profileData.email !== user.email) {
+        await usersService.updateEmail({
+          email: profileData.email,
+          password: '',
+        });
+      }
       setIsSaving(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
+    } catch {
       setIsSaving(false);
-      alert('Failed to save profile. Please try again.');
+      setErrorMsg('Failed to save profile. Please try again.');
+      setTimeout(() => setErrorMsg(null), 5000);
     }
   };
 
-  const handleChangePassword = () => {
-    // TODO: Open change password modal
-    alert('Change password functionality coming soon');
+  const handleAvatarSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsSaving(true);
+      const res = await usersService.uploadAvatar(file);
+      setProfileData({ ...profileData, avatar: res.avatarUrl as string });
+      setIsSaving(false);
+    } catch {
+      setErrorMsg('Failed to upload avatar. Please try a smaller image.');
+      setTimeout(() => setErrorMsg(null), 5000);
+      setIsSaving(false);
+    }
   };
 
-  const handleEnable2FA = () => {
-    // TODO: Open 2FA setup modal
-    alert('Two-factor authentication setup coming soon');
+  const handleChangePassword = async () => {
+    if (passwordData.new_password !== passwordData.confirm) {
+      setErrorMsg('Passwords do not match');
+      setTimeout(() => setErrorMsg(null), 3000);
+      return;
+    }
+    if (passwordData.new_password.length < 8) {
+      setErrorMsg('Password must be at least 8 characters');
+      setTimeout(() => setErrorMsg(null), 3000);
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await usersService.changePassword({
+        current_password: passwordData.current,
+        new_password: passwordData.new_password,
+      });
+      setSuccessMsg('Password changed successfully');
+      setChangePasswordMode(false);
+      setPasswordData({ current: '', new_password: '', confirm: '' });
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch {
+      setErrorMsg('Failed to change password. Check your current password.');
+      setTimeout(() => setErrorMsg(null), 5000);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleCreateApiKey = async () => {
+    if (!newKeyName.trim()) return;
+    setCreatingKey(true);
+    try {
+      const key = await subscriptionsService.createApiKey({
+        name: newKeyName.trim(),
+      });
+      setApiKeys((prev) => [key, ...prev]);
+      setNewKeyName('');
+      setShowNewKeyInput(false);
+      setSuccessMsg(
+        key.full_key
+          ? `API key created! Copy it now — it won't be shown again.`
+          : 'API key created!'
+      );
+      setTimeout(() => setSuccessMsg(null), 10000);
+    } catch {
+      setErrorMsg('Failed to create API key');
+      setTimeout(() => setErrorMsg(null), 3000);
+    } finally {
+      setCreatingKey(false);
+    }
+  };
+
+  const handleDeleteApiKey = async (keyId: number) => {
+    try {
+      await subscriptionsService.deleteApiKey(keyId);
+      setApiKeys((prev) => prev.filter((k) => k.id !== keyId));
+    } catch {
+      setErrorMsg('Failed to delete API key');
+      setTimeout(() => setErrorMsg(null), 3000);
+    }
+  };
+
+  const handleCopyKey = (key: ApiKey) => {
+    const text = key.full_key || key.key_prefix;
+    navigator.clipboard.writeText(text);
+    setCopiedKeyId(key.id);
+    setTimeout(() => setCopiedKeyId(null), 2000);
+  };
+
+  const handleCancelSubscription = async (subscriptionId: number) => {
+    try {
+      await subscriptionsService.cancel({ subscription_id: subscriptionId });
+      setSubscriptions((prev) =>
+        prev.map((s) =>
+          s.id === subscriptionId ? { ...s, status: 'cancelled' } : s
+        )
+      );
+      setSuccessMsg('Subscription cancelled');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch {
+      setErrorMsg('Failed to cancel subscription');
+      setTimeout(() => setErrorMsg(null), 3000);
+    }
   };
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-background">
-      <div className="mx-auto w-full max-w-4xl px-4 sm:px-6 py-6 sm:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
+    <div className="bg-background flex h-full flex-col overflow-y-auto">
+      <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mb-6 space-y-4 sm:mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="hover:text-foreground text-muted-foreground w-fit gap-2 pl-0 hover:bg-transparent"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div>
+            <h1 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
+              Settings
+            </h1>
+            <p className="text-muted-foreground text-sm sm:text-base">
+              Manage your account, subscriptions, and API keys
+            </p>
+          </div>
         </div>
 
+        {/* Status banners */}
+        {errorMsg && (
+          <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {errorMsg}
+          </div>
+        )}
+        {successMsg && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            {successMsg}
+          </div>
+        )}
+
         <div className="space-y-6">
-          {/* Profile Settings */}
+          {/* ----------------------------------------------------------------- */}
+          {/* Profile */}
+          {/* ----------------------------------------------------------------- */}
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-muted-foreground" />
+                <User className="text-muted-foreground h-5 w-5" />
                 <CardTitle>Profile</CardTitle>
               </div>
               <CardDescription>
@@ -104,20 +313,32 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Avatar Upload */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
                   <Avatar
                     src={profileData.avatar}
                     alt={profileData.name}
                     fallback={profileData.name[0]?.toUpperCase() || 'U'}
-                    className="h-16 w-16 sm:h-20 sm:w-20 shrink-0"
+                    className="h-16 w-16 shrink-0 sm:h-20 sm:w-20"
                   />
-                  <div className="space-y-2 min-w-0 flex-1">
-                    <Button variant="outline" size="sm" className="gap-2 w-full sm:w-auto" disabled={isSaving}>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <input
+                      type="file"
+                      accept="image/jpeg, image/png, image/gif"
+                      className="hidden"
+                      ref={fileInputRef}
+                      onChange={handleAvatarSelect}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 sm:w-auto"
+                      disabled={isSaving}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
                       <Camera className="h-4 w-4 shrink-0" />
                       Change Avatar
                     </Button>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       JPG, PNG or GIF. Max size 2MB
                     </p>
                   </div>
@@ -125,37 +346,46 @@ export function SettingsPage() {
 
                 <Separator />
 
-                {/* Name and Email */}
                 <div className="space-y-4">
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">
+                    <label className="text-foreground mb-2 block text-sm font-medium">
                       Full Name
                     </label>
                     <input
                       type="text"
                       value={profileData.name}
-                      onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                      className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      onChange={(e) =>
+                        setProfileData({ ...profileData, name: e.target.value })
+                      }
+                      className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                       disabled={isSaving}
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-foreground">
+                    <label className="text-foreground mb-2 block text-sm font-medium">
                       Email
                     </label>
                     <input
                       type="email"
                       value={profileData.email}
-                      onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                      className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          email: e.target.value,
+                        })
+                      }
+                      className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                       disabled={isSaving}
                     />
                   </div>
                 </div>
 
-                {/* Save Button */}
                 <div className="flex items-center gap-3">
-                  <Button onClick={handleSaveProfile} disabled={isSaving} className="gap-2">
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={isSaving}
+                    className="gap-2"
+                  >
                     {isSaving ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -171,194 +401,402 @@ export function SettingsPage() {
                     )}
                   </Button>
                   {saveSuccess && (
-                    <p className="text-sm text-green-600">Changes saved successfully</p>
+                    <p className="text-sm text-green-600">
+                      Changes saved successfully
+                    </p>
                   )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Notifications */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Bell className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>Notifications</CardTitle>
-              </div>
-              <CardDescription>
-                Manage your notification preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Email Notifications</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Receive email updates about your account and activities
-                    </div>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={notifications.email}
-                      onChange={(e) => setNotifications({ ...notifications, email: e.target.checked })}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20"></div>
-                  </label>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Push Notifications</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Receive browser push notifications
-                    </div>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={notifications.push}
-                      onChange={(e) => setNotifications({ ...notifications, push: e.target.checked })}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20"></div>
-                  </label>
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Marketing Emails</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Receive emails about new features and promotions
-                    </div>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={notifications.marketing}
-                      onChange={(e) => setNotifications({ ...notifications, marketing: e.target.checked })}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-muted after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20"></div>
-                  </label>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
+          {/* ----------------------------------------------------------------- */}
           {/* Security */}
+          {/* ----------------------------------------------------------------- */}
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-muted-foreground" />
+                <Shield className="text-muted-foreground h-5 w-5" />
                 <CardTitle>Security</CardTitle>
               </div>
               <CardDescription>
-                Manage your security settings and authentication
+                Manage your password and authentication
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Password</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Last changed 30 days ago
+              {changePasswordMode ? (
+                <div className="max-w-md space-y-4">
+                  <div>
+                    <label className="text-foreground mb-2 block text-sm font-medium">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.current}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          current: e.target.value,
+                        })
+                      }
+                      className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-foreground mb-2 block text-sm font-medium">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.new_password}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          new_password: e.target.value,
+                        })
+                      }
+                      className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-foreground mb-2 block text-sm font-medium">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.confirm}
+                      onChange={(e) =>
+                        setPasswordData({
+                          ...passwordData,
+                          confirm: e.target.value,
+                        })
+                      }
+                      className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="gap-2"
+                    >
+                      {changingPassword ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : null}
+                      Change Password
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setChangePasswordMode(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border-border flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-foreground text-sm font-medium sm:text-base">
+                      Password
+                    </div>
+                    <div className="text-muted-foreground text-xs sm:text-sm">
+                      Change your account password
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={handleChangePassword} className="w-full sm:w-auto shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setChangePasswordMode(true)}
+                    className="w-full shrink-0 sm:w-auto"
+                  >
                     Change Password
                   </Button>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Two-Factor Authentication</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">
-                      Add an extra layer of security to your account
+              )}
+            </CardContent>
+          </Card>
+
+          {/* ----------------------------------------------------------------- */}
+          {/* Subscription & Usage */}
+          {/* ----------------------------------------------------------------- */}
+          <Card className="border-border">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="text-muted-foreground h-5 w-5" />
+                  <CardTitle>Subscriptions</CardTitle>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push('/wallet')}
+                    className="gap-2"
+                  >
+                    <Wallet className="h-3.5 w-3.5" />
+                    Wallet
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push('/pricing')}
+                    className="gap-2"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    View Plans
+                  </Button>
+                </div>
+              </div>
+              <CardDescription>
+                Manage your active subscriptions and view usage
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {subsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                </div>
+              ) : subscriptions.length === 0 ? (
+                <div className="py-8 text-center">
+                  <CreditCard className="text-muted-foreground/30 mx-auto mb-3 h-10 w-10" />
+                  <p className="text-muted-foreground mb-3 text-sm">
+                    No active subscriptions
+                  </p>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => router.push('/pricing')}
+                  >
+                    Browse Plans
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {subscriptions?.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="border-border flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground font-medium">
+                            {sub.plan.plan_name}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              sub.status === 'active'
+                                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
+                                : sub.status === 'cancelled'
+                                  ? 'border-red-500/20 bg-red-500/10 text-red-700'
+                                  : ''
+                            }
+                          >
+                            {sub.status}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mt-1 text-xs">
+                          {sub.billing_cycle} • Started{' '}
+                          {formatDate(sub.start_date)}
+                          {sub.end_date &&
+                            ` • Ends ${formatDate(sub.end_date)}`}
+                        </p>
+                      </div>
+                      {sub.status === 'active' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive hover:text-destructive shrink-0"
+                          onClick={() => handleCancelSubscription(sub.id)}
+                        >
+                          Cancel
+                        </Button>
+                      )}
                     </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleEnable2FA} className="w-full sm:w-auto shrink-0">
-                    Enable 2FA
-                  </Button>
+                  ))}
+
+                  {/* Usage summary */}
+                  {usage && (
+                    <div className="bg-muted/50 mt-4 rounded-lg p-4">
+                      <p className="text-foreground mb-2 text-sm font-medium">
+                        Usage This Month
+                      </p>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        <div>
+                          <p className="text-muted-foreground text-xs">Tier</p>
+                          <p className="text-foreground text-sm font-medium capitalize">
+                            {usage.subscription_tier}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Requests Today
+                          </p>
+                          <p className="text-foreground text-sm font-medium">
+                            {usage.total_requests_today}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Requests This Month
+                          </p>
+                          <p className="text-foreground text-sm font-medium">
+                            {usage.total_requests_month}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground text-xs">
+                            Models Used
+                          </p>
+                          <p className="text-foreground text-sm font-medium">
+                            {usage.models.length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Billing */}
+          {/* ----------------------------------------------------------------- */}
+          {/* API Keys */}
+          {/* ----------------------------------------------------------------- */}
           <Card className="border-border">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>Billing & Subscription</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Key className="text-muted-foreground h-5 w-5" />
+                  <CardTitle>API Keys</CardTitle>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewKeyInput(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Create Key
+                </Button>
               </div>
               <CardDescription>
-                Manage your subscription and billing information
+                Manage API keys for programmatic access
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 rounded-lg border border-border p-3 sm:p-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm sm:text-base text-foreground">Current Plan</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">Free Plan</div>
-                  </div>
-                  <Button variant="outline" onClick={openUpgradeModal} className="w-full sm:w-auto shrink-0">
-                    Upgrade Plan
+              {/* Create key input */}
+              {showNewKeyInput && (
+                <div className="border-border mb-4 flex items-center gap-2 rounded-lg border p-3">
+                  <input
+                    type="text"
+                    value={newKeyName}
+                    onChange={(e) => setNewKeyName(e.target.value)}
+                    placeholder="Key name (e.g. Production, Dev)"
+                    className="border-input bg-background focus:ring-ring flex-1 rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCreateApiKey();
+                      if (e.key === 'Escape') setShowNewKeyInput(false);
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleCreateApiKey}
+                    disabled={creatingKey || !newKeyName.trim()}
+                    className="gap-2"
+                  >
+                    {creatingKey ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : null}
+                    Create
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewKeyInput(false);
+                      setNewKeyName('');
+                    }}
+                  >
+                    Cancel
                   </Button>
                 </div>
-                <Separator />
-                <div>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => router.push('/pricing')}>
-                    View All Plans
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              )}
 
-          {/* Language */}
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-muted-foreground" />
-                <CardTitle>Language & Region</CardTitle>
-              </div>
-              <CardDescription>
-                Choose your preferred language and region settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">
-                    Language
-                  </label>
-                  <select className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                    <option>English (US)</option>
-                    <option>English (UK)</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                    <option>German</option>
-                    <option>Portuguese</option>
-                  </select>
+              {apiKeysLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-foreground">
-                    Time Zone
-                  </label>
-                  <select className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                    <option>UTC (Coordinated Universal Time)</option>
-                    <option>America/New_York (EST)</option>
-                    <option>America/Chicago (CST)</option>
-                    <option>America/Denver (MST)</option>
-                    <option>America/Los_Angeles (PST)</option>
-                    <option>Europe/London (GMT)</option>
-                    <option>Europe/Paris (CET)</option>
-                    <option>Asia/Tokyo (JST)</option>
-                  </select>
+              ) : apiKeys.length === 0 ? (
+                <div className="py-8 text-center">
+                  <Key className="text-muted-foreground/30 mx-auto mb-3 h-10 w-10" />
+                  <p className="text-muted-foreground text-sm">
+                    No API keys yet. Create one to get started.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-2">
+                  {apiKeys.map((key) => (
+                    <div
+                      key={key.id}
+                      className="border-border flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-foreground text-sm font-medium">
+                            {key.name || 'Unnamed Key'}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              key.is_active
+                                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
+                                : 'border-red-500/20 bg-red-500/10 text-red-700'
+                            }
+                          >
+                            {key.is_active ? 'Active' : 'Revoked'}
+                          </Badge>
+                        </div>
+                        <p className="text-muted-foreground mt-1 font-mono text-xs">
+                          {key.full_key || `${key.key_prefix}...`}
+                        </p>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          Created {formatDate(key.created_at)}
+                          {key.last_used_at &&
+                            ` • Last used ${formatDate(key.last_used_at)}`}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleCopyKey(key)}
+                          title="Copy key"
+                        >
+                          {copiedKeyId === key.id ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                          ) : (
+                            <Copy className="text-muted-foreground h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                        {key.is_active && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive h-8 w-8"
+                            onClick={() => handleDeleteApiKey(key.id)}
+                            title="Revoke key"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

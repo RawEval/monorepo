@@ -1,261 +1,326 @@
 /**
  * Chat Service
  *
- * Business logic for chat functionality
- * Separated from UI components for better testability
+ * Session management and messaging via /api/v1/chat/sessions/*.
+ * Search and models via /api/v1/chat/search/* and /api/v1/chat/models.
+ * Migrated from llmApi to main api per the consumer-based API reorganization.
  */
 
-import { ApiService } from './api-service';
-import { llmCallsService } from './llm-calls-service';
-import { promptsService } from './prompts-service';
-import type { ChatMessage, ChatSession } from '@/features/chat/types';
+import { api } from '@/lib/api';
+import type { ChatMessage } from '@/features/chat/types';
+import type {
+  PaginatedSessionsResponse,
+  SessionDetail,
+  SessionUpdateRequest,
+  Provider,
+} from '@raweval/types';
 
 export interface SendMessageOptions {
-  sessionId?: string;
+  sessionId?: string; // Local Project ID
+  backendSessionId?: number; // Backend Session ID (Integer)
   userId?: number;
-  model?: 'openai' | 'claude' | 'gemini' | 'grok' | 'deepseek' | 'openrouter';
+  model?: Provider | string;
   modelName?: string;
+  models?: { provider: string; model: string }[]; // Array of model objects for multi-model parallel generation
   systemPrompt?: string;
   temperature?: number;
+  maxTokens?: number;
+  webSearch?: boolean;
   files?: File[];
+  attachmentIds?: number[];
 }
 
-export class ChatService extends ApiService {
+/** Response shape from POST /chat/sessions/{id}/messages */
+interface SendMessageResponse {
+  user_message: {
+    id: number;
+    role: string;
+    content: string;
+    model?: string;
+    provider?: string;
+    tokens_used?: number;
+    latency_ms?: number;
+    created_at: string;
+  };
+  assistant_messages: {
+    id: number;
+    role: string;
+    content: string;
+    model?: string;
+    provider?: string;
+    tokens_used?: number;
+    latency_ms?: number;
+    created_at: string;
+  }[];
+}
+
+/** Response shape from POST /chat/sessions */
+interface CreateSessionRequest {
+  title?: string;
+  workflow_type?:
+    | 'single_model'
+    | 'parallel_processing'
+    | 'chain_of_thought'
+    | 'tool_use';
+}
+
+/** Response shape from POST /chat/sessions/{id}/upload */
+interface UploadAttachmentResponse {
+  attachment_id: number;
+  filename: string;
+  content_type: string;
+  file_size_bytes: number;
+  s3_key: string;
+}
+
+/** Chat session summary */
+interface ChatSessionSummary {
+  id: number;
+  user_id: number;
+  title: string;
+  status: string;
+  workflow_type: string;
+  message_count: number;
+  user_marked_failed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+class ChatService {
+  // ---------------------------------------------------------------------------
+  // Session CRUD
+  // ---------------------------------------------------------------------------
+
+  /** Create a new chat session */
+  async createSession(
+    data?: CreateSessionRequest
+  ): Promise<ChatSessionSummary> {
+    return api.post<ChatSessionSummary>('/chat/sessions', data || {});
+  }
+
+  /** List paginated chat sessions */
+  async getChatSessions(params?: {
+    page?: number;
+    page_size?: number;
+    status?: string;
+    failed_only?: boolean;
+  }): Promise<PaginatedSessionsResponse> {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = searchParams.toString();
+    return api.get<PaginatedSessionsResponse>(
+      `/chat/sessions${query ? `?${query}` : ''}`
+    );
+  }
+
+  /** Get a single chat session by ID (with messages + attachments) */
+  async getChatSessionById(
+    sessionId: number,
+    includeMessages = true,
+    includeAttachments = true
+  ): Promise<SessionDetail> {
+    return api.get<SessionDetail>(
+      `/chat/sessions/${sessionId}?include_messages=${includeMessages}&include_attachments=${includeAttachments}`
+    );
+  }
+
+  /** Delete a chat session permanently */
+  async deleteChatSession(sessionId: number): Promise<void> {
+    return api.delete<void>(`/chat/sessions/${sessionId}`);
+  }
+
+  /** Update chat session status, title, or user_marked_failed */
+  async updateChatSession(
+    sessionId: number,
+    request: SessionUpdateRequest
+  ): Promise<ChatSessionSummary> {
+    return api.patch<ChatSessionSummary>(
+      `/chat/sessions/${sessionId}`,
+      request
+    );
+  }
+
+  /** Mark a session as failed */
+  async markSessionFailed(
+    sessionId: number,
+    failureProbability = 1.0
+  ): Promise<ChatSessionSummary> {
+    return api.post<ChatSessionSummary>(
+      `/chat/sessions/${sessionId}/mark-failed`,
+      { failure_probability: failureProbability }
+    );
+  }
+
+  /** Mark a specific message within a session as failed */
+  async markMessageFailed(
+    sessionId: number,
+    messageId: number,
+    failureProbability = 1.0
+  ): Promise<Record<string, unknown>> {
+    return api.post<Record<string, unknown>>(
+      `/chat/sessions/${sessionId}/messages/${messageId}/mark-failed`,
+      { failure_probability: failureProbability }
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Messaging
+  // ---------------------------------------------------------------------------
+
   /**
-   * Send a message and get AI response using LLM Call Host
+   * Send a message and get an LLM response via /chat/sessions/{id}/messages.
+   * This is the primary chat endpoint — replaces the old llmApi /execute flow.
    */
   async sendMessage(
+    sessionId: number,
     message: string,
-    options: SendMessageOptions = {}
-  ): Promise<ChatMessage> {
+    options: Omit<SendMessageOptions, 'sessionId' | 'backendSessionId'> = {}
+  ): Promise<ChatMessage & { backendSessionId?: number }> {
     const {
-      userId,
       model = 'openai',
       modelName = 'gpt-4o',
+      models,
+      systemPrompt,
+      temperature = 0.7,
+      maxTokens,
+      webSearch = false,
+      attachmentIds,
+    } = options;
+
+    const body: Record<string, unknown> = {
+      prompt: message, // backend expects 'prompt' instead of 'content'
+      provider: model,
+      model: modelName,
+      models:
+        models && models.length > 0
+          ? models
+          : [{ provider: model, model: modelName }], // send array of objects
+      temperature,
+      include_history: true,
+      web_search: webSearch,
+    };
+    if (systemPrompt) body.system_prompt = systemPrompt;
+    if (maxTokens) body.max_tokens = maxTokens;
+    if (attachmentIds?.length) body.attachment_ids = attachmentIds;
+
+    const response = await api.post<SendMessageResponse>(
+      `/chat/sessions/${sessionId}/messages`,
+      body
+    );
+
+    const assistantMsg = response.assistant_messages?.[0];
+    if (!assistantMsg) {
+      throw new Error('No assistant message returned from API');
+    }
+
+    return {
+      id: String(assistantMsg.id),
+      role: 'assistant',
+      content: assistantMsg.content,
+      verified: false,
+      createdAt: new Date(assistantMsg.created_at),
+      backendSessionId: sessionId,
+    };
+  }
+
+  /**
+   * High-level helper: ensures a session exists on the backend, sends the
+   * message, and returns the response. Used by the useChat hook.
+   */
+  async executeChatSession(
+    message: string,
+    options: SendMessageOptions = {}
+  ): Promise<ChatMessage & { backendSessionId?: number }> {
+    const {
+      backendSessionId,
+      model = 'openai',
+      modelName = 'gpt-4o',
+      models,
       systemPrompt,
       temperature = 0.7,
       files = [],
     } = options;
 
     try {
-      // If files are provided, upload them first
-      let fileInputs: Array<{
-        file_type:
-          | 'pdf'
-          | 'csv'
-          | 'json'
-          | 'image'
-          | 'video'
-          | 'audio'
-          | 'text';
-        s3_key?: string | null;
-        s3_url?: string | null;
-        filename?: string | null;
-        content_type?: string | null;
-        file_size_bytes?: number | null;
-      }> = [];
-
-      if (files.length > 0) {
-        const uploadResult = await llmCallsService.uploadFiles(files);
-        fileInputs = uploadResult.files.map((file) => ({
-          file_type: this.getFileType(file.filename),
-          s3_key: file.s3_key,
-          s3_url: file.s3_url,
-          filename: file.filename,
-          file_size_bytes: file.file_size_bytes,
-        }));
+      // Ensure we have a backend session
+      let sessionId = backendSessionId;
+      if (!sessionId) {
+        const session = await this.createSession({
+          workflow_type: 'single_model',
+        });
+        sessionId = session.id;
       }
 
-      // Execute direct LLM call (fastest for chat)
-      const response = await llmCallsService.executeDirect(
-        {
-          provider: model,
-          model: modelName,
-          prompt: message,
-          system_prompt: systemPrompt || null,
-          files: fileInputs.length > 0 ? fileInputs : null,
-          temperature,
-        },
-        userId
-      );
-
-      // Convert response to ChatMessage
-      if (response.results && response.results.length > 0) {
-        const result = response.results[0];
-        if (result) {
-          return {
-            id: response.request_id,
-            role: 'assistant',
-            content: result.content,
-            verified: false,
-            createdAt: new Date(result.timestamp),
-          };
+      // Upload attachments if any
+      let attachmentIds: number[] = [];
+      if (files.length > 0) {
+        for (const file of files) {
+          const att = await this.uploadAttachment(sessionId, file);
+          attachmentIds.push(att.attachment_id);
         }
       }
 
-      throw new Error('No response from LLM');
-    } catch (error) {
-      console.error('Error sending message:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Send message with multi-model comparison
-   */
-  async sendMessageWithComparison(
-    message: string,
-    models: Array<{
-      provider:
-        | 'openai'
-        | 'claude'
-        | 'gemini'
-        | 'grok'
-        | 'deepseek'
-        | 'openrouter';
-      model: string;
-    }>,
-    options: Omit<SendMessageOptions, 'model' | 'modelName'> = {}
-  ): Promise<ChatMessage[]> {
-    const { sessionId, userId, systemPrompt, temperature = 0.7 } = options;
-
-    try {
-      const response = await llmCallsService.executeWorkflow(
-        {
-          workflow_name: 'chat_comparison',
-          workflow_type: 'multi_model_comparison',
-          user_prompt: message,
-          system_prompt: systemPrompt || null,
-          models: models.map((m) => ({
-            provider: m.provider,
-            model: m.model,
-            temperature,
-          })),
-          session_id: sessionId ? parseInt(sessionId, 10) : null,
-        },
-        userId
-      );
-
-      // Convert all results to ChatMessages
-      return response.results.map((result) => ({
-        id: `${response.request_id}-${result.provider}`,
-        role: 'assistant' as const,
-        content: result.content,
-        verified: false,
-        createdAt: new Date(result.timestamp),
-      }));
-    } catch (error) {
-      console.error('Error sending message with comparison:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Flag a message as incorrect (mark prompt as wrong)
-   *
-   * If promptId is a number, it calls the API directly.
-   * If promptId is a string (UUID from LLM Host), it throws an error or requires ingestion.
-   *
-   * @deprecated Use ingestAndFlagMessage instead for LLM Host compatibility
-   */
-  async flagMessage(promptId: number): Promise<void> {
-    try {
-      await promptsService.markPromptAsWrong(promptId);
-    } catch (error) {
-      console.error('Error flagging message:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Ingest a chat message to Main API and then flag it
-   * This bridges the gap between LLM Host (UUID) and Main API (Integer ID)
-   */
-  async ingestAndFlagMessage(
-    userMessage: string,
-    assistantMessage: string,
-    modelName: string,
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
-    try {
-      // 1. Ingest into Main API to get a prompt_id
-      const result = await promptsService.ingestPrompt({
-        query_text: userMessage,
-        model_responses: {
-          [modelName]: {
-            response: assistantMessage,
-            model: modelName,
-            status: 'completed',
-          },
-        },
-        metadata,
+      // Send the message
+      return await this.sendMessage(sessionId, message, {
+        model,
+        modelName,
+        models,
+        systemPrompt,
+        temperature,
+        attachmentIds: attachmentIds.length > 0 ? attachmentIds : undefined,
       });
-
-      // 2. Mark as wrong using the returned integer ID
-      await this.flagMessage(result.prompt_id);
     } catch (error) {
-      console.error('Error ingesting and flagging message:', error);
+      // The error is intentionally thrown so React Query's `onError` callback
+      // inside `use-chat.ts` can catch it and handle subscriptions UX gracefully.
       throw error;
     }
   }
 
-  /**
-   * Approve a message as correct
-   */
-  async approveMessage(_messageId: string): Promise<void> {
-    // TODO: Implement if endpoint exists
-    // For now, this might not be needed as the backend handles this differently
+  // ---------------------------------------------------------------------------
+  // File Uploads
+  // ---------------------------------------------------------------------------
+
+  /** Upload a file/image to a chat session */
+  async uploadAttachment(
+    sessionId: number,
+    file: File
+  ): Promise<UploadAttachmentResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post<UploadAttachmentResponse>(
+      `/chat/sessions/${sessionId}/upload`,
+      formData
+    );
   }
 
-  /**
-   * Get chat session conversation history
-   */
-  async getSession(requestId: string): Promise<ChatSession | null> {
-    try {
-      const conversation = await llmCallsService.getConversation(requestId);
+  // ---------------------------------------------------------------------------
+  // Models & Providers
+  // ---------------------------------------------------------------------------
 
-      // Convert conversation to ChatSession format
-      const messages: ChatMessage[] = (
-        conversation.conversation_messages || []
-      ).map((msg: Record<string, unknown>, index: number) => ({
-        id: `${requestId}-${index}`,
-        role: (msg.role as 'user' | 'assistant') || 'user',
-        content: (msg.content as string) || '',
-        verified: false,
-        createdAt: new Date(
-          (msg.timestamp as string) || new Date().toISOString()
-        ),
-      }));
-
-      return {
-        id: requestId,
-        userId: conversation.session_id.toString(),
-        messages,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-    } catch (error) {
-      console.error('Error getting session:', error);
-      return null;
-    }
+  /** Get available models, optionally filtered by provider */
+  async getAvailableModels(provider?: string): Promise<any> {
+    const query = provider ? `?provider=${provider}` : '';
+    return api.get<any>(`/chat/models${query}`);
   }
 
-  /**
-   * Helper to determine file type from filename
-   */
-  private getFileType(
-    filename: string
-  ): 'pdf' | 'csv' | 'json' | 'image' | 'video' | 'audio' | 'text' {
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
+  /** Get available providers */
+  async getProviders(): Promise<any> {
+    return api.get<any>('/chat/providers');
+  }
 
-    if (['pdf'].includes(ext)) return 'pdf';
-    if (['csv'].includes(ext)) return 'csv';
-    if (['json'].includes(ext)) return 'json';
-    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext))
-      return 'image';
-    if (['mp4', 'avi', 'mov', 'webm'].includes(ext)) return 'video';
-    if (['mp3', 'wav', 'ogg', 'm4a'].includes(ext)) return 'audio';
-    return 'text';
+  // ---------------------------------------------------------------------------
+  // Stats
+  // ---------------------------------------------------------------------------
+
+  /** Get chat usage statistics */
+  async getStats(): Promise<Record<string, unknown>> {
+    return api.get('/chat/stats');
   }
 }
 

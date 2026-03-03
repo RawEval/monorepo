@@ -152,3 +152,15 @@ export * from './api';
 
 // Re-export auth API types
 export * from './auth-api';
+
+// Re-export LLM Calls API types
+export * from './llm-calls-api';
+
+// Re-export other API types
+export * from './users-api';
+export * from './prompts-api';
+export * from './payments-api';
+export * from './subscriptions-api';
+export * from './files-api';
+export * from './search-api';
+export * from './experts-api';

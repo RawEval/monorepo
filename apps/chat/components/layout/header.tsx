@@ -7,10 +7,8 @@ import {
   LogOut,
   Menu,
   MoreVertical,
-  Plus,
   DollarSign,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,28 +16,31 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
-import { ModelSelector, type ModelType } from '@/components/model-selector';
 import { useUiStore } from '@/stores/ui-store';
 import { useProjectsStore } from '@/stores/projects-store';
-import { useRouter } from 'next/navigation';
+import { cn } from '@raweval/utils';
+import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/auth-service';
 import {
   clearToken,
   getStoredToken,
   getStoredRefreshToken,
   storeToken,
-} from '@raweval/auth';
+} from '@/lib/auth';
 import type { UserResponse } from '@raweval/types';
 
 export function Header() {
   const router = useRouter();
   const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
   const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
-  const createProject = useProjectsStore((s) => s.createProject);
-  const selectProject = useProjectsStore((s) => s.selectProject);
-  const [selectedModel, setSelectedModel] = useState<ModelType>('gpt-4');
+  const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
+  const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
+  const projects = useProjectsStore((s) => s.projects);
+  const currentProject = projects.find((p) => p.id === selectedProjectId);
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const isChatPage = pathname === '/chat' || pathname === '/';
 
   useEffect(() => {
     const loadUser = async () => {
@@ -112,56 +113,54 @@ export function Header() {
     loadUser();
   }, [router]);
 
-  const handleNewChat = () => {
-    const newId = createProject();
-    selectProject(newId);
-    router.push('/chat');
-  };
-
   return (
     <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/80 safe-area-inset-top sticky top-0 z-40 h-14 border-b backdrop-blur-xl">
       <div className="flex h-full items-center justify-between px-3 sm:px-4">
-        {/* Left: Hamburger Menu + Model Selector */}
+        {/* Left: Hamburger Menu and Branding */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          {/* Hamburger Menu - Mobile only */}
-          <button
-            onClick={toggleLeftSidebar}
-            className="text-foreground active:bg-muted flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-all active:scale-95 lg:hidden"
-            aria-label="Open sidebar"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-
-          {/* Model Selector - Clean minimal like ChatGPT */}
-          <div className="min-w-0 flex-1 sm:flex-initial">
-            <ModelSelector
-              selectedModel={selectedModel}
-              onModelChange={setSelectedModel}
-              className="h-auto px-2 py-1.5 text-sm"
-            />
-          </div>
+          {isChatPage && (
+            <>
+              <button
+                onClick={toggleLeftSidebar}
+                className={cn(
+                  'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-all active:scale-95',
+                  leftSidebarOpen ? 'lg:hidden' : 'flex'
+                )}
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="ml-1 flex items-center">
+                <img
+                  src="/logo.png"
+                  alt="RawEval"
+                  className="h-6 w-auto object-contain sm:h-7"
+                />
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Center: Chat Title */}
+        {isChatPage && currentProject && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 w-full max-w-[50%] -translate-x-1/2 -translate-y-1/2 text-center">
+            <span className="text-foreground truncate text-sm font-medium">
+              {currentProject.title === 'New Chat'
+                ? 'New Chat'
+                : currentProject.title}
+            </span>
+          </div>
+        )}
 
         {/* Right: Options Menu */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {/* New Chat Button - Desktop only */}
-          <Button
-            onClick={handleNewChat}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 hidden h-9 touch-manipulation gap-2 px-3 shadow-sm transition-all hover:shadow-md active:scale-95 sm:flex"
-          >
-            <Plus className="h-4 w-4 shrink-0" />
-            New Chat
-          </Button>
-
           {/* Options Menu */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="shrink-0 focus-visible:outline-none">
-              <button
-                className="text-foreground active:bg-muted flex h-9 w-9 touch-manipulation items-center justify-center rounded-lg transition-all active:scale-95"
-                aria-label="More options"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </button>
+            <DropdownMenuTrigger
+              className="text-foreground active:bg-muted flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-all focus-visible:outline-none active:scale-95"
+              aria-label="More options"
+            >
+              <MoreVertical className="h-5 w-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {loading ? (
@@ -177,13 +176,6 @@ export function Header() {
                 </div>
               ) : null}
               <Separator />
-              <DropdownMenuItem
-                onClick={handleNewChat}
-                className="cursor-pointer sm:hidden"
-              >
-                <Plus className="h-4 w-4" />
-                New Chat
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push('/settings')}
                 className="cursor-pointer"
