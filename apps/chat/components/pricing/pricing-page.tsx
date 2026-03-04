@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Card,
   CardContent,
@@ -26,14 +25,7 @@ import { paymentsService } from '@/services/payments-service';
 import { subscriptionsService } from '@/services/subscriptions-service';
 import { openRazorpayCheckout } from '@/lib/razorpay';
 import type { SubscriptionPlan, UserModelSubscription } from '@raweval/types';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+import { Skeleton } from '../ui/skeleton';
 
 export function PricingPage() {
   const router = useRouter();
