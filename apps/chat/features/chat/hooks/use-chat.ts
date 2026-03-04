@@ -7,33 +7,45 @@ import { useUiStore } from '@/stores/ui-store';
 import { isApiError } from '@/lib/errors';
 import { getStoredToken } from '@/lib/auth';
 import { useChatSession } from '../api/get-chat-session';
-import { useSendMessage } from '../api/send-message';
 import { useMarkMessageFailed } from '../api/mark-message-failed';
+import { useQueryClient } from '@tanstack/react-query';
+import { chatService } from '@/services/chat-service';
+import { chatKeys } from '@/lib/react-query/query-keys';
+import { useRouter } from 'next/navigation';
 
-export function useChat() {
+export function useChat(pathId?: string) {
   const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
   const touchProject = useProjectsStore((s) => s.touchProject);
-  const setBackendId = useProjectsStore((s) => s.setBackendId);
   const projects = useProjectsStore((s) => s.projects);
 
-  const projectId = selectedProjectId ?? 'p1';
+  const projectId =
+    pathId ?? (selectedProjectId === 'p1' ? 'p1' : (selectedProjectId ?? 'p1'));
   const currentProject = projects.find((p) => p.id === projectId);
-  const backendSessionId = currentProject?.backendId;
+  const backendSessionId =
+    currentProject?.backendId ??
+    (projectId !== 'p1' && !isNaN(Number(projectId))
+      ? Number(projectId)
+      : undefined);
 
   const messagesByProject = useChatStore((s) => s.messagesByProject);
   const selectedModel = useChatStore((s) => s.selectedModel);
-  const typingByProject = useChatStore((s) => s.typingByProject);
   const sendUserMessage = useChatStore((s) => s.sendUserMessage);
   const appendAssistantMessage = useChatStore((s) => s.appendAssistantMessage);
-  const setTyping = useChatStore((s) => s.setTyping);
+  const appendToken = useChatStore((s) => s.appendToken);
+  const setIsStreaming = useChatStore((s) => s.setIsStreaming);
   const setMessages = useChatStore((s) => s.setMessages);
+  const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
+  const getMessages = useChatStore((s) => s.getMessages);
+  const clearProject = useChatStore((s) => s.clearProject);
+
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
   const messages = (messagesByProject[projectId] ?? []).map((m) => ({
     ...m,
     createdAt: new Date(m.createdAt),
   }));
-  const isTyping = Boolean(typingByProject[projectId]);
 
   const [error, setError] = useState<string | null>(null);
   const [markingWrong, setMarkingWrong] = useState<Set<string>>(new Set());
@@ -42,7 +54,8 @@ export function useChat() {
   // -------------------------------------------------------------------------
   // Auto-fetch session messages from backend using React Query
   // -------------------------------------------------------------------------
-  const { data: sessionData } = useChatSession(backendSessionId);
+  const { data: sessionData, isLoading: isSessionLoading } =
+    useChatSession(backendSessionId);
 
   // Update local store when query data changes (or derive completely from query)
   useEffect(() => {
@@ -52,27 +65,20 @@ export function useChat() {
           id: m.id ? String(m.id) : `${backendSessionId}-${idx}`,
           role: m.role || 'user',
           content: m.content || '',
+          isFailed: m.metadata?.marked_failed === true,
           createdAt: new Date(
-            m.timestamp || sessionData.created_at || Date.now()
+            m.created_at || m.timestamp || sessionData.created_at || Date.now()
           ).getTime(),
         })
       );
       // Only set messages if the store is empty for this project to avoid overwriting optimistic updates
       // during active typing
-      if (messages.length === 0 && !isTyping) {
+      if (messages.length === 0) {
         setMessages(projectId, formattedMessages);
       }
     }
-  }, [
-    sessionData,
-    backendSessionId,
-    projectId,
-    setMessages,
-    messages.length,
-    isTyping,
-  ]);
+  }, [sessionData, backendSessionId, projectId, setMessages, messages.length]);
 
-  const sendMessageMutation = useSendMessage();
   const markMessageFailedMutation = useMarkMessageFailed();
 
   // -------------------------------------------------------------------------
@@ -82,7 +88,6 @@ export function useChat() {
     async (content: string, images?: string[]) => {
       sendUserMessage(projectId, content, images);
       touchProject(projectId);
-      setTyping(projectId, true);
       setError(null);
       setUpgradeRequired(false);
 
@@ -98,7 +103,6 @@ export function useChat() {
           }
         }
 
-        // Convert data-URL images to File objects for upload
         const files: File[] = [];
         if (images?.length) {
           for (const imageUrl of images) {
@@ -113,53 +117,84 @@ export function useChat() {
           }
         }
 
-        // Fire the mutation instead of calling service directly
-        sendMessageMutation.mutate(
+        // Generate a temporary ID for the upcoming stream
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        // Optimistically insert an empty assistant message
+        appendAssistantMessage(projectId, '', false, tempId, true);
+        setIsStreaming(projectId, tempId, true);
+
+        let activeBackendId = backendSessionId;
+        let targetProjectId = projectId;
+
+        // 1) Ensure backend session exists
+        if (!activeBackendId) {
+          const newSession = await chatService.createSession({
+            workflow_type: 'single_model',
+          });
+          activeBackendId = newSession.id;
+          targetProjectId = String(activeBackendId);
+
+          // Migrate local store messages from "new" to the newly created session
+          const existingMsgs = getMessages(projectId);
+          if (existingMsgs.length > 0) {
+            setMessages(targetProjectId, existingMsgs);
+            // We intentionally do not clear `p1` here to prevent the UI from
+            // flashing empty while `router.replace` is resolving the new path.
+            // It will be cleared the next time the user explicitly navigates to `/chat`.
+          }
+
+          router.replace(`/chat/${activeBackendId}`);
+
+          // Trigger a silent background reload of the sidebar projects
+          useProjectsStore
+            .getState()
+            .loadProjects()
+            .catch((err) => {
+              console.error('Failed to sync projects on new chat', err);
+            });
+        }
+
+        // 2) Start streaming the message natively
+        await chatService.streamMessage(
+          activeBackendId,
+          content,
           {
-            message: content,
-            options: {
-              sessionId: projectId,
-              backendSessionId,
-              userId,
-              model: selectedModel.provider,
-              modelName: selectedModel.model,
-              models: [
-                {
-                  provider: selectedModel.provider,
-                  model: selectedModel.model,
-                },
-              ],
-              temperature: 0.7,
-              files: files.length > 0 ? files : undefined,
-            },
+            userId,
+            model: selectedModel.provider,
+            modelName: selectedModel.model,
+            models: [
+              {
+                provider: selectedModel.provider,
+                model: selectedModel.model,
+              },
+            ],
+            temperature: 0.7,
+            files: files.length > 0 ? files : undefined,
+            webSearch: webSearchEnabled,
           },
           {
-            onSuccess: (response) => {
-              if (
-                response.backendSessionId &&
-                response.backendSessionId !== backendSessionId
-              ) {
-                setBackendId(projectId, response.backendSessionId);
-                // Dynamically update the URL to point to the new chat session without reloading the page
-                window.history.pushState(
-                  {},
-                  '',
-                  `/chat?id=${response.backendSessionId}`
-                );
-              }
-              // Always reload to get updated AI-generated titles
-              useProjectsStore.getState().loadProjects();
-
-              setTyping(projectId, false);
-              appendAssistantMessage(
-                projectId,
-                response.content,
-                response.verified
-              );
-              touchProject(projectId);
+            onChunk: (_provider, _model, delta) => {
+              // Stream content natively to the placeholder
+              appendToken(targetProjectId, tempId, delta);
             },
-            onError: (err: any) => {
-              setTyping(projectId, false);
+            onDone: (_data) => {
+              setIsStreaming(targetProjectId, tempId, false);
+              touchProject(targetProjectId);
+
+              if (activeBackendId) {
+                queryClient.invalidateQueries({
+                  queryKey: chatKeys.session(activeBackendId),
+                });
+                queryClient.invalidateQueries({
+                  queryKey: chatKeys.sessions(),
+                });
+              }
+            },
+            onError: (err) => {
+              setIsStreaming(targetProjectId, tempId, false);
+
+              // Reuse existing robust error extraction
               if (isApiError(err)) {
                 if (err.statusCode === 402) {
                   setUpgradeRequired(true);
@@ -170,7 +205,6 @@ export function useChat() {
                 }
                 if (err.statusCode === 403) {
                   const resData = err.response as any;
-                  // Handle multiple deep nested paths from backend: { error: { message: { error: ... } } }
                   const nestedMsgObj =
                     resData?.error?.message ||
                     resData?.message ||
@@ -180,11 +214,11 @@ export function useChat() {
                     nestedMsgObj?.error === 'SUBSCRIPTION_REQUIRED' ||
                     nestedMsgObj?.code === 'SUBSCRIPTION_REQUIRED'
                   ) {
-                    const defaultMsg =
+                    const dispMsg =
+                      nestedMsgObj?.message ||
                       'This model requires a premium subscription. Please upgrade your plan to use it.';
-                    const dispMsg = nestedMsgObj?.message || defaultMsg;
                     appendAssistantMessage(
-                      projectId,
+                      targetProjectId,
                       `⚠️ **Subscription Required**\n\n${dispMsg}`,
                       false
                     );
@@ -199,35 +233,38 @@ export function useChat() {
                   return;
                 }
               }
-
               const msg = isApiError(err)
-                ? err.message || 'Failed to send message. Please try again.'
-                : 'An unexpected error occurred. Please try again.';
+                ? err.message || 'Failed to send message.'
+                : err.message || 'An unexpected error occurred.';
               setError(msg);
-              appendAssistantMessage(projectId, `Error: ${msg}`, false);
+              appendAssistantMessage(targetProjectId, `Error: ${msg}`, false);
             },
           }
         );
       } catch (err) {
-        // any synchronous errors before mutation
-        setTyping(projectId, false);
+        // any synchronous errors before stream initialization
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       appendAssistantMessage,
+      appendToken,
       backendSessionId,
       projectId,
       selectedModel,
       sendUserMessage,
-      setTyping,
       touchProject,
-      setBackendId,
+      webSearchEnabled,
+      setIsStreaming,
+      getMessages,
+      setMessages,
+      clearProject,
+      router,
     ]
   );
 
   // -------------------------------------------------------------------------
-  // Mark As Wrong — uses /api/v1/chat/failure/mark-failed
+  // Mark As Wrong — uses /api/v1/chat/sessions/{session_id}/messages/{message_id}/mark-failed
   // -------------------------------------------------------------------------
   const markAsWrong = useCallback(
     async (messageId: string) => {
@@ -301,7 +338,7 @@ export function useChat() {
 
   return {
     messages,
-    isTyping,
+    isSessionLoading,
     sendMessage,
     markAsWrong,
     approveMessage,

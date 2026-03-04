@@ -1,21 +1,29 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { ChatMessage } from './chat-message';
 import { ChatInput } from './chat-input';
+import { ChatSkeleton } from './chat-skeleton';
 import { EmptyState } from './empty-state';
 import { useChat } from '../hooks/use-chat';
 import { useProjectsStore } from '@/stores/projects-store';
-import { Sparkle, X } from 'lucide-react';
+import { useChatStore } from '@/stores/chat-store';
+import { X } from 'lucide-react';
 import { cn } from '@raweval/utils';
+import { format } from 'date-fns';
 
-function ChatInterfaceContent() {
-  const searchParams = useSearchParams();
+function ChatInterfaceContent({ id: pathId }: { id?: string }) {
   const selectProject = useProjectsStore((s) => s.selectProject);
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
-  const { messages, isTyping, sendMessage, markAsWrong, error, markingWrong } =
-    useChat();
+  const clearProject = useChatStore((s) => s.clearProject);
+  const {
+    messages,
+    isSessionLoading,
+    sendMessage,
+    markAsWrong,
+    error,
+    markingWrong,
+  } = useChat(pathId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
@@ -23,19 +31,27 @@ function ChatInterfaceContent() {
   useEffect(() => {
     setMounted(true);
 
-    // Check if the URL has an ?id= parameter and sync it to the global store on mount
-    const idParam = searchParams.get('id');
-    if (idParam && idParam !== selectedProjectId) {
-      selectProject(idParam);
+    // Sync the dynamic path `id` to the global store on mount
+    if (pathId) {
+      if (pathId !== selectedProjectId) {
+        selectProject(pathId);
+      }
+    } else {
+      if (selectedProjectId !== 'p1') {
+        selectProject('p1');
+      }
+      // When explicitly navigating to the root `/chat`, reset the new chat state
+      // so it doesn't hold messages from a previously migrated creation
+      clearProject('p1');
     }
-  }, [searchParams, selectProject, selectedProjectId]);
+  }, [pathId, selectProject, selectedProjectId, clearProject]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
     return () => clearTimeout(timer);
-  }, [messages, isTyping]);
+  }, [messages]);
 
   // Show banner whenever error message changes (includes success messages)
   useEffect(() => {
@@ -46,13 +62,7 @@ function ChatInterfaceContent() {
     }
   }, [error]);
 
-  const formatTimestamp = (date: Date): string =>
-    date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+  const formatTimestamp = (date: Date): string => format(date, 'MMM d, h:mm a');
 
   const handleSend = async (message: string, images?: string[]) => {
     await sendMessage(message, images);
@@ -99,18 +109,22 @@ function ChatInterfaceContent() {
       >
         <div className="mx-auto w-full max-w-4xl px-3 py-3 sm:px-4 sm:py-6">
           {messages.length === 0 ? (
-            <EmptyState
-              onSuggestionClick={(prompt) => handleSend(prompt)}
-              mounted={mounted}
-            />
+            isSessionLoading ? (
+              <ChatSkeleton />
+            ) : (
+              <EmptyState
+                onSuggestionClick={(prompt) => handleSend(prompt)}
+                mounted={mounted}
+              />
+            )
           ) : (
             <div className="space-y-6">
               {messages.map((message, idx) => {
                 const prevMessage = idx > 0 ? messages[idx - 1] : null;
                 const showTimestamp =
                   !prevMessage ||
-                  message.createdAt.getTime() -
-                    prevMessage.createdAt.getTime() >
+                  new Date(message.createdAt).getTime() -
+                    new Date(prevMessage.createdAt).getTime() >
                     300_000; // 5 minutes
 
                 return (
@@ -130,45 +144,16 @@ function ChatInterfaceContent() {
                         content={message.content}
                         images={message.images}
                         verified={message.verified}
-                        createdAt={message.createdAt}
+                        createdAt={new Date(message.createdAt)}
                         isMarkingWrong={markingWrong.has(message.id)}
+                        isFailed={message.isFailed}
+                        isStreaming={message.isStreaming}
                         onWrong={() => handleWrong(message.id)}
                       />
                     </div>
                   </div>
                 );
               })}
-
-              {/* Typing Indicator */}
-              {isTyping && (
-                <div
-                  className="flex justify-start"
-                  role="status"
-                  aria-label="AI is typing"
-                >
-                  <div className="flex gap-3">
-                    <div className="bg-muted flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                      <Sparkle
-                        className="text-muted-foreground h-4 w-4"
-                        fill="currentColor"
-                      />
-                    </div>
-                    <div className="border-border bg-card rounded-2xl rounded-tl-sm border px-5 py-4 shadow-sm">
-                      <div className="flex items-center gap-1.5">
-                        <div className="typing-dot bg-muted-foreground h-2 w-2 rounded-full" />
-                        <div
-                          className="typing-dot bg-muted-foreground h-2 w-2 rounded-full"
-                          style={{ animationDelay: '0.2s' }}
-                        />
-                        <div
-                          className="typing-dot bg-muted-foreground h-2 w-2 rounded-full"
-                          style={{ animationDelay: '0.4s' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div ref={messagesEndRef} />
             </div>
@@ -186,7 +171,7 @@ function ChatInterfaceContent() {
   );
 }
 
-export function ChatInterface() {
+export function ChatInterface({ id }: { id?: string }) {
   return (
     <React.Suspense
       fallback={
@@ -195,7 +180,7 @@ export function ChatInterface() {
         </div>
       }
     >
-      <ChatInterfaceContent />
+      <ChatInterfaceContent id={id} />
     </React.Suspense>
   );
 }

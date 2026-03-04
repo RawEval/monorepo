@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Card,
   CardContent,
@@ -87,6 +88,10 @@ export function PricingPage() {
     );
   };
 
+  const hasUltimatePlan = activeSubs.some(
+    (sub) => sub.plan.plan_type === 'ultimate' && sub.status === 'active'
+  );
+
   // ---------------------------------------------------------------------------
   // Upgrade handler — full Razorpay flow + subscribe
   // ---------------------------------------------------------------------------
@@ -118,9 +123,11 @@ export function PricingPage() {
             : (newSubs as any)?.subscriptions || []
         );
       } catch (e: any) {
+        const errMsg =
+          e?.response?.data?.error?.message || e?.message || 'Unknown error';
         setStatusMsg({
           type: 'error',
-          text: `Failed: ${e?.message || 'Unknown error'}`,
+          text: `Failed: ${errMsg}`,
         });
       } finally {
         setLoadingPlanId(null);
@@ -154,7 +161,7 @@ export function PricingPage() {
         payment_id: pendingPayment.payment_id,
         amount: amountPaise,
         currency: 'INR',
-        description: `RawEval ${plan.plan_name} Plan (${billingCycle})`,
+        notes: `RawEval ${plan.plan_name} Plan (${billingCycle})`,
       });
 
       // 2. Open Razorpay checkout
@@ -194,9 +201,10 @@ export function PricingPage() {
         Array.isArray(newSubs) ? newSubs : (newSubs as any)?.subscriptions || []
       );
     } catch (e: any) {
-      const msg: string = e?.message ?? 'Payment failed.';
-      if (!msg.toLowerCase().includes('cancelled')) {
-        setStatusMsg({ type: 'error', text: `Payment failed: ${msg}` });
+      const errMsg: string =
+        e?.response?.data?.error?.message || e?.message || 'Payment failed.';
+      if (!errMsg.toLowerCase().includes('cancelled')) {
+        setStatusMsg({ type: 'error', text: `Payment failed: ${errMsg}` });
       }
     } finally {
       setLoadingPlanId(null);
@@ -208,10 +216,37 @@ export function PricingPage() {
   // ---------------------------------------------------------------------------
   if (loading) {
     return (
-      <div className="bg-background flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="text-primary h-8 w-8 animate-spin" />
-          <p className="text-muted-foreground text-sm">Loading plans…</p>
+      <div className="bg-background flex h-full flex-col overflow-y-auto">
+        <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+          {/* Header Skeleton */}
+          <div className="mb-8 flex flex-col items-center justify-center sm:mb-12">
+            <Skeleton className="mb-4 h-6 w-32 rounded-full" />
+            <Skeleton className="mb-4 h-10 w-3/4 max-w-sm" />
+            <Skeleton className="h-4 w-full max-w-2xl" />
+            <Skeleton className="mt-2 h-4 w-5/6 max-w-xl" />
+          </div>
+          {/* Grid Skeleton */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="border-border opactity-50 flex flex-col">
+                <CardHeader className="pb-4">
+                  <Skeleton className="mb-2 h-8 w-1/2" />
+                  <Skeleton className="mt-4 h-10 w-1/3" />
+                  <Skeleton className="mt-2 h-4 w-full" />
+                </CardHeader>
+                <CardContent className="flex-1 space-y-3">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-5/6" />
+                  <Skeleton className="h-4 w-4/5" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-12 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -281,6 +316,12 @@ export function PricingPage() {
             const isCurrent = isCurrentPlan(plan.id);
             const isLoading = loadingPlanId === plan.id;
 
+            // Logic: Ultimate plans trump premium_model plans
+            const isCoveredByUltimate =
+              hasUltimatePlan && plan.plan_type === 'premium_model';
+            const isDisabled =
+              isCurrent || isLoading || !!loadingPlanId || isCoveredByUltimate;
+
             // Defensively extract features
             let featureList: string[] = [];
             if (Array.isArray(plan.features)) {
@@ -312,11 +353,20 @@ export function PricingPage() {
                   <div className="mb-2">
                     <CardTitle className="text-2xl font-bold">
                       {plan.plan_name}
-                      {plan.badge_text && (
+                      {/* Show Plan Type explicitly */}
+                      {plan.plan_type === 'ultimate' ? (
+                        <span className="ml-2 inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-purple-700/10 ring-inset">
+                          All Access
+                        </span>
+                      ) : plan.plan_type === 'premium_model' ? (
+                        <span className="ml-2 inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-700/10 ring-inset">
+                          {plan.model_display_name || 'Premium Model'}
+                        </span>
+                      ) : plan.badge_text ? (
                         <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
                           {plan.badge_text}
                         </span>
-                      )}
+                      ) : null}
                     </CardTitle>
                     <div className="mt-4 flex items-baseline gap-1">
                       <span className="text-foreground text-4xl font-bold">
@@ -349,12 +399,19 @@ export function PricingPage() {
                   <Button
                     variant={isPopular ? 'default' : 'outline'}
                     className="w-full gap-2"
-                    disabled={isCurrent || isLoading || !!loadingPlanId}
+                    disabled={isDisabled}
                     size="lg"
                     onClick={() => handleUpgrade(plan)}
+                    title={
+                      isCoveredByUltimate
+                        ? 'Your Ultimate plan already includes this'
+                        : ''
+                    }
                   >
                     {isCurrent ? (
                       'Current Plan'
+                    ) : isCoveredByUltimate ? (
+                      'Included in Ultimate'
                     ) : isLoading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />

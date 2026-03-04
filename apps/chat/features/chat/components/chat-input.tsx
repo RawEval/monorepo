@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Send, Loader2, Plus, BrainCircuit } from 'lucide-react';
+import { Send, Loader2, Plus, BrainCircuit, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 // import {
 //   Select,
@@ -107,6 +107,8 @@ export function ChatInput({
   // Hook up Model Selection
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
+  const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
+  const setWebSearchEnabled = useChatStore((s) => s.setWebSearchEnabled);
   const activeModelValue = `${selectedModel.provider}:${selectedModel.model}`;
 
   const { data: modelsResult } = useModels();
@@ -434,8 +436,8 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* Bottom Bar for Model Selection */}
-        <div className="flex items-center px-4 pb-2">
+        {/* Bottom Bar for Model Selection and Web Search */}
+        <div className="flex items-center gap-4 px-4 pb-2">
           <Select value={activeModelValue} onValueChange={handleModelChange}>
             <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit gap-1.5 border-none bg-transparent! p-0 text-xs font-medium shadow-none focus:ring-0 [&>svg]:ml-0">
               <BrainCircuit className="h-3.5 w-3.5" />
@@ -470,6 +472,26 @@ export function ChatInput({
               ))}
             </SelectContent>
           </Select>
+
+          <button
+            type="button"
+            onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 outline-none',
+              webSearchEnabled
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+            title={
+              webSearchEnabled ? 'Web Search enabled' : 'Enable Web Search'
+            }
+            aria-label="Toggle Web Search"
+          >
+            <Globe
+              className={cn('h-3.5 w-3.5', webSearchEnabled && 'opacity-90')}
+            />
+            <span>Search</span>
+          </button>
         </div>
       </div>
 

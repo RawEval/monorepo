@@ -59,15 +59,14 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>()(
           // Map backend sessions to frontend projects
           const backendProjects: Project[] = response.sessions.map(
             (session) => ({
-              id: session.request_id || session.id?.toString() || newId('p'),
-              backendId: session.session_id || session.id,
+              id: String(session.id),
+              backendId: session.id,
               title:
-                session.workflow_name === 'chat_session' ||
-                !session.workflow_name
-                  ? session.last_user_message?.substring(0, 30) ||
-                    'Chat Session'
-                  : session.workflow_name,
+                session.title ||
+                session.last_user_message?.substring(0, 30) ||
+                'Chat Session',
               description:
+                session.system_prompt ||
                 session.last_assistant_message?.substring(0, 50) ||
                 'Conversation history',
               updatedAt: session.updated_at

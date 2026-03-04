@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { Provider } from '@raweval/types';
+import type { ChatMessage } from '@/features/chat/types';
 
 export type ChatRole = 'user' | 'assistant';
 
@@ -8,24 +9,14 @@ export interface ModelSelection {
   model: string;
 }
 
-export interface ChatMessage {
-  id: string;
-  role: ChatRole;
-  content: string;
-  images?: string[];
-  verified?: boolean;
-  createdAt: number; // epoch ms
-}
-
 interface ChatState {
   messagesByProject: Record<string, ChatMessage[]>;
-  typingByProject: Record<string, boolean>;
   selectedModel: ModelSelection;
+  webSearchEnabled: boolean;
 }
 
 interface ChatActions {
   getMessages: (projectId: string) => ChatMessage[];
-  isTyping: (projectId: string) => boolean;
   sendUserMessage: (
     projectId: string,
     content: string,
@@ -34,12 +25,21 @@ interface ChatActions {
   appendAssistantMessage: (
     projectId: string,
     content: string,
-    verified?: boolean
+    verified?: boolean,
+    tempId?: string,
+    isStreaming?: boolean
   ) => void;
-  setTyping: (projectId: string, typing: boolean) => void;
   clearProject: (projectId: string) => void;
   setSelectedModel: (selection: ModelSelection) => void;
   setMessages: (projectId: string, messages: ChatMessage[]) => void;
+  setWebSearchEnabled: (enabled: boolean) => void;
+  // For streaming: Append token to a specific existing message
+  appendToken: (projectId: string, messageId: string, token: string) => void;
+  setIsStreaming: (
+    projectId: string,
+    messageId: string,
+    isStreaming: boolean
+  ) => void;
 }
 
 function newId(prefix: string) {
@@ -48,11 +48,10 @@ function newId(prefix: string) {
 
 export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
   messagesByProject: {},
-  typingByProject: {},
-  selectedModel: { provider: 'openai', model: 'gpt-4o' },
+  selectedModel: { provider: 'openai', model: 'gpt-4o-mini' },
+  webSearchEnabled: false,
 
   getMessages: (projectId) => get().messagesByProject[projectId] ?? [],
-  isTyping: (projectId) => Boolean(get().typingByProject[projectId]),
 
   sendUserMessage: (projectId, content, images) => {
     const trimmed = content.trim();
@@ -72,13 +71,20 @@ export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
     }));
   },
 
-  appendAssistantMessage: (projectId, content, verified) => {
+  appendAssistantMessage: (
+    projectId,
+    content,
+    verified,
+    tempId,
+    isStreaming
+  ) => {
     const msg: ChatMessage = {
-      id: newId('a'),
+      id: tempId || newId('a'),
       role: 'assistant',
       content,
       verified,
       createdAt: Date.now(),
+      isStreaming: isStreaming ?? false,
     };
     set((s) => ({
       messagesByProject: {
@@ -88,15 +94,37 @@ export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
     }));
   },
 
-  setTyping: (projectId, typing) =>
-    set((s) => ({
-      typingByProject: { ...s.typingByProject, [projectId]: typing },
-    })),
+  appendToken: (projectId, messageId, token) =>
+    set((s) => {
+      const messages = s.messagesByProject[projectId] ?? [];
+      const updatedMessages = messages.map((m) =>
+        m.id === messageId ? { ...m, content: m.content + token } : m
+      );
+      return {
+        messagesByProject: {
+          ...s.messagesByProject,
+          [projectId]: updatedMessages,
+        },
+      };
+    }),
+
+  setIsStreaming: (projectId, messageId, isStreaming) =>
+    set((s) => {
+      const messages = s.messagesByProject[projectId] ?? [];
+      const updatedMessages = messages.map((m) =>
+        m.id === messageId ? { ...m, isStreaming } : m
+      );
+      return {
+        messagesByProject: {
+          ...s.messagesByProject,
+          [projectId]: updatedMessages,
+        },
+      };
+    }),
 
   clearProject: (projectId) =>
     set((s) => ({
       messagesByProject: { ...s.messagesByProject, [projectId]: [] },
-      typingByProject: { ...s.typingByProject, [projectId]: false },
     })),
 
   setSelectedModel: (selection) => set({ selectedModel: selection }),
@@ -104,4 +132,5 @@ export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
     set((s) => ({
       messagesByProject: { ...s.messagesByProject, [projectId]: messages },
     })),
+  setWebSearchEnabled: (enabled) => set({ webSearchEnabled: enabled }),
 }));

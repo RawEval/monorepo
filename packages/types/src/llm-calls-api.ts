@@ -149,6 +149,8 @@ export interface SessionDetail {
   session_id: number;
   request_id: string;
   user_id?: number | null;
+  title?: string | null;
+  system_prompt?: string | null;
   workflow_name: string;
   workflow_type: string;
   status: string;

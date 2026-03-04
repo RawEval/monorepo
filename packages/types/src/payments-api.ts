@@ -141,7 +141,7 @@ export interface RazorpayOrderCreate {
   /** Amount in smallest currency unit (e.g. paise for INR) */
   amount: number;
   currency?: string;
-  description?: string;
+  notes?: string;
   payment_method_id?: number;
   payment_id: string;
 }

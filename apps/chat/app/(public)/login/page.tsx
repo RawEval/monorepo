@@ -15,6 +15,7 @@ import { ArrowRight, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { authService } from '@/services/auth-service';
 import { storeToken } from '@/lib/auth';
 import { isApiError, UnauthorizedError } from '@/lib/errors';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -113,12 +114,7 @@ export default function LoginPage() {
           className={`mb-8 flex justify-center ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
         >
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-lg">
-              <span className="text-base font-bold text-white">R</span>
-            </div>
-            <span className="text-foreground text-xl font-semibold">
-              RawEval
-            </span>
+            <Image src="/logo.png" alt="RawEval" width={128} height={128} />
           </Link>
         </div>
 
@@ -252,7 +248,7 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="border-border absolute inset-0 flex items-center border-t" />
-              <div className="bg-card text-muted-foreground relative px-2 text-xs">
+              <div className="bg-card text-muted-foreground relative px-2 text-center text-xs">
                 OR
               </div>
             </div>

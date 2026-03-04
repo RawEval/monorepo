@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, XCircle, Copy, Sparkle, Loader2 } from 'lucide-react';
+import { XCircle, Copy, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
 import { cn } from '@raweval/utils';
+import { format } from 'date-fns';
 
 interface ChatMessageProps {
   id: string;
@@ -16,22 +16,28 @@ interface ChatMessageProps {
   content: string;
   verified?: boolean;
   images?: string[];
-  createdAt: Date;
+  createdAt: number | Date;
   /** Whether the failure-analysis API call is currently in flight */
   isMarkingWrong?: boolean;
+  isFailed?: boolean;
+  isStreaming?: boolean;
   onWrong?: () => void;
 }
 
 export function ChatMessage({
   role,
   content,
-  verified,
   images,
+  createdAt,
   isMarkingWrong = false,
+  isFailed = false,
+  isStreaming = false,
   onWrong,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [wrongClicked, setWrongClicked] = useState(false);
+
+  const isActuallyFailed = isFailed || wrongClicked;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -40,7 +46,7 @@ export function ChatMessage({
   };
 
   const handleWrong = () => {
-    if (isMarkingWrong || wrongClicked) return;
+    if (isMarkingWrong || isActuallyFailed) return;
     setWrongClicked(true);
     onWrong?.();
   };
@@ -70,12 +76,16 @@ export function ChatMessage({
 
           {/* User Message */}
           {content && (
-            <div className="bg-muted text-foreground rounded-3xl px-5 py-2.5 shadow-none sm:py-3">
+            <div className="bg-muted text-foreground backdrop: rounded-2xl px-5 py-2.5 shadow-none drop-shadow sm:py-3">
               <p className="text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">
                 {content}
               </p>
             </div>
           )}
+
+          <div className="text-muted-foreground mr-1 text-right text-[11px] font-medium opacity-50">
+            {format(new Date(createdAt), 'MMM d, h:mm a')}
+          </div>
         </div>
       </div>
     );
@@ -83,28 +93,10 @@ export function ChatMessage({
 
   return (
     <div className="flex justify-start">
-      <div className="flex max-w-[90%] gap-2 sm:max-w-[85%] sm:gap-3 md:max-w-[80%]">
-        {/* Assistant Avatar */}
-        <div className="bg-muted flex h-7 w-7 shrink-0 items-center justify-center rounded-full shadow-sm sm:h-8 sm:w-8">
-          <Sparkle
-            className="text-muted-foreground h-3.5 w-3.5 sm:h-4 sm:w-4"
-            fill="currentColor"
-          />
-        </div>
-
+      <div className="flex max-w-[90%] gap-2 sm:max-w-[85%] sm:gap-3 md:max-w-full">
         {/* Message Content */}
         <div className="min-w-0 flex-1 space-y-2 pt-1 sm:space-y-2.5">
           <div className="px-1 sm:px-2">
-            {/* Header / Verified Badge Layout */}
-            {verified && (
-              <div className="mb-2.5 flex items-center gap-2">
-                <Badge variant="secondary" className="h-5 gap-1 text-xs">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Verified
-                </Badge>
-              </div>
-            )}
-
             {/* Content with Markdown */}
             <div className="prose prose-sm sm:prose-base dark:prose-invert text-card-foreground max-w-none">
               <ReactMarkdown
@@ -195,55 +187,57 @@ export function ChatMessage({
                   ),
                 }}
               >
-                {content}
+                {content + (isStreaming ? ' \u258E' : '')}
               </ReactMarkdown>
             </div>
           </div>
 
           {/* Action Buttons - Clean row like ChatGPT, Wrong is priority */}
-          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleCopy}
-              className={cn(
-                'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs transition-colors',
-                copied
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-muted active:bg-muted'
-              )}
-              aria-label="Copy message"
-            >
-              <Copy className="h-3.5 w-3.5 shrink-0" />
-            </Button>
-            {/* Wrong button — priority action, sends to failure analysis pipeline */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleWrong}
-              disabled={isMarkingWrong || wrongClicked}
-              className={cn(
-                'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
-                wrongClicked
-                  ? 'bg-destructive/10 text-destructive border-destructive/20 border'
-                  : 'text-muted-foreground hover:bg-destructive/5 hover:text-destructive active:bg-destructive/10 active:text-destructive'
-              )}
-              aria-label="Mark as wrong"
-            >
-              {isMarkingWrong ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-              ) : (
-                <XCircle className="h-3.5 w-3.5 shrink-0" />
-              )}
-              <span className="xs:inline hidden">
-                {isMarkingWrong
-                  ? 'Marking…'
-                  : wrongClicked
-                    ? 'Marked'
-                    : 'Wrong'}
-              </span>
-            </Button>
-          </div>
+          {!isStreaming && (
+            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCopy}
+                className={cn(
+                  'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs transition-colors',
+                  copied
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-muted-foreground hover:bg-muted active:bg-muted'
+                )}
+                aria-label="Copy message"
+              >
+                <Copy className="h-3.5 w-3.5 shrink-0" />
+              </Button>
+              {/* Wrong button — priority action, sends to failure analysis pipeline */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleWrong}
+                disabled={isMarkingWrong || isActuallyFailed}
+                className={cn(
+                  'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
+                  isActuallyFailed
+                    ? 'bg-destructive/10 text-destructive border-destructive/20 border'
+                    : 'text-muted-foreground hover:bg-destructive/5 hover:text-destructive active:bg-destructive/10 active:text-destructive'
+                )}
+                aria-label="Mark as wrong"
+              >
+                {isMarkingWrong ? (
+                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5 shrink-0" />
+                )}
+                <span className="xs:inline hidden">
+                  {isMarkingWrong
+                    ? 'Marking…'
+                    : isActuallyFailed
+                      ? 'Marked'
+                      : 'Wrong'}
+                </span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>

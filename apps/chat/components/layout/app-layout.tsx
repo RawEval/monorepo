@@ -16,7 +16,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const closeUpgradeModal = useUiStore((s) => s.closeUpgradeModal);
   const pathname = usePathname();
 
-  const isChatPage = pathname === '/chat' || pathname === '/';
+  const isChatPage = pathname.startsWith('/chat') || pathname === '/';
 
   return (
     <div className="bg-background flex h-screen overflow-hidden">

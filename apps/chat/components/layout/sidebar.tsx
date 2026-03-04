@@ -28,6 +28,7 @@ import { useChatStore } from '@/stores/chat-store';
 import { useUiStore } from '@/stores/ui-store';
 import { cn } from '@raweval/utils';
 import { Avatar } from '@/components/ui/avatar';
+import { format } from 'date-fns';
 import { MobileSheet } from './mobile-sheet';
 import { authService } from '@/services/auth-service';
 
@@ -55,7 +56,7 @@ export function Sidebar() {
     if (id === 'p1') {
       router.push('/chat');
     } else {
-      router.push(`/chat?id=${id}`);
+      router.push(`/chat/${id}`);
     }
     if (isMobile) {
       toggleLeftSidebar();
@@ -84,7 +85,7 @@ export function Sidebar() {
         if (nextProject.id === 'p1') {
           router.push('/chat');
         } else {
-          router.push(`/chat?id=${nextProject.id}`);
+          router.push(`/chat/${nextProject.id}`);
         }
       } else {
         router.push('/chat');
@@ -94,12 +95,7 @@ export function Sidebar() {
   };
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    return format(timestamp, 'MMM d, h:mm a');
   };
 
   useEffect(() => {

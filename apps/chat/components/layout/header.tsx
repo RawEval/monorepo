@@ -40,7 +40,7 @@ export function Header() {
   const [user, setUser] = useState<UserResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
-  const isChatPage = pathname === '/chat' || pathname === '/';
+  const isChatPage = pathname.startsWith('/chat') || pathname === '/';
 
   useEffect(() => {
     const loadUser = async () => {

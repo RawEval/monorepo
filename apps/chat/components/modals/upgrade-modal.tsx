@@ -122,7 +122,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
         payment_id: pendingPayment.payment_id,
         amount: amountPaise,
         currency: 'INR',
-        description: `RawEval ${plan.plan_name} Plan (${billingCycle})`,
+        notes: `RawEval ${plan.plan_name} Plan (${billingCycle})`,
       });
 
       // 2. Open Razorpay checkout

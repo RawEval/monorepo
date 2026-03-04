@@ -4,7 +4,9 @@ export interface ChatMessage {
   content: string;
   verified?: boolean;
   images?: string[];
-  createdAt: Date;
+  createdAt: number;
+  isStreaming?: boolean;
+  isFailed?: boolean;
 }
 
 export interface ChatSession {

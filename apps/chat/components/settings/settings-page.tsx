@@ -39,6 +39,7 @@ import type {
   UserUsageStats,
   ApiKey,
 } from '@raweval/types';
+import { Skeleton } from '../ui/skeleton';
 
 export function SettingsPage() {
   const router = useRouter();
@@ -255,8 +256,12 @@ export function SettingsPage() {
       );
       setSuccessMsg('Subscription cancelled');
       setTimeout(() => setSuccessMsg(null), 3000);
-    } catch {
-      setErrorMsg('Failed to cancel subscription');
+    } catch (e: any) {
+      const errMsg =
+        e?.response?.data?.error?.message ||
+        e?.message ||
+        'Failed to cancel subscription';
+      setErrorMsg(errMsg);
       setTimeout(() => setErrorMsg(null), 3000);
     }
   };
@@ -553,8 +558,9 @@ export function SettingsPage() {
             </CardHeader>
             <CardContent>
               {subsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                <div className="space-y-3">
+                  <Skeleton className="h-[76px] w-full rounded-lg" />
+                  <Skeleton className="h-[76px] w-full rounded-lg" />
                 </div>
               ) : subscriptions.length === 0 ? (
                 <div className="py-8 text-center">
@@ -582,6 +588,16 @@ export function SettingsPage() {
                           <span className="text-foreground font-medium">
                             {sub.plan.plan_name}
                           </span>
+                          {/* Dynamic Plan Type Badge */}
+                          {sub.plan.plan_type === 'ultimate' ? (
+                            <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-purple-700/10 ring-inset">
+                              All Access
+                            </span>
+                          ) : sub.plan.plan_type === 'premium_model' ? (
+                            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-700/10 ring-inset">
+                              {sub.plan.model_display_name || 'Premium Model'}
+                            </span>
+                          ) : null}
                           <Badge
                             variant="outline"
                             className={
@@ -725,8 +741,9 @@ export function SettingsPage() {
               )}
 
               {apiKeysLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                <div className="space-y-3">
+                  <Skeleton className="h-[72px] w-full rounded-lg" />
+                  <Skeleton className="h-[72px] w-full rounded-lg" />
                 </div>
               ) : apiKeys.length === 0 ? (
                 <div className="py-8 text-center">

@@ -14,6 +14,7 @@ import type {
   SessionUpdateRequest,
   Provider,
 } from '@raweval/types';
+import { getStoredToken } from '@/lib/auth';
 
 export interface SendMessageOptions {
   sessionId?: string; // Local Project ID
@@ -224,9 +225,149 @@ class ChatService {
       role: 'assistant',
       content: assistantMsg.content,
       verified: false,
-      createdAt: new Date(assistantMsg.created_at),
+      createdAt: new Date(assistantMsg.created_at).getTime(),
       backendSessionId: sessionId,
     };
+  }
+
+  /**
+   * Stream a message and get an LLM response via /chat/sessions/{id}/messages/stream.
+   * This uses the standard fetch API to decode the Server-Sent Events stream incrementally.
+   */
+  async streamMessage(
+    sessionId: number,
+    message: string,
+    options: Omit<SendMessageOptions, 'sessionId' | 'backendSessionId'> = {},
+    callbacks: {
+      onStart?: (data: any) => void;
+      onChunk?: (provider: string, model: string, delta: string) => void;
+      onModelComplete?: (data: any) => void;
+      onDone?: (data: any) => void;
+      onError?: (error: Error) => void;
+    }
+  ): Promise<void> {
+    const {
+      model = 'openai',
+      modelName = 'gpt-4o',
+      models,
+      systemPrompt,
+      temperature = 0.7,
+      maxTokens,
+      webSearch = false,
+      attachmentIds,
+    } = options;
+
+    const body: Record<string, unknown> = {
+      prompt: message,
+      provider: model,
+      model: modelName,
+      models:
+        models && models.length > 0
+          ? models
+          : [{ provider: model, model: modelName }],
+      temperature,
+      include_history: true,
+      web_search: webSearch,
+    };
+    if (systemPrompt) body.system_prompt = systemPrompt;
+    if (maxTokens) body.max_tokens = maxTokens;
+    if (attachmentIds?.length) body.attachment_ids = attachmentIds;
+
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_API_URL || 'https://api.raweval.com';
+      const response = await fetch(
+        `${baseUrl}/api/v1/chat/sessions/${sessionId}/messages/stream`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(getStoredToken()
+              ? { Authorization: `Bearer ${getStoredToken()}` }
+              : {}),
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!response.ok) {
+        let errorMsg = `Streaming API Error: ${response.status}`;
+        try {
+          const errData = await response.json();
+          errorMsg = errData?.error?.message || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+
+      if (!response.body) {
+        throw new Error('No readable stream available in the response');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+
+        // The last element is either empty (if buffer ended with \n\n) or
+        // an incomplete event block, so we keep it in the buffer.
+        buffer = lines.pop() || '';
+
+        for (const block of lines) {
+          const linesInBlock = block.split('\n');
+          let eventType = 'message';
+          let dataStr = '';
+
+          for (const line of linesInBlock) {
+            if (line.startsWith('event:')) {
+              eventType = line.replace('event:', '').trim();
+            } else if (line.startsWith('data:')) {
+              // Reconstruct potentially multi-line data payloads
+              // by stripping the prefix "data:" from each data line.
+              // Note: SSE data parsing natively usually appends newlines unless it's JSON.
+              dataStr += line.substring(5).trim();
+            }
+          }
+
+          if (dataStr) {
+            try {
+              const data = JSON.parse(dataStr);
+              switch (eventType) {
+                case 'stream_start':
+                  callbacks.onStart?.(data);
+                  break;
+                case 'chunk':
+                  callbacks.onChunk?.(data.provider, data.model, data.delta);
+                  break;
+                case 'model_complete':
+                  callbacks.onModelComplete?.(data);
+                  break;
+                case 'model_error':
+                  callbacks.onError?.(new Error(data.error));
+                  break;
+                case 'done':
+                  callbacks.onDone?.(data);
+                  return; // End the stream successfully
+              }
+            } catch (e) {
+              console.error(
+                'Failed to parse SSE JSON data:',
+                e,
+                'Data string:',
+                dataStr
+              );
+            }
+          }
+        }
+      }
+    } catch (err) {
+      callbacks.onError?.(err instanceof Error ? err : new Error(String(err)));
+    }
   }
 
   /**
