@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@raweval/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
 
 export function AdminHeader() {
@@ -60,7 +60,7 @@ export function AdminHeader() {
                 </span>
               </div>
               <Avatar className="border-border h-9 w-9 border">
-                {/* <AvatarImage src={user?.av || ''} /> */}
+                <AvatarImage src="" />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {user?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
                 </AvatarFallback>

@@ -1,124 +1,145 @@
-/**
- * Admin Experts Service
- *
- * Manage registered experts, tiers, and certifications.
- */
-
-import { ApiService } from '../api-service';
-
-export interface ExpertRegistrationRequest {
-  user_id: number;
-  specializations: string[];
-  certifications?: Array<{
-    name: string;
-    issuer: string;
-    date_issued: string;
-    expiry_date?: string | null;
-  }>;
-}
+import { ApiService, type PaginatedResponse } from '../api-service';
 
 export interface ExpertResponse {
-  id: number;
+  expert_id: number;
   user_id: number;
-  tier: 1 | 2 | 3;
-  specializations: string[];
-  woe_score: number;
-  total_tasks_completed: number;
-  accuracy_rate: number;
-  created_at: string;
-  verified_at: string | null;
+  email: string;
+  full_name: string | null;
+  expert_tier: number | null;
+  expert_status: string;
+  interview_completed: boolean;
+  interview_score: number | null;
+  expert_score: number | null;
+  derived_tier: number | null;
+  rolling_agreement_score: number | null;
+  total_completed_annotations: number;
+  is_on_probation: boolean;
+  quality_trend: string | null;
+  active_allocations: number;
+  last_heartbeat: string | null;
 }
 
-export interface ExpertCertification {
+export interface ScoreHistoryEntry {
   id: number;
   expert_id: number;
-  name: string;
-  issuer: string;
-  date_issued: string;
-  expiry_date: string | null;
-  verified: boolean;
+  score: number;
+  trigger: string;
+  created_at: string;
 }
 
-export interface UpdateTierRequest {
-  tier: 1 | 2 | 3;
-  reason?: string;
+export interface ScoreTrajectorySummary {
+  expert_id: number;
+  current_score: number;
+  trend: string;
+  entries: ScoreHistoryEntry[];
+}
+
+export interface ListExpertsParams {
+  page?: number;
+  page_size?: number;
+  tier?: number;
+  domain?: string;
+  expert_status?: string;
+  min_score?: number;
+  max_score?: number;
+  on_probation?: boolean;
+  sort_by?: string;
+  sort_order?: string;
+}
+
+export interface UpdateExpertStatusRequest {
+  expert_status: string;
+  is_on_probation?: boolean;
+  probation_reason?: string;
+  reason: string;
+}
+
+export interface UpdateExpertTierRequest {
+  new_tier: number;
+  reason: string;
 }
 
 export class AdminExpertsService extends ApiService {
-  /**
-   * Register as an expert
-   */
-  async registerExpert(
-    data: ExpertRegistrationRequest
-  ): Promise<ExpertResponse> {
-    const response = await this.client.post<ExpertResponse>(
-      '/experts/register',
-      data
+  async listExperts(
+    params: ListExpertsParams = {}
+  ): Promise<PaginatedResponse<ExpertResponse>> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<PaginatedResponse<ExpertResponse>>(
+      `/admin/experts${query}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get expert by ID
-   */
   async getExpert(expertId: number): Promise<ExpertResponse> {
     const response = await this.client.get<ExpertResponse>(
-      `/experts/${expertId}`
+      `/admin/experts/${expertId}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get all experts with pagination
-   */
-  async getExperts(skip = 0, limit = 100): Promise<ExpertResponse[]> {
-    const response = await this.client.get<ExpertResponse[]>(
-      `/experts?skip=${skip}&limit=${limit}`
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Update expert tier
-   */
-  async updateExpertTier(
+  async updateExpertStatus(
     expertId: number,
-    data: UpdateTierRequest
-  ): Promise<ExpertResponse> {
-    const response = await this.client.put<ExpertResponse>(
-      `/experts/${expertId}/tier`,
+    data: UpdateExpertStatusRequest
+  ): Promise<unknown> {
+    const response = await this.client.patch(
+      `/admin/experts/${expertId}/status`,
       data
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get expert certifications
-   */
-  async getExpertCertifications(
-    expertId: number
-  ): Promise<ExpertCertification[]> {
-    const response = await this.client.get<ExpertCertification[]>(
-      `/experts/${expertId}/certifications`
+  async overrideExpertTier(
+    expertId: number,
+    data: UpdateExpertTierRequest
+  ): Promise<unknown> {
+    const response = await this.client.patch(
+      `/admin/experts/${expertId}/tier`,
+      data
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Add certification to expert
-   */
-  async addCertification(
+  async recomputeScore(
     expertId: number,
-    certification: {
-      name: string;
-      issuer: string;
-      date_issued: string;
-      expiry_date?: string | null;
-    }
-  ): Promise<ExpertCertification> {
-    const response = await this.client.post<ExpertCertification>(
-      `/experts/${expertId}/certifications`,
-      certification
+    domain?: string
+  ): Promise<unknown> {
+    const query = domain ? `?domain=${domain}` : '';
+    const response = await this.client.post(
+      `/admin/experts/${expertId}/recompute-score${query}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async batchRecomputeScores(
+    domain?: string,
+    expertIds?: number[]
+  ): Promise<unknown> {
+    const params: Record<string, unknown> = {};
+    if (domain) params.domain = domain;
+    if (expertIds) params.expert_ids = expertIds.join(',');
+    const query = this.buildQuery(params);
+    const response = await this.client.post(
+      `/admin/experts/batch-recompute-scores${query}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async getScoreHistory(
+    expertId: number,
+    params: { trigger?: string; limit?: number; offset?: number } = {}
+  ): Promise<ScoreHistoryEntry[]> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<ScoreHistoryEntry[]>(
+      `/admin/experts/${expertId}/score-history${query}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async getScoreTrajectorySummary(
+    expertId: number
+  ): Promise<ScoreTrajectorySummary> {
+    const response = await this.client.get<ScoreTrajectorySummary>(
+      `/admin/experts/${expertId}/score-trajectory-summary`
     );
     return this.handleResponse(response);
   }

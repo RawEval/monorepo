@@ -194,15 +194,14 @@ class ChatService {
       attachmentIds,
     } = options;
 
+    const modelList =
+      models && models.length > 0
+        ? models.map((m) => ({ ...m, temperature }))
+        : [{ provider: model, model: modelName, temperature }];
+
     const body: Record<string, unknown> = {
-      prompt: message, // backend expects 'prompt' instead of 'content'
-      provider: model,
-      model: modelName,
-      models:
-        models && models.length > 0
-          ? models
-          : [{ provider: model, model: modelName }], // send array of objects
-      temperature,
+      prompt: message,
+      models: modelList,
       include_history: true,
       web_search: webSearch,
     };
@@ -252,25 +251,22 @@ class ChatService {
       models,
       systemPrompt,
       temperature = 0.7,
-      maxTokens,
       webSearch = false,
       attachmentIds,
     } = options;
 
+    const modelList =
+      models && models.length > 0
+        ? models.map((m) => ({ ...m, temperature }))
+        : [{ provider: model, model: modelName, temperature }];
+
     const body: Record<string, unknown> = {
       prompt: message,
-      provider: model,
-      model: modelName,
-      models:
-        models && models.length > 0
-          ? models
-          : [{ provider: model, model: modelName }],
-      temperature,
+      models: modelList,
       include_history: true,
       web_search: webSearch,
     };
     if (systemPrompt) body.system_prompt = systemPrompt;
-    if (maxTokens) body.max_tokens = maxTokens;
     if (attachmentIds?.length) body.attachment_ids = attachmentIds;
 
     try {

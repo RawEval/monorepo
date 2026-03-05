@@ -2,230 +2,262 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
 import {
-  FileText,
-  AlertTriangle,
-  Search,
+  BarChart3,
   Loader2,
-  ChevronLeft,
-  ChevronRight,
+  TrendingUp,
+  Award,
+  ArrowUpDown,
 } from 'lucide-react';
-import { adminPromptsService } from '@/services/admin';
+import { adminAnalyticsService } from '@/services/admin/analytics-service';
+import { adminIAAService } from '@/services/admin/iaa-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
+import { cn } from '@raweval/utils';
 
-const PAGE_SIZE = 20;
+type Tab = 'leaderboard' | 'quality' | 'iaa';
 
-type Tab = 'all' | 'failed';
+export default function AnalyticsPage() {
+  const [tab, setTab] = useState<Tab>('leaderboard');
+  const [tierFilter, setTierFilter] = useState<number | undefined>();
 
-export default function PromptsPage() {
-  const [tab, setTab] = useState<Tab>('all');
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
-
-  const { data: prompts, isLoading: promptsLoading } = useQuery({
-    queryKey: queryKeys.promptsList(page * PAGE_SIZE, PAGE_SIZE),
-    queryFn: () => adminPromptsService.getPrompts(page * PAGE_SIZE, PAGE_SIZE),
-    enabled: tab === 'all',
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery({
+    queryKey: queryKeys.analytics.leaderboard(tierFilter),
+    queryFn: () => adminAnalyticsService.getExpertLeaderboard(tierFilter, 20),
+    enabled: tab === 'leaderboard',
   });
 
-  const { data: failedPrompts, isLoading: failedLoading } = useQuery({
-    queryKey: queryKeys.failedPrompts(),
-    queryFn: () =>
-      adminPromptsService.getFailedPrompts(page * PAGE_SIZE, PAGE_SIZE),
-    enabled: tab === 'failed',
+  const { data: qualityTrends, isLoading: trendsLoading } = useQuery({
+    queryKey: queryKeys.analytics.qualityTrends(),
+    queryFn: () => adminAnalyticsService.getQualityTrends(),
+    enabled: tab === 'quality',
   });
 
-  const isLoading = tab === 'all' ? promptsLoading : failedLoading;
+  const { data: iaaOverview, isLoading: iaaLoading } = useQuery({
+    queryKey: queryKeys.iaa.overview,
+    queryFn: () => adminIAAService.getOverview(),
+    enabled: tab === 'iaa',
+  });
+
+  const { data: tierChanges, isLoading: tierLoading } = useQuery({
+    queryKey: queryKeys.analytics.tierChanges,
+    queryFn: () => adminAnalyticsService.getTierChangeLog(20),
+    enabled: tab === 'quality',
+  });
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-foreground text-2xl font-semibold">
-          Prompt Management
+          Analytics & Quality
         </h1>
         <p className="text-muted-foreground text-sm">
-          Browse prompts and review failed prompts that need attention
+          Expert leaderboards, quality trends, and inter-annotator agreement metrics
         </p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2">
         <Button
-          variant={tab === 'all' ? 'default' : 'outline'}
+          variant={tab === 'leaderboard' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => {
-            setTab('all');
-            setPage(0);
-          }}
+          onClick={() => setTab('leaderboard')}
           className="gap-1.5"
         >
-          <FileText className="h-4 w-4" />
-          All Prompts
+          <Award className="h-4 w-4" />
+          Leaderboard
         </Button>
         <Button
-          variant={tab === 'failed' ? 'default' : 'outline'}
+          variant={tab === 'quality' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => {
-            setTab('failed');
-            setPage(0);
-          }}
+          onClick={() => setTab('quality')}
           className="gap-1.5"
         >
-          <AlertTriangle className="h-4 w-4" />
-          Failed Prompts
+          <TrendingUp className="h-4 w-4" />
+          Quality & Tiers
+        </Button>
+        <Button
+          variant={tab === 'iaa' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setTab('iaa')}
+          className="gap-1.5"
+        >
+          <BarChart3 className="h-4 w-4" />
+          IAA Overview
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search prompts..."
-          className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none sm:max-w-sm"
-        />
-      </div>
-
-      {/* Content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {tab === 'all' ? 'All Prompts' : 'Failed Prompts'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-            </div>
-          ) : tab === 'all' && prompts ? (
-            <div className="space-y-2">
-              {prompts.length > 0 ? (
-                prompts
-                  .filter((p) =>
-                    search
-                      ? p.query_text
-                          .toLowerCase()
-                          .includes(search.toLowerCase())
-                      : true
-                  )
-                  .map((prompt) => (
-                    <div
-                      key={prompt.id}
-                      className="border-border rounded-lg border p-4"
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="code-label text-muted-foreground">
-                            #{prompt.id}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            {prompt.status}
-                          </Badge>
-                          {prompt.domain && (
-                            <Badge variant="outline" className="text-xs">
-                              {prompt.domain}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <p className="text-foreground line-clamp-2 text-sm">
-                        {prompt.query_text}
-                      </p>
-                    </div>
-                  ))
-              ) : (
-                <p className="text-muted-foreground py-12 text-center text-sm">
-                  No prompts found
-                </p>
-              )}
-            </div>
-          ) : tab === 'failed' && failedPrompts ? (
-            <div className="space-y-2">
-              {failedPrompts.length > 0 ? (
-                failedPrompts
-                  .filter((fp) =>
-                    search
-                      ? fp.query_text
-                          .toLowerCase()
-                          .includes(search.toLowerCase())
-                      : true
-                  )
-                  .map((fp) => (
-                    <div
-                      key={fp.id}
-                      className="border-border rounded-lg border p-4"
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="code-label text-muted-foreground">
-                            #{fp.id}
-                          </span>
-                          <Badge
-                            variant={
-                              fp.priority === 'high'
-                                ? 'destructive'
-                                : fp.priority === 'medium'
-                                  ? 'secondary'
-                                  : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {fp.priority}
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {fp.status}
-                          </Badge>
-                        </div>
-                        <span className="text-muted-foreground text-xs">
-                          {new Date(fp.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-foreground line-clamp-2 text-sm">
-                        {fp.query_text}
-                      </p>
-                    </div>
-                  ))
-              ) : (
-                <p className="text-muted-foreground py-12 text-center text-sm">
-                  No failed prompts
-                </p>
-              )}
-            </div>
-          ) : null}
-
-          {/* Pagination */}
-          <div className="mt-4 flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="gap-1"
+      {/* Leaderboard */}
+      {tab === 'leaderboard' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3">
+            <select
+              value={tierFilter ?? ''}
+              onChange={(e) => setTierFilter(e.target.value ? Number(e.target.value) : undefined)}
+              className="border-input bg-background focus:ring-ring rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
             >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <span className="text-muted-foreground text-sm">
-              Page {page + 1}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              className="gap-1"
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <option value="">All Tiers</option>
+              <option value="1">Tier 1</option>
+              <option value="2">Tier 2</option>
+              <option value="3">Tier 3</option>
+            </select>
           </div>
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Award className="h-4 w-4" />
+                Expert Leaderboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {leaderboardLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                </div>
+              ) : leaderboard && Array.isArray(leaderboard) && leaderboard.length > 0 ? (
+                <div className="space-y-2">
+                  {leaderboard.map((entry, i) => (
+                    <div
+                      key={entry.expert_id}
+                      className="border-border flex items-center justify-between rounded-lg border p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
+                          i === 0 ? 'bg-amber-100 text-amber-700' :
+                          i === 1 ? 'bg-gray-100 text-gray-700' :
+                          i === 2 ? 'bg-orange-100 text-orange-700' :
+                          'bg-muted text-muted-foreground'
+                        )}>
+                          {i + 1}
+                        </span>
+                        <div>
+                          <span className="text-sm font-medium">Expert #{entry.expert_id}</span>
+                          <div className="text-muted-foreground flex gap-2 text-xs">
+                            <Badge variant="outline" className="text-[10px]">T{entry.tier}</Badge>
+                            <span>{entry.tasks_completed} tasks</span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-foreground font-mono text-sm font-bold">
+                        {entry.score?.toFixed(2) ?? 'N/A'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-12 text-center text-sm">
+                  No leaderboard data available
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Quality & Tier Changes */}
+      {tab === 'quality' && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Quality Trends</CardTitle>
+              <CardDescription>Recent quality score trends across domains</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {trendsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                </div>
+              ) : qualityTrends && Array.isArray(qualityTrends) && qualityTrends.length > 0 ? (
+                <div className="space-y-2">
+                  {qualityTrends.map((trend, i) => (
+                    <div key={i} className="border-border flex items-center justify-between rounded-lg border p-3">
+                      <div>
+                        <span className="text-muted-foreground text-xs">{trend.date}</span>
+                        {trend.domain && <Badge variant="outline" className="ml-2 text-[10px]">{trend.domain}</Badge>}
+                      </div>
+                      <span className="text-foreground font-mono text-sm font-bold">{trend.score?.toFixed(3)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-12 text-center text-sm">No quality data</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ArrowUpDown className="h-4 w-4" />
+                Recent Tier Changes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tierLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                </div>
+              ) : tierChanges && Array.isArray(tierChanges) && tierChanges.length > 0 ? (
+                <div className="space-y-2">
+                  {tierChanges.map((change, i) => (
+                    <div key={i} className="border-border rounded-lg border p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Expert #{change.expert_id}</span>
+                        <div className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-[10px]">T{change.old_tier}</Badge>
+                          <span className="text-muted-foreground text-xs">→</span>
+                          <Badge variant="default" className="text-[10px]">T{change.new_tier}</Badge>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground mt-1 text-xs">{change.reason}</p>
+                      <p className="text-muted-foreground mt-0.5 text-[10px]">
+                        {new Date(change.changed_at).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground py-12 text-center text-sm">No tier changes</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* IAA Overview */}
+      {tab === 'iaa' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Inter-Annotator Agreement Overview</CardTitle>
+            <CardDescription>System-wide IAA metrics</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {iaaLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              </div>
+            ) : iaaOverview ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Object.entries(iaaOverview).map(([key, value]) => (
+                  <div key={key} className="border-border rounded-lg border p-4">
+                    <span className="text-muted-foreground text-xs font-medium uppercase">
+                      {key.replace(/_/g, ' ')}
+                    </span>
+                    <p className="text-foreground mt-1 font-mono text-lg font-bold">
+                      {typeof value === 'number' ? value.toFixed(3) : String(value)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground py-12 text-center text-sm">No IAA data</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

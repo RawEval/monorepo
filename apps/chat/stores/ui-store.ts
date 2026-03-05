@@ -47,7 +47,17 @@ export const useUiStore = create<UiState & UiActions>()(
         rightSidebarOpen: s.rightSidebarOpen,
         billingCycle: s.billingCycle,
       }),
+      onRehydrateStorage: () => {
+        return (state) => {
+          if (
+            state &&
+            typeof window !== 'undefined' &&
+            window.innerWidth < 768
+          ) {
+            state.leftSidebarOpen = false;
+          }
+        };
+      },
     }
   )
 );
-

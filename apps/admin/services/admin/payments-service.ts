@@ -1,81 +1,153 @@
-/**
- * Admin Payments Service
- *
- * Track platform-wide payments, statistics, and individual transactions.
- */
+import { ApiService, type PaginatedResponse } from '../api-service';
 
-import { ApiService } from '../api-service';
-
-export interface AdminPaymentTransaction {
+export interface PayoutResponse {
   id: number;
-  user_email: string;
+  expert_id: number | null;
+  user_id: number;
+  batch_id: number | null;
+  failed_prompt_final_id: number | null;
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
-  transaction_type: string | null;
-  description: string | null;
-  reference_id: string | null;
+  currency: string;
+  status: string;
+  role: string | null;
+  domain: string | null;
   created_at: string;
+  [key: string]: unknown;
+}
+
+export interface PaymentTrackingItem {
+  id: number;
+  user_id: number;
+  amount: number;
+  currency: string;
+  payment_type: string;
+  payment_reason: string;
+  status: string;
+  description: string | null;
+  created_at: string;
+  [key: string]: unknown;
+}
+
+export interface PayoutConfigResponse {
+  tier_1_rate: number;
+  tier_2_rate: number;
+  tier_3_rate: number;
+  reviewer_pre_rate: number;
+  reviewer_post_rate: number;
+  description: string | null;
   updated_at: string;
 }
 
-export interface PaymentStatistics {
-  total_volume: number;
-  total_completed: number;
-  total_pending: number;
-  total_failed: number;
-  transactions_count: number;
-  subscriptions_revenue: number;
-  expert_payouts: number;
-  failed_prompt_payouts: number;
+export interface UpdatePayoutConfigRequest {
+  tier_1_rate?: number;
+  tier_2_rate?: number;
+  tier_3_rate?: number;
+  reviewer_pre_rate?: number;
+  reviewer_post_rate?: number;
+  description?: string;
 }
 
-export interface ListAdminPaymentsParams {
-  skip?: number;
-  limit?: number;
-  status?: 'pending' | 'completed' | 'failed' | 'cancelled';
-  transaction_type?: string;
-  start_date?: string;
-  end_date?: string;
+export interface ListPayoutsParams {
+  expert_id?: number;
+  user_id?: number;
+  batch_id?: number;
+  status?: string;
+  role?: string;
+  domain?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export class AdminPaymentsService extends ApiService {
-  /**
-   * List all payment transactions on the platform
-   */
-  async listPayments(
-    params: ListAdminPaymentsParams = {}
-  ): Promise<AdminPaymentTransaction[]> {
-    const query = new URLSearchParams(params as any).toString();
-    const response = await this.client.get<AdminPaymentTransaction[]>(
-      `/admin/payments?${query}`
+  async listPayouts(
+    params: ListPayoutsParams = {}
+  ): Promise<PaginatedResponse<PayoutResponse>> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<PaginatedResponse<PayoutResponse>>(
+      `/admin/payouts${query}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get details for a specific payment
-   */
-  async getPaymentDetails(paymentId: number): Promise<AdminPaymentTransaction> {
-    const response = await this.client.get<AdminPaymentTransaction>(
-      `/admin/payments/${paymentId}`
+  async getBatchPayouts(batchId: number): Promise<unknown> {
+    const response = await this.client.get(
+      `/admin/payouts/batch/${batchId}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get platform payment statistics
-   */
-  async getPaymentStatistics(
-    startDate?: string,
-    endDate?: string
-  ): Promise<PaymentStatistics> {
-    const params = {
-      ...(startDate ? { start_date: startDate } : {}),
-      ...(endDate ? { end_date: endDate } : {}),
-    };
-    const query = new URLSearchParams(params as any).toString();
-    const response = await this.client.get<PaymentStatistics>(
-      `/admin/payments/statistics?${query}`
+  async getTaskPayouts(fpfId: number): Promise<unknown> {
+    const response = await this.client.get(
+      `/admin/payouts/task/${fpfId}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async triggerPayouts(
+    failedPromptFinalId: number,
+    reason: string
+  ): Promise<unknown> {
+    const response = await this.client.post('/admin/payouts/trigger', {
+      failed_prompt_final_id: failedPromptFinalId,
+      reason,
+    });
+    return this.handleResponse(response);
+  }
+
+  async getPaymentsByUser(
+    userId: number,
+    params: {
+      payment_reason?: string;
+      skip?: number;
+      limit?: number;
+    } = {}
+  ): Promise<PaymentTrackingItem[]> {
+    const query = this.buildQuery({
+      user_id: userId,
+      ...params,
+    } as Record<string, unknown>);
+    const response = await this.client.get<PaymentTrackingItem[]>(
+      `/admin/payments/tracking/by-user${query}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async getPaymentsByBatch(batchId: number): Promise<PaymentTrackingItem[]> {
+    const response = await this.client.get<PaymentTrackingItem[]>(
+      `/admin/payments/tracking/by-batch?batch_id=${batchId}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async getPaymentsByConversation(
+    conversationId: number
+  ): Promise<PaymentTrackingItem[]> {
+    const response = await this.client.get<PaymentTrackingItem[]>(
+      `/admin/payments/tracking/by-conversation?conversation_id=${conversationId}`
+    );
+    return this.handleResponse(response);
+  }
+
+  async getPayoutConfig(): Promise<PayoutConfigResponse> {
+    const response = await this.client.get<PayoutConfigResponse>(
+      '/admin/payout-config'
+    );
+    return this.handleResponse(response);
+  }
+
+  async updatePayoutConfig(
+    data: UpdatePayoutConfigRequest
+  ): Promise<PayoutConfigResponse> {
+    const response = await this.client.put<PayoutConfigResponse>(
+      '/admin/payout-config',
+      data
+    );
+    return this.handleResponse(response);
+  }
+
+  async getPayoutConfigHistory(): Promise<PayoutConfigResponse[]> {
+    const response = await this.client.get<PayoutConfigResponse[]>(
+      '/admin/payout-config/history'
     );
     return this.handleResponse(response);
   }

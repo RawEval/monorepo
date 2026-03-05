@@ -49,14 +49,12 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>()(
     loadProjects: async () => {
       set({ isLoading: true, error: null });
       try {
-        // Fetch sessions from backend
         const response = await chatService.getChatSessions({
           page: 1,
           page_size: 50,
         });
 
         if (response && response.sessions && response.sessions.length > 0) {
-          // Map backend sessions to frontend projects
           const backendProjects: Project[] = response.sessions.map(
             (session) => ({
               id: String(session.id),
@@ -77,23 +75,30 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>()(
               status: session.status,
             })
           );
-          // We have backend projects. Replace the state and select the latest one.
-          set({
-            projects: [defaultProject, ...backendProjects],
-            selectedProjectId: defaultProject.id,
-            isLoading: false,
+
+          set((s) => {
+            const allProjects = [defaultProject, ...backendProjects];
+            const currentStillExists =
+              s.selectedProjectId === defaultProject.id ||
+              backendProjects.some((p) => p.id === s.selectedProjectId);
+
+            return {
+              projects: allProjects,
+              selectedProjectId: currentStillExists
+                ? s.selectedProjectId
+                : defaultProject.id,
+              isLoading: false,
+            };
           });
         } else {
-          // No sessions found, default to New Chat
-          set({
+          set((s) => ({
             projects: [defaultProject],
-            selectedProjectId: defaultProject.id,
+            selectedProjectId: s.selectedProjectId || defaultProject.id,
             isLoading: false,
-          });
+          }));
         }
       } catch (error) {
         console.error('Failed to load projects from backend', error);
-        // Fallback to local state if backend fetch fails
         set({ isLoading: false, error: 'Failed to sync with backend' });
       }
     },

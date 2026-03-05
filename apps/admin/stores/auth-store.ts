@@ -1,12 +1,6 @@
-/**
- * Auth Store
- *
- * Manages authentication state for the admin app.
- */
-
 import { create } from 'zustand';
 import { authService } from '@/services/auth-service';
-import type { AdminUserView as UserResponse } from '@/services/admin/users-service';
+import type { UserResponse } from '@/services/auth-service';
 import { storeToken, clearToken } from '@/lib/auth';
 
 interface AuthState {
@@ -14,20 +8,12 @@ interface AuthState {
   isLoading: boolean;
   isAuthenticated: boolean;
   error: string | null;
-
-  /** Fetch the current user from /users/me */
   fetchUser: () => Promise<UserResponse | null>;
-
-  /** Login and verify admin role */
   login: (
     email: string,
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
-
-  /** Logout and clear tokens */
   logout: () => void;
-
-  /** Set user directly (e.g., from cached data) */
   setUser: (user: UserResponse | null) => void;
 }
 
