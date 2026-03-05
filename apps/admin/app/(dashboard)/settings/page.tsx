@@ -3,21 +3,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
-import { Settings, User, Shield, Loader2, Globe } from 'lucide-react';
+import { Settings, User, Shield, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { adminUsersService } from '@/services/admin/users-service';
+import { queryKeys } from '@/lib/react-query/query-keys';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
 
   const { data: profileCompletion, isLoading: completionLoading } = useQuery({
-    queryKey: ['profileCompletion'],
+    queryKey: queryKeys.users.profileCompletion,
     queryFn: () => adminUsersService.getProfileCompletion(),
-  });
-
-  const { data: accessiblePages, isLoading: pagesLoading } = useQuery({
-    queryKey: ['accessiblePages'],
-    queryFn: () => adminUsersService.getAccessiblePages(),
   });
 
   return (
@@ -25,7 +21,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-foreground text-2xl font-semibold">Settings</h1>
         <p className="text-muted-foreground text-sm">
-          Account settings, profile, and access information
+          Account settings and profile information
         </p>
       </div>
 
@@ -70,11 +66,11 @@ export default function SettingsPage() {
                 <div className="border-border space-y-2 rounded-lg border p-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">User ID</span>
-                    <span className="code-label">{user.id}</span>
+                    <span className="font-mono text-xs">{user.id}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Role</span>
-                    <span className="system-state">{user.role}</span>
+                    <span className="font-medium">{user.role}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Member since</span>
@@ -109,33 +105,35 @@ export default function SettingsPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground text-sm">
-                    Completion
+                    Status
                   </span>
-                  <span className="metric text-lg font-semibold">
-                    {profileCompletion.completion_percentage}%
-                  </span>
-                </div>
-                <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-                  <div
-                    className="bg-primary h-full transition-all"
-                    style={{
-                      width: `${profileCompletion.completion_percentage}%`,
-                    }}
-                  />
+                  <Badge
+                    variant={
+                      profileCompletion.profile_completed
+                        ? 'default'
+                        : 'secondary'
+                    }
+                  >
+                    {profileCompletion.profile_completed
+                      ? 'Complete'
+                      : 'Incomplete'}
+                  </Badge>
                 </div>
                 {profileCompletion.missing_fields.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Missing fields:</p>
                     <div className="flex flex-wrap gap-1">
-                      {profileCompletion.missing_fields.map((field: string) => (
-                        <Badge
-                          key={field}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {field}
-                        </Badge>
-                      ))}
+                      {profileCompletion.missing_fields.map(
+                        (field: string) => (
+                          <Badge
+                            key={field}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {field}
+                          </Badge>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
@@ -143,46 +141,6 @@ export default function SettingsPage() {
             ) : (
               <p className="text-muted-foreground py-8 text-center text-sm">
                 Unable to load profile completion data
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Accessible Pages */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Globe className="h-4 w-4" />
-              Access Permissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {pagesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-              </div>
-            ) : accessiblePages && accessiblePages.length > 0 ? (
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {accessiblePages.map(
-                  (page: { page: string; accessible: boolean }) => (
-                    <div
-                      key={page.page}
-                      className="border-border flex items-center justify-between rounded-lg border p-3"
-                    >
-                      <span className="text-sm">{page.page}</span>
-                      <Badge
-                        variant={page.accessible ? 'default' : 'destructive'}
-                        className="text-xs"
-                      >
-                        {page.accessible ? 'Allowed' : 'Denied'}
-                      </Badge>
-                    </div>
-                  )
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground py-8 text-center text-sm">
-                No access permission data available
               </p>
             )}
           </CardContent>

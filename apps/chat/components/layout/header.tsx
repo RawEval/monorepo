@@ -29,6 +29,15 @@ import {
 } from '@/lib/auth';
 import type { UserResponse } from '@raweval/types';
 
+const PAGE_TITLES: Record<string, string> = {
+  '/settings': 'Settings',
+  '/wallet': 'Wallet',
+  '/pricing': 'Pricing',
+  '/documents': 'Documents',
+  '/templates': 'Templates',
+  '/payouts': 'Payouts',
+};
+
 export function Header() {
   const router = useRouter();
   const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
@@ -41,12 +50,12 @@ export function Header() {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const isChatPage = pathname.startsWith('/chat') || pathname === '/';
+  const pageTitle = PAGE_TITLES[pathname];
 
   useEffect(() => {
     const loadUser = async () => {
       let token = getStoredToken();
 
-      // If no access token, try to refresh if we have a refresh token
       if (!token) {
         const refreshToken = getStoredRefreshToken();
         if (refreshToken) {
@@ -68,7 +77,6 @@ export function Header() {
       }
 
       if (!token) {
-        // No token and no valid refresh token
         router.push('/login');
         return;
       }
@@ -77,11 +85,8 @@ export function Header() {
         const userData = await authService.getCurrentUser();
         setUser(userData);
       } catch (error) {
-        // If getting user fails, check if it's a 401
-        // (Though auth interceptor might have handled it, we should be safe)
         console.error('Failed to load user:', error);
 
-        // Try one more refresh if we have a refresh token (in case token expired just now)
         const refreshToken = getStoredRefreshToken();
         if (refreshToken) {
           try {
@@ -91,17 +96,14 @@ export function Header() {
               tokenResponse.expires_in,
               tokenResponse.refresh_token
             );
-            // Retry get user
             const userDataRetry = await authService.getCurrentUser();
             setUser(userDataRetry);
             return;
-          } catch (refreshError) {
-            // Refresh failed
+          } catch {
             clearToken();
             router.push('/login');
           }
         } else {
-          // No refresh token, clear and redirect
           clearToken();
           router.push('/login');
         }
@@ -113,51 +115,68 @@ export function Header() {
     loadUser();
   }, [router]);
 
+  const chatTitle =
+    isChatPage && currentProject
+      ? currentProject.title === 'New Chat'
+        ? 'New Chat'
+        : currentProject.title
+      : null;
+
   return (
     <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/80 safe-area-inset-top sticky top-0 z-40 h-14 border-b backdrop-blur-xl">
       <div className="flex h-full items-center justify-between px-3 sm:px-4">
-        {/* Left: Hamburger Menu and Branding */}
+        {/* Left: Hamburger + Logo + mobile title */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-          {isChatPage && (
-            <>
-              <button
-                onClick={toggleLeftSidebar}
-                className={cn(
-                  'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-all active:scale-95',
-                  leftSidebarOpen ? 'lg:hidden' : 'flex'
-                )}
-                aria-label="Toggle sidebar"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              <div className="ml-1 flex items-center">
-                <img
-                  src="/logo.png"
-                  alt="RawEval"
-                  className="h-6 w-auto object-contain sm:h-7"
-                />
-              </div>
-            </>
-          )}
+          <button
+            onClick={toggleLeftSidebar}
+            className={cn(
+              'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-all active:scale-95',
+              isChatPage
+                ? leftSidebarOpen
+                  ? 'lg:hidden'
+                  : 'flex'
+                : 'lg:hidden'
+            )}
+            aria-label="Toggle sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="flex min-w-0 items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="RawEval"
+              className="h-6 w-auto shrink-0 object-contain sm:h-7"
+            />
+            {/* Page title for non-chat pages */}
+            {!isChatPage && pageTitle && (
+              <span className="text-muted-foreground hidden text-sm font-medium sm:inline">
+                / {pageTitle}
+              </span>
+            )}
+            {/* Chat title on mobile — visible inline next to logo */}
+            {chatTitle && (
+              <span className="text-muted-foreground truncate text-xs font-medium sm:hidden">
+                {chatTitle}
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Center: Chat Title */}
-        {isChatPage && currentProject && (
-          <div className="pointer-events-none absolute top-1/2 left-1/2 w-full max-w-[50%] -translate-x-1/2 -translate-y-1/2 text-center">
+        {/* Center: Chat title on desktop */}
+        {chatTitle && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 hidden w-full max-w-[40%] -translate-x-1/2 -translate-y-1/2 text-center sm:block">
             <span className="text-foreground truncate text-sm font-medium">
-              {currentProject.title === 'New Chat'
-                ? 'New Chat'
-                : currentProject.title}
+              {chatTitle}
             </span>
           </div>
         )}
 
         {/* Right: Options Menu */}
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-          {/* Options Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="text-foreground active:bg-muted flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-all focus-visible:outline-none active:scale-95"
+              className="text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-lg transition-all focus-visible:outline-none active:scale-95"
               aria-label="More options"
             >
               <MoreVertical className="h-5 w-5" />
@@ -198,23 +217,17 @@ export function Header() {
               <DropdownMenuItem
                 variant="destructive"
                 onClick={async () => {
-                  // Get refresh token before clearing
                   const refreshToken = getStoredRefreshToken();
-
-                  // Clear tokens immediately
                   clearToken();
 
-                  // Call logout API if refresh token exists
                   if (refreshToken) {
                     try {
                       await authService.logout(refreshToken);
                     } catch (error) {
-                      // Ignore errors on logout (token may already be invalid)
                       console.warn('Logout API call failed:', error);
                     }
                   }
 
-                  // Redirect to login
                   router.push('/login');
                 }}
                 className="cursor-pointer"

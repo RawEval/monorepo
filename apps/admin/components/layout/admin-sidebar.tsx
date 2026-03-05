@@ -18,6 +18,9 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  Layers,
+  Globe,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
@@ -37,76 +40,30 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Core',
     items: [
-      {
-        title: 'Dashboard',
-        href: '/',
-        icon: LayoutDashboard,
-      },
-      {
-        title: 'Users',
-        href: '/users',
-        icon: Users,
-      },
-      {
-        title: 'Conversations',
-        href: '/conversations',
-        icon: FileText,
-      },
-      {
-        title: 'Pipeline',
-        href: '/pipeline',
-        icon: Activity,
-      },
-      {
-        title: 'Experts',
-        href: '/experts',
-        icon: ShieldCheck,
-      },
-      {
-        title: 'Tasks',
-        href: '/tasks',
-        icon: SlidersHorizontal,
-      },
+      { title: 'Dashboard', href: '/', icon: LayoutDashboard },
+      { title: 'Users', href: '/users', icon: Users },
+      { title: 'Conversations', href: '/conversations', icon: FileText },
+      { title: 'Pipeline', href: '/pipeline', icon: Activity },
+      { title: 'Experts', href: '/experts', icon: ShieldCheck },
+      { title: 'Batches & Tasks', href: '/tasks', icon: Layers },
     ],
   },
   {
     label: 'Monitoring',
     items: [
-      {
-        title: 'Wallets',
-        href: '/wallets',
-        icon: Wallet,
-      },
-      {
-        title: 'Payments',
-        href: '/payments',
-        icon: Coins,
-      },
-      {
-        title: 'Audit Logs',
-        href: '/audit',
-        icon: History,
-      },
+      { title: 'Wallets', href: '/wallets', icon: Wallet },
+      { title: 'Payments', href: '/payments', icon: Coins },
+      { title: 'Analytics', href: '/prompts', icon: BarChart3 },
+      { title: 'Audit Logs', href: '/audit', icon: History },
     ],
   },
   {
     label: 'Platform',
     items: [
-      {
-        title: 'QC Config',
-        href: '/qc-config',
-        icon: Shield,
-      },
-      {
-        title: 'Roles',
-        href: '/roles',
-        icon: Settings,
-      },
-      {
-        title: 'Config',
-        href: '/platform',
-        icon: SlidersHorizontal,
-      },
+      { title: 'QC Config', href: '/qc-config', icon: Shield },
+      { title: 'Domains', href: '/roles', icon: Globe },
+      { title: 'Config', href: '/platform', icon: SlidersHorizontal },
+      { title: 'Settings', href: '/settings', icon: Settings },
     ],
   },
 ];
@@ -122,7 +79,6 @@ export function AdminSidebar() {
         sidebarOpen ? 'w-64' : 'w-20'
       )}
     >
-      {/* Sidebar Header */}
       <div className="border-border flex h-16 items-center border-b px-4">
         <Link href="/" className="flex items-center gap-2 overflow-hidden">
           <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
@@ -136,7 +92,6 @@ export function AdminSidebar() {
         </Link>
       </div>
 
-      {/* Navigation Groups */}
       <div className="scroll-area flex-1 overflow-x-hidden overflow-y-auto py-4">
         {NAV_GROUPS.map((group, groupIdx) => (
           <div
@@ -188,7 +143,6 @@ export function AdminSidebar() {
         ))}
       </div>
 
-      {/* Sidebar Footer */}
       <div className="border-border border-t p-4">
         <Button
           variant="ghost"
@@ -202,7 +156,7 @@ export function AdminSidebar() {
           {sidebarOpen ? (
             <>
               <ChevronLeft className="mr-2 h-4 w-4" />
-              <span>Collapse Sidebar</span>
+              <span>Collapse</span>
             </>
           ) : (
             <ChevronRight className="h-4 w-4" />

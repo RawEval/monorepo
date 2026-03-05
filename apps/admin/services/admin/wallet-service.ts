@@ -1,126 +1,110 @@
-/**
- * Admin Wallet Service
- *
- * Manage user wallets, balances, and transaction history.
- */
-
 import { ApiService } from '../api-service';
 
-export interface AdminWalletView {
-  wallet_id: string;
+export interface WorkbenchWalletView {
+  id: number;
   user_id: number;
-  user_email: string;
-  user_full_name: string | null;
   available_balance: number;
   pending_balance: number;
-  locked_balance: number;
+  held_balance: number;
+  currency: string;
   total_earned: number;
   total_spent: number;
   total_withdrawn: number;
-  status: 'active' | 'frozen' | 'suspended';
+  total_deposited: number;
+  total_fees_paid: number;
+  total_transactions: number;
+  total_failed_prompt_payouts: number;
+  total_subscription_payments: number;
+  last_transaction_at: string | null;
   created_at: string;
   updated_at: string;
+  is_frozen?: boolean;
+  user?: {
+    id: number;
+    email: string;
+    full_name: string | null;
+  };
 }
 
-export interface AdminWalletTransaction {
-  id: string;
-  wallet_id: string;
-  amount: number;
-  type: 'credit' | 'debit';
+export interface WalletTransactionResponse {
+  id: number;
+  wallet_transaction_id: string;
   transaction_type: string;
-  status: 'pending' | 'completed' | 'failed' | 'cancelled';
-  description: string | null;
-  reference_id: string | null;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-}
-
-export interface ListAdminWalletsParams {
-  skip?: number;
-  limit?: number;
-  status?: 'active' | 'frozen' | 'suspended';
-  search?: string;
-}
-
-export interface AdminWalletAdjustRequest {
+  status: string;
   amount: number;
+  currency: string;
+  source_wallet_id: number | null;
+  destination_wallet_id: number | null;
+  reference_id: string | null;
+  wallet_transaction_metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+  completed_at: string | null;
+}
+
+export interface AdjustWalletRequest {
+  user_id: number;
+  amount: number;
+  direction: 'credit' | 'debit';
   reason: string;
-  transaction_type: 'manual_credit' | 'manual_debit' | 'correction';
+}
+
+export interface FreezeWalletRequest {
+  reason: string;
 }
 
 export class AdminWalletService extends ApiService {
-  /**
-   * List all user wallets with filters and search
-   */
-  async listWallets(
-    params: ListAdminWalletsParams = {}
-  ): Promise<AdminWalletView[]> {
-    const query = new URLSearchParams(params as any).toString();
-    const response = await this.client.get<AdminWalletView[]>(
-      `/admin/wallets?${query}`
+  async listWallets(): Promise<WorkbenchWalletView[]> {
+    const response = await this.client.get<WorkbenchWalletView[]>(
+      '/admin/workbench-wallets'
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get wallet for a specific user
-   */
-  async getUserWallet(userId: number): Promise<AdminWalletView> {
-    const response = await this.client.get<AdminWalletView>(
-      `/admin/wallets/user/${userId}`
+  async getUserWallet(userId: number): Promise<WorkbenchWalletView> {
+    const response = await this.client.get<WorkbenchWalletView>(
+      `/admin/workbench-wallets/${userId}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * List transactions for a specific wallet
-   */
   async getWalletTransactions(
-    walletId: string,
-    params: { skip?: number; limit?: number } = {}
-  ): Promise<AdminWalletTransaction[]> {
-    const query = new URLSearchParams(params as any).toString();
-    const response = await this.client.get<AdminWalletTransaction[]>(
-      `/admin/wallets/${walletId}/transactions?${query}`
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Freeze a user's wallet
-   */
-  async freezeWallet(userId: number, reason: string): Promise<AdminWalletView> {
-    const response = await this.client.post<AdminWalletView>(
-      `/admin/wallets/user/${userId}/freeze`,
-      { reason }
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Unfreeze a user's wallet
-   */
-  async unfreezeWallet(
     userId: number,
-    reason: string
-  ): Promise<AdminWalletView> {
-    const response = await this.client.post<AdminWalletView>(
-      `/admin/wallets/user/${userId}/unfreeze`,
-      { reason }
+    params: { page?: number; page_size?: number } = {}
+  ): Promise<WalletTransactionResponse[]> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<WalletTransactionResponse[]>(
+      `/admin/workbench-wallets/${userId}/transactions${query}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Manually adjust a user's wallet balance
-   */
-  async adjustWalletBalance(
+  async freezeWallet(
     userId: number,
-    data: AdminWalletAdjustRequest
-  ): Promise<AdminWalletView> {
-    const response = await this.client.post<AdminWalletView>(
-      `/admin/wallets/user/${userId}/adjust`,
+    data: FreezeWalletRequest
+  ): Promise<unknown> {
+    const response = await this.client.patch(
+      `/admin/workbench-wallets/${userId}/freeze`,
       data
+    );
+    return this.handleResponse(response);
+  }
+
+  async adjustBalance(data: AdjustWalletRequest): Promise<unknown> {
+    const response = await this.client.post(
+      '/admin/workbench-wallets/adjust',
+      data
+    );
+    return this.handleResponse(response);
+  }
+
+  async getUserTransactions(
+    userId: number,
+    params: { page?: number; page_size?: number } = {}
+  ): Promise<WalletTransactionResponse[]> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<WalletTransactionResponse[]>(
+      `/admin/transactions/${userId}${query}`
     );
     return this.handleResponse(response);
   }

@@ -5,171 +5,177 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
-import { formatCurrency, formatNumber } from '@raweval/utils';
 import {
   UserCog,
   Search,
   Loader2,
   ChevronLeft,
   ChevronRight,
-  ShieldBan,
-  ShieldCheck,
-  Trash2,
+  Shield,
   AlertTriangle,
   X,
+  Plus,
 } from 'lucide-react';
-import { adminUsersService } from '@/services/admin/users-service';
-import type { AdminUserView } from '@/services/admin/users-service';
+import { adminUsersService, type ListAdminUsersParams } from '@/services/admin/users-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
 
 const PAGE_SIZE = 20;
 
-function ConfirmDialog({
-  open,
-  title,
-  message,
-  confirmLabel,
-  variant,
-  onConfirm,
-  onCancel,
-}: {
-  open: boolean;
-  title: string;
-  message: string;
-  confirmLabel: string;
-  variant: 'destructive' | 'default';
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="border-border bg-background w-full max-w-md rounded-xl border p-6 shadow-xl">
-        <div className="mb-4 flex items-start gap-3">
-          <AlertTriangle className="text-destructive mt-0.5 h-5 w-5 shrink-0" />
-          <div>
-            <h2 className="text-base font-semibold">{title}</h2>
-            <p className="text-muted-foreground mt-1 text-sm">{message}</p>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button variant={variant} size="sm" onClick={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function UsersPage() {
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [roleFilter, setRoleFilter] = useState('');
-  const [confirmAction, setConfirmAction] = useState<{
-    type: 'suspend' | 'activate' | 'delete';
-    user: AdminUserView;
+  const [roleModal, setRoleModal] = useState<{
+    userId: number;
+    email: string;
   } | null>(null);
+  const [roleName, setRoleName] = useState('');
+  const [roleReason, setRoleReason] = useState('');
 
   const queryClient = useQueryClient();
 
-  const params = {
-    skip: page * PAGE_SIZE,
-    limit: PAGE_SIZE,
+  const params: ListAdminUsersParams = {
+    page,
+    page_size: PAGE_SIZE,
     ...(search ? { search } : {}),
     ...(roleFilter ? { role: roleFilter } : {}),
   };
 
   const {
-    data: users,
+    data: usersData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: queryKeys.adminUsers(params),
+    queryKey: queryKeys.users.list(params as Record<string, unknown>),
     queryFn: () => adminUsersService.listUsers(params),
   });
 
-  const suspendMutation = useMutation({
-    mutationFn: (userId: number) =>
-      adminUsersService.suspendUser(userId, 'Admin action'),
+  const users = usersData?.items ?? [];
+  const totalUsers = usersData?.total ?? 0;
+  const totalPages = usersData?.total_pages ?? 1;
+
+  const assignRoleMutation = useMutation({
+    mutationFn: ({
+      userId,
+      roleName: rn,
+      reason,
+    }: {
+      userId: number;
+      roleName: string;
+      reason: string;
+    }) => adminUsersService.assignRole(userId, { role_name: rn, reason }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      setConfirmAction(null);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      setRoleModal(null);
+      setRoleName('');
+      setRoleReason('');
     },
   });
 
-  const activateMutation = useMutation({
-    mutationFn: (userId: number) => adminUsersService.activateUser(userId),
+  const revokeRoleMutation = useMutation({
+    mutationFn: ({
+      userId,
+      roleName: rn,
+    }: {
+      userId: number;
+      roleName: string;
+    }) =>
+      adminUsersService.revokeRole(userId, {
+        role_name: rn,
+        reason: 'Admin action',
+      }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      setConfirmAction(null);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (userId: number) => adminUsersService.deleteUser(userId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
-      setConfirmAction(null);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
     },
   });
 
   const isMutating =
-    suspendMutation.isPending ||
-    activateMutation.isPending ||
-    deleteMutation.isPending;
-
-  const mutationError =
-    suspendMutation.error?.message ||
-    activateMutation.error?.message ||
-    deleteMutation.error?.message;
-
-  const handleConfirm = () => {
-    if (!confirmAction) return;
-    if (confirmAction.type === 'suspend') {
-      suspendMutation.mutate(confirmAction.user.id);
-    } else if (confirmAction.type === 'activate') {
-      activateMutation.mutate(confirmAction.user.id);
-    } else {
-      deleteMutation.mutate(confirmAction.user.id);
-    }
-  };
+    assignRoleMutation.isPending || revokeRoleMutation.isPending;
 
   return (
     <div className="space-y-6">
-      {confirmAction && (
-        <ConfirmDialog
-          open
-          title={
-            confirmAction.type === 'suspend'
-              ? 'Suspend User'
-              : confirmAction.type === 'activate'
-                ? 'Activate User'
-                : 'Delete User'
-          }
-          message={
-            confirmAction.type === 'delete'
-              ? `This will permanently delete ${confirmAction.user.email}. This action cannot be undone.`
-              : `Are you sure you want to ${confirmAction.type} ${confirmAction.user.email}?`
-          }
-          confirmLabel={
-            confirmAction.type === 'suspend'
-              ? 'Suspend'
-              : confirmAction.type === 'activate'
-                ? 'Activate'
-                : 'Delete'
-          }
-          variant={
-            confirmAction.type === 'delete' || confirmAction.type === 'suspend'
-              ? 'destructive'
-              : 'default'
-          }
-          onConfirm={handleConfirm}
-          onCancel={() => setConfirmAction(null)}
-        />
+      {/* Assign Role Modal */}
+      {roleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="border-border bg-background w-full max-w-md rounded-xl border p-6 shadow-xl">
+            <div className="mb-4 flex items-start justify-between">
+              <div>
+                <h2 className="text-base font-semibold">Assign Role</h2>
+                <p className="text-muted-foreground text-sm">
+                  {roleModal.email}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setRoleModal(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                  Role Name *
+                </label>
+                <select
+                  value={roleName}
+                  onChange={(e) => setRoleName(e.target.value)}
+                  className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                >
+                  <option value="">Select role...</option>
+                  <option value="admin">Admin</option>
+                  <option value="super_admin">Super Admin</option>
+                  <option value="annotator">Annotator</option>
+                  <option value="reviewer">Reviewer</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-muted-foreground mb-1 block text-xs font-medium">
+                  Reason
+                </label>
+                <input
+                  className="border-input bg-background focus:ring-ring w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+                  placeholder="Reason for assignment..."
+                  value={roleReason}
+                  onChange={(e) => setRoleReason(e.target.value)}
+                />
+              </div>
+            </div>
+            {assignRoleMutation.error && (
+              <p className="text-destructive mt-2 text-xs">
+                {assignRoleMutation.error.message}
+              </p>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRoleModal(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={!roleName || assignRoleMutation.isPending}
+                onClick={() =>
+                  assignRoleMutation.mutate({
+                    userId: roleModal.userId,
+                    roleName,
+                    reason: roleReason || 'Admin assignment',
+                  })
+                }
+              >
+                {assignRoleMutation.isPending ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : null}
+                Assign
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div>
@@ -177,7 +183,7 @@ export default function UsersPage() {
           User Management
         </h1>
         <p className="text-muted-foreground text-sm">
-          View and manage all platform users, roles, and access
+          View all platform users and manage their roles
         </p>
       </div>
 
@@ -190,7 +196,7 @@ export default function UsersPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(0);
+              setPage(1);
             }}
             placeholder="Search by email or name..."
             className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
@@ -208,7 +214,7 @@ export default function UsersPage() {
           value={roleFilter}
           onChange={(e) => {
             setRoleFilter(e.target.value);
-            setPage(0);
+            setPage(1);
           }}
           className="border-input bg-background focus:ring-ring rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:outline-none"
         >
@@ -221,18 +227,11 @@ export default function UsersPage() {
         </select>
       </div>
 
-      {mutationError && (
-        <div className="border-destructive/30 bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          {mutationError}
-        </div>
-      )}
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <UserCog className="h-4 w-4" />
-            Users {users ? `(${users.length})` : ''}
+            Users {usersData ? `(${totalUsers})` : ''}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -264,85 +263,54 @@ export default function UsersPage() {
                           {user.full_name || 'No name'}
                         </span>
                         <Badge variant="outline" className="text-xs">
+                          <Shield className="mr-1 h-3 w-3" />
                           {user.role}
                         </Badge>
-                        {user.is_suspended ? (
-                          <Badge variant="destructive" className="text-xs">
-                            Suspended
-                          </Badge>
-                        ) : user.is_active ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">
-                            Inactive
-                          </Badge>
-                        )}
-                        {user.subscription_tier && (
-                          <Badge
-                            variant="outline"
-                            className="text-xs capitalize"
-                          >
-                            {user.subscription_tier}
-                          </Badge>
-                        )}
+                        <Badge
+                          variant={user.is_active ? 'secondary' : 'destructive'}
+                          className="text-xs"
+                        >
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
                       <p className="text-muted-foreground text-xs">
                         {user.email}
                       </p>
-                      <div className="text-muted-foreground mt-0.5 flex gap-3 text-xs">
-                        {user.wallet_balance != null && (
-                          <span>
-                            Wallet: {formatCurrency(user.wallet_balance)}
-                          </span>
+                      <div className="text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
+                        <span>
+                          Joined{' '}
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </span>
+                        {user.is_expert && (
+                          <Badge variant="secondary" className="h-4 text-[10px]">
+                            Expert
+                          </Badge>
                         )}
-                        <span>
-                          {formatNumber(user.total_sessions)} sessions
-                        </span>
-                        <span>
-                          {formatNumber(user.total_failed_prompts)} failures
-                        </span>
+                        {user.domain_count > 0 && (
+                          <span>{user.domain_count} domains</span>
+                        )}
+                        {user.years_of_experience != null && (
+                          <span>{user.years_of_experience}y exp</span>
+                        )}
+                        {!user.profile_completed && (
+                          <span className="text-amber-600">Profile incomplete</span>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
-                    {user.is_suspended ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs"
-                        disabled={isMutating}
-                        onClick={() =>
-                          setConfirmAction({ type: 'activate', user })
-                        }
-                      >
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        Activate
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-xs text-amber-600 hover:text-amber-600"
-                        disabled={isMutating}
-                        onClick={() =>
-                          setConfirmAction({ type: 'suspend', user })
-                        }
-                      >
-                        <ShieldBan className="h-3.5 w-3.5" />
-                        Suspend
-                      </Button>
-                    )}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="text-destructive hover:text-destructive gap-1.5 text-xs"
+                      className="gap-1.5 text-xs"
+                      onClick={() =>
+                        setRoleModal({ userId: user.id, email: user.email })
+                      }
                       disabled={isMutating}
-                      onClick={() => setConfirmAction({ type: 'delete', user })}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Plus className="h-3.5 w-3.5" />
+                      Assign Role
                     </Button>
                   </div>
                 </div>
@@ -356,25 +324,24 @@ export default function UsersPage() {
             </p>
           )}
 
-          {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <Button
               variant="outline"
               size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               className="gap-1"
             >
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
             <span className="text-muted-foreground text-sm">
-              Page {page + 1}
+              Page {page} of {totalPages}
             </span>
             <Button
               variant="outline"
               size="sm"
-              disabled={!users || users.length < PAGE_SIZE}
+              disabled={page >= totalPages}
               onClick={() => setPage((p) => p + 1)}
               className="gap-1"
             >

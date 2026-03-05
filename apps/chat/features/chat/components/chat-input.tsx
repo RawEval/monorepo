@@ -3,13 +3,6 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Send, Loader2, Plus, BrainCircuit, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from '@raweval/ui/select';
 import { cn } from '@raweval/utils';
 import { AttachmentPreview, Attachment } from './attachment-preview';
 import { VoiceRecorder } from './voice-recorder';
@@ -104,7 +97,6 @@ export function ChatInput({
   const [isSending, setIsSending] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Hook up Model Selection
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
   const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
@@ -128,7 +120,6 @@ export function ChatInput({
   }, [modelsResult]);
 
   useEffect(() => {
-    // Ensure selected model is in the list, else default to first
     if (availableModels.length > 0) {
       const currentProvider = selectedModel?.provider || '';
       const currentName = selectedModel?.model || '';
@@ -232,7 +223,6 @@ export function ChatInput({
     const imageSlots =
       MAX_IMAGES - attachments.filter((a) => a.type === 'image').length;
 
-    // Process images
     const imagesToProcess = imageFiles.slice(0, imageSlots);
     imagesToProcess.forEach((file) => {
       const reader = new FileReader();
@@ -251,7 +241,6 @@ export function ChatInput({
       reader.readAsDataURL(file);
     });
 
-    // Process other files
     const filesToProcess = otherFiles.slice(0, remainingSlots);
     filesToProcess.forEach((file) => {
       const reader = new FileReader();
@@ -284,8 +273,8 @@ export function ChatInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       const scrollHeight = textareaRef.current.scrollHeight;
-      const minHeight = 52; // min-h-[52px]
-      const maxHeight = 200; // max-h-[200px]
+      const minHeight = 44;
+      const maxHeight = 160;
       textareaRef.current.style.height = `${Math.max(minHeight, Math.min(scrollHeight, maxHeight))}px`;
     }
   };
@@ -337,22 +326,22 @@ export function ChatInput({
   const canAddFiles = fileCount + imageCount < MAX_FILES + MAX_IMAGES;
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div className="flex w-full flex-col gap-3 sm:gap-4">
       {/* Drag & Drop Overlay */}
       {isDragOver && (
         <div className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="border-primary bg-accent rounded-lg border-2 border-dashed p-8 text-center">
-            <p className="text-foreground text-lg font-medium">
+          <div className="border-primary bg-accent rounded-lg border-2 border-dashed p-6 text-center sm:p-8">
+            <p className="text-foreground text-base font-medium sm:text-lg">
               Drop files here to attach
             </p>
           </div>
         </div>
       )}
 
-      {/* Input Container - ChatGPT inspired design */}
+      {/* Input Container */}
       <div
         className={cn(
-          'bg-muted/40 focus-within:bg-background border-border flex cursor-text flex-col rounded-[26px] border shadow-sm transition-all duration-200 focus-within:shadow-md',
+          'bg-muted/40 focus-within:bg-background border-border flex cursor-text flex-col rounded-2xl border shadow-sm transition-all duration-200 focus-within:shadow-md sm:rounded-[26px]',
           isDragOver && 'border-primary bg-primary/5 border-dashed',
           disabled && 'pointer-events-none opacity-50'
         )}
@@ -360,7 +349,7 @@ export function ChatInput({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {/* Attachment Previews (Inside the container like ChatGPT) */}
+        {/* Attachment Previews */}
         {attachments.length > 0 && (
           <div className="max-w-full overflow-hidden px-3 pt-3">
             <AttachmentPreview
@@ -370,9 +359,9 @@ export function ChatInput({
           </div>
         )}
 
-        <div className="flex w-full items-end gap-2 p-2 sm:p-3">
-          {/* Left Actions */}
-          <div className="flex pb-1">
+        <div className="flex w-full items-end gap-1.5 p-2 sm:gap-2 sm:p-3">
+          {/* Attach button */}
+          <div className="flex pb-0.5 sm:pb-1">
             <Button
               type="button"
               variant="outline"
@@ -388,7 +377,7 @@ export function ChatInput({
           </div>
 
           {/* Text Area */}
-          <div className="relative max-h-[200px] flex-1 overflow-y-auto">
+          <div className="relative max-h-[160px] flex-1 overflow-y-auto sm:max-h-[200px]">
             <textarea
               ref={textareaRef}
               value={input}
@@ -403,13 +392,13 @@ export function ChatInput({
               rows={1}
               disabled={disabled}
               maxLength={MAX_CHARACTERS}
-              className="text-foreground placeholder:text-muted-foreground min-h-[36px] w-full resize-none border-0 bg-transparent py-2 text-[15px] wrap-break-word whitespace-pre-wrap shadow-none transition-[padding] duration-200 ease-in-out outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed"
+              className="text-foreground placeholder:text-muted-foreground min-h-[36px] w-full resize-none border-0 bg-transparent py-2 text-[15px] wrap-break-word whitespace-pre-wrap shadow-none transition-[padding] duration-200 ease-in-out outline-none focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed sm:min-h-[44px]"
               style={{ WebkitAppearance: 'none' }}
             />
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2 pr-1 pb-1">
+          <div className="flex items-center gap-1 pb-0.5 sm:gap-2 sm:pr-1 sm:pb-1">
             <VoiceRecorder
               onRecordingComplete={handleVoiceRecordingComplete}
               disabled={disabled}
@@ -436,19 +425,21 @@ export function ChatInput({
           </div>
         </div>
 
-        {/* Bottom Bar for Model Selection and Web Search */}
-        <div className="flex items-center gap-4 px-4 pb-2">
+        {/* Bottom Bar - Model Selection and Web Search */}
+        <div className="flex items-center gap-2 px-3 pb-2 sm:gap-4 sm:px-4">
           <Select value={activeModelValue} onValueChange={handleModelChange}>
-            <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit gap-1.5 border-none bg-transparent! p-0 text-xs font-medium shadow-none focus:ring-0 [&>svg]:ml-0">
-              <BrainCircuit className="h-3.5 w-3.5" />
+            <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit max-w-[60%] gap-1 border-none bg-transparent! p-0 text-[11px] font-medium shadow-none focus:ring-0 sm:max-w-none sm:gap-1.5 sm:text-xs [&>svg]:ml-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-3.5 sm:[&>svg]:w-3.5">
+              <BrainCircuit className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
               <SelectValue>
                 {activeModelDef?.max ? (
-                  <div className="flex items-center gap-1.5">
-                    <span>{activeModelDef.label}</span>
-                    {renderMaxBadge()}
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <span className="truncate">{activeModelDef.label}</span>
+                    <span className="hidden sm:inline-flex">
+                      {renderMaxBadge()}
+                    </span>
                   </div>
                 ) : (
-                  <span>{activeModelDef?.label}</span>
+                  <span className="truncate">{activeModelDef?.label}</span>
                 )}
               </SelectValue>
             </SelectTrigger>
@@ -477,7 +468,7 @@ export function ChatInput({
             type="button"
             onClick={() => setWebSearchEnabled(!webSearchEnabled)}
             className={cn(
-              'flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 outline-none',
+              'flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-all duration-200 outline-none sm:gap-1.5 sm:px-2.5 sm:text-xs',
               webSearchEnabled
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -488,7 +479,10 @@ export function ChatInput({
             aria-label="Toggle Web Search"
           >
             <Globe
-              className={cn('h-3.5 w-3.5', webSearchEnabled && 'opacity-90')}
+              className={cn(
+                'h-3 w-3 sm:h-3.5 sm:w-3.5',
+                webSearchEnabled && 'opacity-90'
+              )}
             />
             <span>Search</span>
           </button>
@@ -499,7 +493,7 @@ export function ChatInput({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.pdf,.doc,.docx,.txt"
+        accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.csv,.txt,.doc,.docx"
         multiple
         onChange={(e) => handleFileSelect(e.target.files)}
         className="hidden"

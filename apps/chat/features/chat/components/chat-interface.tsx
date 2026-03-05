@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatMessage } from './chat-message';
 import { ChatInput } from './chat-input';
 import { ChatSkeleton } from './chat-skeleton';
@@ -25,13 +25,14 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
     markingWrong,
   } = useChat(pathId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [bannerVisible, setBannerVisible] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(true);
 
   useEffect(() => {
     setMounted(true);
 
-    // Sync the dynamic path `id` to the global store on mount
     if (pathId) {
       if (pathId !== selectedProjectId) {
         selectProject(pathId);
@@ -40,20 +41,33 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
       if (selectedProjectId !== 'p1') {
         selectProject('p1');
       }
-      // When explicitly navigating to the root `/chat`, reset the new chat state
-      // so it doesn't hold messages from a previously migrated creation
       clearProject('p1');
     }
   }, [pathId, selectProject, selectedProjectId, clearProject]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 50);
-    return () => clearTimeout(timer);
-  }, [messages]);
+  const scrollToBottom = useCallback((instant = false) => {
+    if (!messagesEndRef.current) return;
+    messagesEndRef.current.scrollIntoView({
+      behavior: instant ? 'instant' : 'smooth',
+    });
+  }, []);
 
-  // Show banner whenever error message changes (includes success messages)
+  const handleScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const threshold = 120;
+    setIsNearBottom(
+      el.scrollHeight - el.scrollTop - el.clientHeight < threshold
+    );
+  }, []);
+
+  useEffect(() => {
+    if (isNearBottom) {
+      const raf = requestAnimationFrame(() => scrollToBottom());
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [messages, isNearBottom, scrollToBottom]);
+
   useEffect(() => {
     if (error) {
       setBannerVisible(true);
@@ -62,10 +76,16 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
     }
   }, [error]);
 
-  const formatTimestamp = (date: Date): string => format(date, 'MMM d, h:mm a');
+  const formatTimestamp = (date: Date): string =>
+    format(date, 'MMM d, h:mm a');
 
-  const handleSend = async (message: string, images?: string[]) => {
-    await sendMessage(message, images);
+  const handleSend = async (
+    message: string,
+    images?: string[],
+    files?: File[]
+  ) => {
+    scrollToBottom();
+    await sendMessage(message, images, files);
   };
 
   const handleWrong = (messageId: string) => {
@@ -76,11 +96,11 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
 
   return (
     <div className="bg-background relative flex h-full flex-col" role="main">
-      {/* Status Banner (success or error from markAsWrong / sendMessage) */}
+      {/* Status Banner */}
       {bannerVisible && error && (
         <div
           className={cn(
-            'border-b px-4 py-2.5 text-sm font-medium transition-all',
+            'animate-in fade-in slide-in-from-top-1 border-b px-3 py-2 text-sm font-medium duration-200 sm:px-4 sm:py-2.5',
             isSuccess
               ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
               : 'border-destructive/20 bg-destructive/10 text-destructive'
@@ -88,10 +108,10 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
           role="alert"
         >
           <div className="mx-auto flex max-w-4xl items-center justify-between gap-2">
-            <span>{error}</span>
+            <span className="min-w-0 flex-1 truncate">{error}</span>
             <button
               onClick={() => setBannerVisible(false)}
-              className="shrink-0 opacity-70 hover:opacity-100"
+              className="shrink-0 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 active:scale-95"
               aria-label="Dismiss"
             >
               <X className="h-4 w-4" />
@@ -102,12 +122,14 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
 
       {/* Messages Container */}
       <div
-        className="safe-area-inset-top flex-1 overflow-y-auto"
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="safe-area-inset-top flex-1 scroll-smooth overflow-y-auto overscroll-contain"
         role="log"
         aria-live="polite"
         aria-label="Chat messages"
       >
-        <div className="mx-auto w-full max-w-4xl px-3 py-3 sm:px-4 sm:py-6">
+        <div className="mx-auto w-full max-w-4xl px-3 py-3 sm:px-4 md:px-6 sm:py-6">
           {messages.length === 0 ? (
             isSessionLoading ? (
               <ChatSkeleton />
@@ -118,25 +140,30 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
               />
             )
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-5 md:space-y-6">
               {messages.map((message, idx) => {
                 const prevMessage = idx > 0 ? messages[idx - 1] : null;
                 const showTimestamp =
                   !prevMessage ||
                   new Date(message.createdAt).getTime() -
                     new Date(prevMessage.createdAt).getTime() >
-                    300_000; // 5 minutes
+                    300_000;
 
                 return (
                   <div key={message.id}>
                     {showTimestamp && (
-                      <div className="text-muted-foreground mb-4 text-center text-xs">
+                      <div className="text-muted-foreground mb-3 text-center text-[11px] font-medium tracking-wide uppercase sm:mb-4">
                         {formatTimestamp(message.createdAt)}
                       </div>
                     )}
                     <div
-                      className={`chat-message-enter ${mounted ? '' : 'opacity-0'}`}
-                      style={{ animationDelay: `${idx * 30}ms` }}
+                      className={cn(
+                        'group chat-message-enter',
+                        !mounted && 'opacity-0'
+                      )}
+                      style={{
+                        animationDelay: `${Math.min(idx * 30, 300)}ms`,
+                      }}
                     >
                       <ChatMessage
                         id={message.id}
@@ -155,7 +182,7 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
                 );
               })}
 
-              <div ref={messagesEndRef} />
+              <div ref={messagesEndRef} className="h-1" />
             </div>
           )}
         </div>
@@ -163,7 +190,7 @@ function ChatInterfaceContent({ id: pathId }: { id?: string }) {
 
       {/* Input Area */}
       <div className="bg-background/80 safe-area-inset-bottom shrink-0 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-6">
+        <div className="mx-auto w-full max-w-4xl px-2 py-2 sm:px-4 sm:py-3 md:px-6 md:py-4">
           <ChatInput onSend={handleSend} />
         </div>
       </div>

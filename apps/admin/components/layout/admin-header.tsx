@@ -60,7 +60,7 @@ export function AdminHeader() {
                 </span>
               </div>
               <Avatar className="border-border h-9 w-9 border">
-                <AvatarImage src={user?.avatar_url || ''} />
+                <AvatarImage src="" />
                 <AvatarFallback className="bg-primary/10 text-primary">
                   {user?.full_name?.substring(0, 2).toUpperCase() || 'AD'}
                 </AvatarFallback>

@@ -1,10 +1,4 @@
-/**
- * Admin Users Service
- *
- * Comprehensive user management for platform administrators.
- */
-
-import { ApiService } from '../api-service';
+import { ApiService, type PaginatedResponse } from '../api-service';
 
 export interface AdminUserView {
   id: number;
@@ -12,112 +6,126 @@ export interface AdminUserView {
   full_name: string | null;
   role: string;
   is_active: boolean;
-  status: 'active' | 'suspended' | 'pending';
-  is_suspended: boolean;
-  subscription_tier: string;
-  wallet_balance: number;
-  total_sessions: number;
-  total_failures: number;
-  total_failed_prompts: number;
   created_at: string;
-  last_login: string | null;
+  is_expert: boolean;
+  expert_id: number | null;
+  expert_tier: number | null;
+  expert_status: string | null;
+  interview_completed: boolean | null;
+  domain_count: number;
+  profile_completed: boolean;
+  years_of_experience: number | null;
+}
+
+export interface UserRoleAssignment {
+  id: number;
+  user_id: number;
+  role_id: number;
+  role_name: string;
+  assigned_by: number | null;
+  assignment_reason: string | null;
+  is_active: boolean;
+  assigned_at: string;
+  expires_at: string | null;
+  revoked_at: string | null;
+  role: {
+    id: number;
+    role_name: string;
+    display_name: string;
+  } | null;
+}
+
+export interface UserStatusResponse {
+  user_id: number;
+  email: string;
+  full_name: string | null;
+  base_role: string;
+  context: string | null;
+  roles: UserRoleAssignment[];
+  available_roles: string[];
+  workflows: string[];
+  terms_acceptance: unknown;
+  subscription_tier: string | null;
+  is_on_workbench: boolean;
+  is_on_admin: boolean;
+  is_on_subscription: boolean;
+  active_pages: string[];
 }
 
 export interface ListAdminUsersParams {
-  skip?: number;
-  limit?: number;
+  page?: number;
+  page_size?: number;
   role?: string;
   status?: string;
   search?: string;
 }
 
-export interface UpdateUserRequest {
-  full_name?: string;
-  role?: string;
-  status?: 'active' | 'suspended' | 'pending';
+export interface AssignRoleRequest {
+  role_name: string;
+  reason?: string;
+}
+
+export interface RevokeRoleRequest {
+  role_name: string;
+  reason?: string;
+}
+
+export interface ProfileCompletionStatus {
+  profile_completed: boolean;
+  missing_fields: string[];
 }
 
 export class AdminUsersService extends ApiService {
-  /**
-   * List all users with comprehensive details and filters
-   */
-  async listUsers(params: ListAdminUsersParams = {}): Promise<AdminUserView[]> {
-    const query = new URLSearchParams(params as any).toString();
-    const response = await this.client.get<AdminUserView[]>(
-      `/admin/users?${query}`
+  async listUsers(
+    params: ListAdminUsersParams = {}
+  ): Promise<PaginatedResponse<AdminUserView>> {
+    const query = this.buildQuery(params as Record<string, unknown>);
+    const response = await this.client.get<PaginatedResponse<AdminUserView>>(
+      `/admin/users${query}`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get comprehensive details for a specific user
-   */
-  async getUserDetails(userId: number): Promise<AdminUserView> {
-    const response = await this.client.get<AdminUserView>(
-      `/admin/users/${userId}`
+  async getUserRoles(userId: number): Promise<UserRoleAssignment[]> {
+    const response = await this.client.get<UserRoleAssignment[]>(
+      `/admin/users/${userId}/roles`
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Update user details or role
-   */
-  async updateUser(
+  async assignRole(
     userId: number,
-    data: UpdateUserRequest
-  ): Promise<AdminUserView> {
-    const response = await this.client.patch<AdminUserView>(
-      `/admin/users/${userId}`,
+    data: AssignRoleRequest
+  ): Promise<UserRoleAssignment> {
+    const response = await this.client.post<UserRoleAssignment>(
+      `/admin/users/${userId}/assign-role`,
       data
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Suspend a user's account
-   */
-  async suspendUser(userId: number, reason: string): Promise<void> {
-    const response = await this.client.post(`/admin/users/${userId}/suspend`, {
-      reason,
-    });
-    this.handleResponse(response);
-  }
-
-  /**
-   * Activate a suspended user account
-   */
-  async activateUser(userId: number): Promise<void> {
-    const response = await this.client.post(`/admin/users/${userId}/activate`);
-    this.handleResponse(response);
-  }
-
-  /**
-   * Delete a user account (irreversible)
-   */
-  async deleteUser(userId: number): Promise<void> {
-    const response = await this.client.delete(`/admin/users/${userId}`);
-    this.handleResponse(response);
-  }
-
-  /**
-   * Get profile completion status for current admin
-   */
-  async getProfileCompletion(): Promise<{
-    completed: boolean;
-    missing_fields: string[];
-    completion_percentage: number;
-  }> {
-    const response = await this.client.get<any>('/users/me/profile-completion');
+  async revokeRole(
+    userId: number,
+    data: RevokeRoleRequest
+  ): Promise<unknown> {
+    const response = await this.client.post(
+      `/admin/users/${userId}/revoke-role`,
+      data
+    );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get accessible pages for current admin
-   */
-  async getAccessiblePages(): Promise<
-    Array<{ page: string; accessible: boolean }>
-  > {
-    const response = await this.client.get<any>('/users/me/accessible-pages');
+  async getProfileCompletion(): Promise<ProfileCompletionStatus> {
+    const response = await this.client.get<ProfileCompletionStatus>(
+      '/users/me/profile-completion'
+    );
+    return this.handleResponse(response);
+  }
+
+  async getUserStatus(): Promise<UserStatusResponse> {
+    const response = await this.client.get<UserStatusResponse>(
+      '/users/me/status'
+    );
     return this.handleResponse(response);
   }
 }

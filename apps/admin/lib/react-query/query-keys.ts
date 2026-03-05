@@ -1,91 +1,132 @@
-/**
- * React Query Keys
- *
- * Centralized query keys for all admin services.
- */
-
 export const queryKeys = {
-  // Auth
   me: ['me'] as const,
 
-  // Users
-  usersList: (skip: number, limit: number, role?: string, status?: string) =>
-    ['users', 'list', { skip, limit, role, status }] as const,
-  userDetails: (userId: number) => ['users', 'details', userId] as const,
-  userAuditLogs: (userId: number) => ['users', 'audit', userId] as const,
+  users: {
+    all: ['users'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['users', 'list', params] as const,
+    roles: (userId: number) => ['users', 'roles', userId] as const,
+    profileCompletion: ['users', 'profile-completion'] as const,
+    status: ['users', 'status'] as const,
+  },
 
-  // Conversations
-  failedConversations: (
-    skip: number,
-    limit: number,
-    status?: string,
-    domain?: string,
-    priority?: string
-  ) =>
-    [
-      'conversations',
-      'failed',
-      { skip, limit, status, domain, priority },
-    ] as const,
-  conversationDetail: (id: string) => ['conversations', 'detail', id] as const,
-  conversationRubric: (id: string) => ['conversations', 'rubric', id] as const,
+  conversations: {
+    all: ['conversations'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['conversations', 'list', params] as const,
+    detail: (id: number) => ['conversations', 'detail', id] as const,
+    rubric: (id: number) => ['conversations', 'rubric', id] as const,
+    statusHistory: (id: number) =>
+      ['conversations', 'status-history', id] as const,
+    annotationProgress: (id: number) =>
+      ['conversations', 'annotation-progress', id] as const,
+  },
 
-  // Pipeline
-  pipelineStatus: () => ['pipeline', 'status'] as const,
-  pipelineOverview: () => ['pipeline', 'overview'] as const,
-  pipelineDomains: () => ['pipeline', 'domains'] as const,
-  domainDetails: (domain: string) => ['pipeline', 'domain', domain] as const,
+  experts: {
+    all: ['experts'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['experts', 'list', params] as const,
+    detail: (id: number) => ['experts', 'detail', id] as const,
+    scoreHistory: (id: number) =>
+      ['experts', 'score-history', id] as const,
+    trajectory: (id: number) =>
+      ['experts', 'trajectory', id] as const,
+  },
 
-  // QC Config
-  qcConfigs: () => ['qc', 'configs'] as const,
-  qcConfigDetail: (id: number) => ['qc', 'config', id] as const,
+  batches: {
+    all: ['batches'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['batches', 'list', params] as const,
+    detail: (id: number) => ['batches', 'detail', id] as const,
+    quality: (id: number) => ['batches', 'quality', id] as const,
+    qualityHistory: (id: number) =>
+      ['batches', 'quality-history', id] as const,
+  },
 
-  // Roles
-  rolesList: () => ['roles', 'list'] as const,
-  roleDetails: (id: number) => ['roles', 'detail', id] as const,
+  pipeline: {
+    all: ['pipeline'] as const,
+    overview: ['pipeline', 'overview'] as const,
+    domainSummary: ['pipeline', 'domain-summary'] as const,
+    taskStatusSummary: ['pipeline', 'task-status-summary'] as const,
+    taskStatusDefinitions: ['pipeline', 'task-status-definitions'] as const,
+    tasksByStatus: (status: string) =>
+      ['pipeline', 'tasks-by-status', status] as const,
+  },
 
-  // Wallets
-  walletsList: (
-    skip: number,
-    limit: number,
-    status?: string,
-    search?: string
-  ) => ['wallets', 'list', { skip, limit, status, search }] as const,
-  walletDetails: (userId: number) => ['wallets', 'user', userId] as const,
-  walletTransactions: (walletId: string, skip: number, limit: number) =>
-    ['wallets', 'transactions', walletId, { skip, limit }] as const,
+  domains: {
+    all: ['domains'] as const,
+    list: (includeInactive: boolean) =>
+      ['domains', 'list', { includeInactive }] as const,
+  },
 
-  // Payments
-  paymentsList: (params: any) => ['payments', 'list', params] as const,
-  paymentDetails: (id: number) => ['payments', 'detail', id] as const,
-  paymentStats: (startDate?: string, endDate?: string) =>
-    ['payments', 'stats', { startDate, endDate }] as const,
+  allocations: {
+    all: ['allocations'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['allocations', 'list', params] as const,
+  },
 
-  // Audit
-  auditLogs: (params: any) => ['audit', 'logs', params] as const,
-  auditLogDetail: (id: number) => ['audit', 'log', id] as const,
+  wallets: {
+    all: ['wallets'] as const,
+    list: ['wallets', 'list'] as const,
+    user: (userId: number) => ['wallets', 'user', userId] as const,
+    transactions: (userId: number) =>
+      ['wallets', 'transactions', userId] as const,
+  },
 
-  // Platform
-  platformConfig: () => ['platform', 'config'] as const,
-  subscriptionPlans: () => ['platform', 'plans'] as const,
+  payments: {
+    all: ['payments'] as const,
+    payouts: (params: Record<string, unknown>) =>
+      ['payments', 'payouts', params] as const,
+    payoutConfig: ['payments', 'payout-config'] as const,
+    payoutConfigHistory: ['payments', 'payout-config-history'] as const,
+    byUser: (userId: number) =>
+      ['payments', 'by-user', userId] as const,
+    byBatch: (batchId: number) =>
+      ['payments', 'by-batch', batchId] as const,
+  },
 
-  // Experts (Legacy linked)
-  expertsList: (skip: number, limit: number) =>
-    ['experts', 'list', { skip, limit }] as const,
-  expertDetails: (id: number) => ['experts', 'detail', id] as const,
+  qcConfig: {
+    all: ['qc-config'] as const,
+    list: ['qc-config', 'list'] as const,
+    active: ['qc-config', 'active'] as const,
+  },
 
-  // Prompts (Legacy linked)
-  promptsList: (skip: number, limit: number) =>
-    ['prompts', 'list', { skip, limit }] as const,
-  failedPrompts: () => ['prompts', 'failed'] as const,
+  config: {
+    all: ['config'] as const,
+    platform: (category?: string) =>
+      ['config', 'platform', category] as const,
+  },
 
-  // Workbench (Legacy linked)
-  taskBatches: (skip: number, limit: number) =>
-    ['workbench', 'batches', { skip, limit }] as const,
-  availableTasks: () => ['workbench', 'tasks', 'available'] as const,
+  audit: {
+    all: ['audit'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['audit', 'list', params] as const,
+  },
 
-  // Compatibility Aliases
-  adminPipelineStatus: ['pipeline', 'status'] as const,
-  adminUsers: (params: any) => ['users', 'list', params] as const,
-  adminWallets: (params: any) => ['wallets', 'list', params] as const,
-};
+  analytics: {
+    all: ['analytics'] as const,
+    leaderboard: (tier?: number) =>
+      ['analytics', 'leaderboard', tier] as const,
+    qualityTrends: (domain?: string) =>
+      ['analytics', 'quality-trends', domain] as const,
+    tierChanges: ['analytics', 'tier-changes'] as const,
+  },
+
+  iaa: {
+    all: ['iaa'] as const,
+    overview: ['iaa', 'overview'] as const,
+    batch: (batchId: number) => ['iaa', 'batch', batchId] as const,
+    conversation: (id: number) =>
+      ['iaa', 'conversation', id] as const,
+    expert: (expertId: number) =>
+      ['iaa', 'expert', expertId] as const,
+  },
+
+  reviewers: {
+    all: ['reviewers'] as const,
+    preAnnotation: (params: Record<string, unknown>) =>
+      ['reviewers', 'pre-annotation', params] as const,
+    postAnnotation: (params: Record<string, unknown>) =>
+      ['reviewers', 'post-annotation', params] as const,
+  },
+} as const;

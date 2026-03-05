@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Filter,
   RefreshCcw,
   AlertCircle,
   Clock,
@@ -11,10 +10,12 @@ import {
   MoreVertical,
   Layers,
   ExternalLink,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   adminConversationsService,
-  type AdminConversationStatus,
+  type ListFailedConversationsParams,
 } from '@/services/admin/conversations-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
@@ -29,68 +30,81 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@raweval/utils';
 
+const PAGE_SIZE = 20;
+
 export default function ConversationsPage() {
-  const [skip, setSkip] = useState(0);
-  const limit = 20;
-  const [status, setStatus] = useState<AdminConversationStatus | undefined>(
-    undefined
-  );
-  const [domain, setDomain] = useState<string | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState<string>('');
+  const [domain, _setDomain] = useState<string>('');
 
   const queryClient = useQueryClient();
 
-  const { data: conversations, isLoading } = useQuery({
-    queryKey: queryKeys.failedConversations(skip, limit, status, domain),
-    queryFn: () =>
-      adminConversationsService.listFailedConversations({
-        skip,
-        limit,
-        status,
-        domain,
-      }),
+  const params: ListFailedConversationsParams = {
+    page,
+    page_size: PAGE_SIZE,
+    ...(status ? { status } : {}),
+    ...(domain ? { domain } : {}),
+  };
+
+  const { data: conversationsData, isLoading } = useQuery({
+    queryKey: queryKeys.conversations.list(params as Record<string, unknown>),
+    queryFn: () => adminConversationsService.listFailedConversations(params),
   });
 
-  const updateStatusMutation = useMutation({
+  const conversations = conversationsData?.items ?? [];
+  const totalPages = conversationsData?.total_pages ?? 1;
+
+  const transitionMutation = useMutation({
     mutationFn: ({
       id,
-      status,
+      newStatus,
+      reason,
     }: {
-      id: string;
-      status: AdminConversationStatus;
-    }) => adminConversationsService.updateConversationStatus(id, { status }),
+      id: number;
+      newStatus: string;
+      reason: string;
+    }) =>
+      adminConversationsService.transitionStatus(id, {
+        new_status_code: newStatus,
+        reason,
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['conversations', 'failed'] });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations.all,
+      });
     },
   });
 
-  const getStatusColor = (status: AdminConversationStatus) => {
-    switch (status) {
-      case 'failed':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'processing':
-        return 'bg-primary/10 text-primary border-primary/20';
-      case 'completed':
-        return 'bg-success/10 text-success border-success/20';
-      case 'ignored':
-        return 'bg-muted text-muted-foreground border-border';
-      default:
-        return 'bg-primary/10 text-primary border-primary/20';
-    }
+  const rerunQCMutation = useMutation({
+    mutationFn: (id: number) =>
+      adminConversationsService.rerunQC(id, { reason: 'Admin re-run' }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.conversations.all,
+      });
+    },
+  });
+
+  const getStatusColor = (s: string | null | undefined) => {
+    if (!s || typeof s !== 'string') return 'bg-muted text-muted-foreground border-border';
+    if (s.includes('completed') || s.includes('done'))
+      return 'bg-success/10 text-success border-success/20';
+    if (s.includes('fail') || s.includes('error'))
+      return 'bg-destructive/10 text-destructive border-destructive/20';
+    if (s.includes('progress') || s.includes('annot'))
+      return 'bg-primary/10 text-primary border-primary/20';
+    return 'bg-muted text-muted-foreground border-border';
   };
 
-  const getStatusIcon = (status: AdminConversationStatus) => {
-    switch (status) {
-      case 'failed':
-        return <AlertCircle className="h-3 w-3" />;
-      case 'processing':
-        return <RefreshCcw className="h-3 w-3 animate-spin" />;
-      case 'completed':
-        return <CheckCircle2 className="h-3 w-3" />;
-      case 'ignored':
-        return <Clock className="h-3 w-3" />;
-      default:
-        return <Clock className="h-3 w-3" />;
-    }
+  const getStatusIcon = (s: string | null | undefined) => {
+    if (!s || typeof s !== 'string') return <Clock className="h-3 w-3" />;
+    if (s.includes('completed') || s.includes('done'))
+      return <CheckCircle2 className="h-3 w-3" />;
+    if (s.includes('fail') || s.includes('error'))
+      return <AlertCircle className="h-3 w-3" />;
+    if (s.includes('progress'))
+      return <RefreshCcw className="h-3 w-3 animate-spin" />;
+    return <Clock className="h-3 w-3" />;
   };
 
   return (
@@ -106,15 +120,28 @@ export default function ConversationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="border-input bg-background focus:ring-ring rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+          >
+            <option value="">All Statuses</option>
+            <option value="pending_analysis">Pending Analysis</option>
+            <option value="analysis_complete">Analysis Complete</option>
+            <option value="in_annotation">In Annotation</option>
+            <option value="annotation_complete">Annotation Complete</option>
+            <option value="needs_human_review">Needs Human Review</option>
+            <option value="completed">Completed</option>
+          </select>
           <Button
+            variant="outline"
             className="gap-2"
             onClick={() =>
               queryClient.invalidateQueries({
-                queryKey: ['conversations', 'failed'],
+                queryKey: queryKeys.conversations.all,
               })
             }
           >
@@ -128,15 +155,14 @@ export default function ConversationsPage() {
         <CardHeader className="border-border/50 bg-muted/30 border-b pb-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-sm font-medium">
-              Results ({conversations?.length || 0})
+              Results ({conversationsData?.total ?? 0})
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-background">
-                Status: {status || 'All'}
-              </Badge>
-              <Badge variant="outline" className="bg-background">
-                Domain: {domain || 'All'}
-              </Badge>
+              {status && (
+                <Badge variant="outline" className="bg-background">
+                  Status: {status.replace(/_/g, ' ')}
+                </Badge>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -145,11 +171,11 @@ export default function ConversationsPage() {
             <table className="w-full text-left text-sm">
               <thead className="border-border bg-muted/30 text-muted-foreground border-b text-xs font-medium tracking-wider uppercase">
                 <tr>
-                  <th className="px-6 py-3">Conversation ID</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Priority</th>
+                  <th className="px-6 py-3">ID</th>
+                  <th className="px-6 py-3">QC Status</th>
                   <th className="px-6 py-3">Domain</th>
-                  <th className="px-6 py-3">Failure Prob</th>
+                  <th className="px-6 py-3">Failure Type</th>
+                  <th className="px-6 py-3">User / Prob</th>
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -158,48 +184,28 @@ export default function ConversationsPage() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
                       <td colSpan={6} className="px-6 py-4">
-                        <div className="bg-muted h-4 w-full rounded"></div>
+                        <div className="bg-muted h-4 w-full rounded" />
                       </td>
                     </tr>
                   ))
-                ) : conversations && conversations.length > 0 ? (
+                ) : conversations.length > 0 ? (
                   conversations.map((conv) => (
-                    <tr key={conv.id} className="group hover:bg-accent/50">
+                    <tr key={conv.conversation_id} className="group hover:bg-accent/50">
                       <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-foreground font-mono text-xs font-semibold">
-                            {conv.id.substring(0, 8)}...
-                          </span>
-                          <span className="text-muted-foreground mt-1 line-clamp-1 max-w-xs text-xs">
-                            {conv.query_text}
-                          </span>
-                        </div>
+                        <span className="text-foreground font-mono text-xs font-semibold">
+                          #{conv.conversation_id}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <Badge
                           variant="outline"
                           className={cn(
                             'gap-1 py-0.5',
-                            getStatusColor(conv.status)
+                            getStatusColor(conv.qc_status)
                           )}
                         >
-                          {getStatusIcon(conv.status)}
-                          {conv.status}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            'py-0.5',
-                            conv.priority === 'high'
-                              ? 'bg-destructive/10 text-destructive border-destructive/20'
-                              : conv.priority === 'medium'
-                                ? 'border-amber-200 bg-amber-100 text-amber-700'
-                                : 'bg-muted text-muted-foreground border-border'
-                          )}
-                        >
-                          {conv.priority}
+                          {getStatusIcon(conv.qc_status)}
+                          {(conv.qc_status ?? 'pending').replace(/_/g, ' ')}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -208,24 +214,29 @@ export default function ConversationsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="bg-muted h-1.5 w-16 overflow-hidden rounded-full">
-                            <div
-                              className={cn(
-                                'h-full rounded-full transition-all',
-                                conv.failure_probability > 0.7
-                                  ? 'bg-destructive'
-                                  : 'bg-primary'
-                              )}
-                              style={{
-                                width: `${conv.failure_probability * 100}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-muted-foreground text-xs font-medium">
-                            {(conv.failure_probability * 100).toFixed(0)}%
-                          </span>
-                        </div>
+                        {conv.failure_type && (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'py-0.5',
+                              conv.failure_type === 'both'
+                                ? 'bg-destructive/10 text-destructive border-destructive/20'
+                                : 'bg-muted text-muted-foreground border-border'
+                            )}
+                          >
+                            {conv.failure_type}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-muted-foreground line-clamp-1 max-w-xs text-xs">
+                          {conv.user_email}
+                          {conv.failure_probability != null && (
+                            <span className="ml-1">
+                              ({(conv.failure_probability * 100).toFixed(1)}%)
+                            </span>
+                          )}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <DropdownMenu>
@@ -240,7 +251,8 @@ export default function ConversationsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuItem className="cursor-pointer gap-2">
-                              <ExternalLink className="h-4 w-4" /> View Details
+                              <ExternalLink className="h-4 w-4" /> View Full
+                              Detail
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer gap-2">
                               <Layers className="h-4 w-4" /> View Rubric
@@ -248,25 +260,22 @@ export default function ConversationsPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-primary cursor-pointer gap-2"
-                              onClick={() =>
-                                updateStatusMutation.mutate({
-                                  id: conv.id,
-                                  status: 'processing',
-                                })
-                              }
+                              onClick={() => rerunQCMutation.mutate(conv.conversation_id)}
                             >
-                              <RefreshCcw className="h-4 w-4" /> Retry Analysis
+                              <RefreshCcw className="h-4 w-4" /> Re-run QC
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-muted-foreground cursor-pointer gap-2"
                               onClick={() =>
-                                updateStatusMutation.mutate({
-                                  id: conv.id,
-                                  status: 'ignored',
+                                transitionMutation.mutate({
+                                  id: conv.conversation_id,
+                                  newStatus: 'needs_human_review',
+                                  reason: 'Admin escalation',
                                 })
                               }
                             >
-                              <Clock className="h-4 w-4" /> Mark as Ignored
+                              <AlertCircle className="h-4 w-4" /> Escalate to
+                              Review
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -288,24 +297,28 @@ export default function ConversationsPage() {
           </div>
           <div className="border-border flex items-center justify-between border-t px-6 py-4">
             <span className="text-muted-foreground text-xs">
-              Showing {skip + 1} to {skip + (conversations?.length || 0)}
+              Page {page} of {totalPages}
             </span>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSkip(Math.max(0, skip - limit))}
-                disabled={skip === 0}
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+                className="gap-1"
               >
+                <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setSkip(skip + limit)}
-                disabled={!conversations || conversations.length < limit}
+                onClick={() => setPage(page + 1)}
+                disabled={page >= totalPages}
+                className="gap-1"
               >
                 Next
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>

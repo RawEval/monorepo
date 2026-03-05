@@ -1,65 +1,113 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
-import { formatNumber, formatPercentage } from '@raweval/utils';
 import {
   Users,
   Award,
-  Search,
   Loader2,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
+  ArrowUpDown,
 } from 'lucide-react';
-import { adminExpertsService } from '@/services/admin';
+import { adminExpertsService, type ListExpertsParams } from '@/services/admin/experts-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
+import { cn } from '@raweval/utils';
 
 const PAGE_SIZE = 20;
 
 export default function ExpertsPage() {
-  const [page, setPage] = useState(0);
-  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [tierFilter, setTierFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sortBy, _setSortBy] = useState<string>('expert_score');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
+  const queryClient = useQueryClient();
 
-  const { data: experts, isLoading } = useQuery({
-    queryKey: queryKeys.expertsList(page * PAGE_SIZE, PAGE_SIZE),
-    queryFn: () => adminExpertsService.getExperts(page * PAGE_SIZE, PAGE_SIZE),
+  const params: ListExpertsParams = {
+    page,
+    page_size: PAGE_SIZE,
+    ...(tierFilter ? { tier: Number(tierFilter) } : {}),
+    ...(statusFilter ? { expert_status: statusFilter } : {}),
+    sort_by: sortBy,
+    sort_order: sortOrder,
+  };
+
+  const { data: expertsData, isLoading } = useQuery({
+    queryKey: queryKeys.experts.list(params as Record<string, unknown>),
+    queryFn: () => adminExpertsService.listExperts(params),
   });
 
-  const filteredExperts = experts?.filter((e) =>
-    search
-      ? e.specializations.some((s) =>
-          s.toLowerCase().includes(search.toLowerCase())
-        ) || String(e.id).includes(search)
-      : true
-  );
+  const experts = expertsData?.items ?? [];
+  const totalExperts = expertsData?.total ?? 0;
+  const totalPages = expertsData?.total_pages ?? 1;
+
+  const recomputeMutation = useMutation({
+    mutationFn: (expertId: number) =>
+      adminExpertsService.recomputeScore(expertId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.experts.all });
+    },
+  });
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-foreground text-2xl font-semibold">
             Expert Management
           </h1>
           <p className="text-muted-foreground text-sm">
-            View and manage registered experts, tiers, and certifications
+            View and manage registered experts, tiers, scores, and status
           </p>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by ID or specialization..."
-          className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none sm:max-w-sm"
-        />
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={tierFilter}
+          onChange={(e) => {
+            setTierFilter(e.target.value);
+            setPage(1);
+          }}
+          className="border-input bg-background focus:ring-ring rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:outline-none"
+        >
+          <option value="">All Tiers</option>
+          <option value="1">Tier 1</option>
+          <option value="2">Tier 2</option>
+          <option value="3">Tier 3</option>
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="border-input bg-background focus:ring-ring rounded-lg border px-3 py-2.5 text-sm focus:ring-2 focus:outline-none"
+        >
+          <option value="">All Statuses</option>
+          <option value="active">Active</option>
+          <option value="pending_interview">Pending Interview</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => {
+            setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+            setPage(1);
+          }}
+        >
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          {sortOrder === 'desc' ? 'Highest first' : 'Lowest first'}
+        </Button>
       </div>
 
       {/* Experts table */}
@@ -67,7 +115,7 @@ export default function ExpertsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Users className="h-4 w-4" />
-            Experts ({filteredExperts?.length ?? 0})
+            Experts ({totalExperts})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -75,82 +123,108 @@ export default function ExpertsPage() {
             <div className="flex items-center justify-center py-12">
               <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
-          ) : filteredExperts && filteredExperts.length > 0 ? (
+          ) : experts.length > 0 ? (
             <>
-              {/* Table header */}
               <div className="border-border text-muted-foreground mb-2 hidden items-center gap-4 border-b px-4 pb-2 text-xs font-medium sm:flex">
                 <span className="w-16">ID</span>
                 <span className="w-16">Tier</span>
-                <span className="flex-1">Specializations</span>
-                <span className="w-24 text-right">WoE Score</span>
-                <span className="w-24 text-right">Accuracy</span>
-                <span className="w-24 text-right">Tasks</span>
+                <span className="flex-1">Expert</span>
+                <span className="w-24 text-right">Score</span>
+                <span className="w-24 text-right">Status</span>
+                <span className="w-24 text-right">Actions</span>
               </div>
 
               <div className="space-y-2">
-                {filteredExperts.map((expert) => (
+                {experts.map((expert) => (
                   <div
-                    key={expert.id}
+                    key={expert.expert_id}
                     className="border-border flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:gap-4"
                   >
-                    <span className="code-label text-muted-foreground w-16">
-                      #{expert.id}
+                    <span className="text-muted-foreground w-16 font-mono text-xs">
+                      #{expert.expert_id}
                     </span>
                     <div className="w-16">
                       <Badge
                         variant={
-                          expert.tier === 1
+                          expert.expert_tier === 1
                             ? 'default'
-                            : expert.tier === 2
+                            : expert.expert_tier === 2
                               ? 'secondary'
-                              : 'outline'
+                              : expert.expert_tier === 3
+                                ? 'outline'
+                                : 'outline'
                         }
                         className="gap-0.5"
                       >
-                        <Award className="h-3 w-3" />T{expert.tier}
+                        <Award className="h-3 w-3" />
+                        {expert.expert_tier != null ? `T${expert.expert_tier}` : '—'}
                       </Badge>
                     </div>
-                    <div className="flex flex-1 flex-wrap gap-1">
-                      {expert.specializations.map((spec) => (
-                        <Badge key={spec} variant="outline" className="text-xs">
-                          {spec}
-                        </Badge>
-                      ))}
+                    <div className="flex flex-1 flex-col">
+                      <span className="text-sm font-medium">
+                        {expert.full_name || expert.email || `User #${expert.user_id}`}
+                      </span>
+                      <span className="text-muted-foreground text-xs">
+                        {expert.email}
+                      </span>
                     </div>
-                    <span className="metric w-24 text-right text-sm">
-                      {expert.woe_score.toFixed(2)}
+                    <span className="w-24 text-right font-mono text-sm font-semibold">
+                      {expert.expert_score?.toFixed(2) ?? 'N/A'}
                     </span>
-                    <span className="metric w-24 text-right text-sm">
-                      {formatPercentage(expert.accuracy_rate, 1)}
-                    </span>
-                    <span className="metric w-24 text-right text-sm">
-                      {formatNumber(expert.total_tasks_completed)}
-                    </span>
+                    <div className="w-24 text-right">
+                      <Badge
+                        variant={
+                          expert.expert_status === 'active'
+                            ? 'secondary'
+                            : expert.expert_status === 'suspended'
+                              ? 'destructive'
+                              : 'outline'
+                        }
+                        className={cn(
+                          'text-xs',
+                          expert.is_on_probation &&
+                            'border-amber-200 bg-amber-100 text-amber-700'
+                        )}
+                      >
+                        {expert.is_on_probation
+                          ? 'Probation'
+                          : expert.expert_status || 'active'}
+                      </Badge>
+                    </div>
+                    <div className="w-24 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 gap-1 text-xs"
+                        onClick={() => recomputeMutation.mutate(expert.expert_id)}
+                        disabled={recomputeMutation.isPending}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Score
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* Pagination */}
               <div className="mt-4 flex items-center justify-between">
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={page === 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="gap-1"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
                 <span className="text-muted-foreground text-sm">
-                  Page {page + 1}
+                  Page {page} of {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={
-                    !filteredExperts || filteredExperts.length < PAGE_SIZE
-                  }
+                  disabled={page >= totalPages}
                   onClick={() => setPage((p) => p + 1)}
                   className="gap-1"
                 >
@@ -161,7 +235,7 @@ export default function ExpertsPage() {
             </>
           ) : (
             <p className="text-muted-foreground py-12 text-center text-sm">
-              {search ? 'No experts match your search' : 'No experts found'}
+              No experts found
             </p>
           )}
         </CardContent>

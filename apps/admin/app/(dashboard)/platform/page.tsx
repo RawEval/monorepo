@@ -1,16 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   SlidersHorizontal,
-  Save,
-  Lock,
-  Zap,
-  Trash2,
-  Plus,
-  Clock,
+  Loader2,
+  Database,
+  Settings2,
+  Check,
+  X,
+  Pencil,
 } from 'lucide-react';
-import { adminConfigService } from '@/services/admin';
+import {
+  adminConfigService,
+  type PlatformConfigItem,
+} from '@/services/admin/config-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
 import {
   Card,
@@ -21,27 +25,81 @@ import {
 } from '@raweval/ui/card';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
-import { cn, formatCurrency } from '@raweval/utils';
 
 export default function PlatformPage() {
   const queryClient = useQueryClient();
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
-  const { data: config } = useQuery({
-    queryKey: queryKeys.platformConfig(),
+  const { data: configData, isLoading } = useQuery({
+    queryKey: queryKeys.config.platform(),
     queryFn: () => adminConfigService.getPlatformConfig(),
   });
 
-  const { data: plans, isLoading: plansLoading } = useQuery({
-    queryKey: queryKeys.subscriptionPlans(),
-    queryFn: () => adminConfigService.listSubscriptionPlans(),
-  });
-
-  const updateConfigMutation = useMutation({
-    mutationFn: (data: any) => adminConfigService.updatePlatformConfig(data),
+  const updateMutation = useMutation({
+    mutationFn: ({ key, value }: { key: string; value: string }) =>
+      adminConfigService.updateConfig(key, { value }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.platformConfig() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
+      setEditingKey(null);
+      setEditValue('');
     },
   });
+
+  const seedConfigMutation = useMutation({
+    mutationFn: () => adminConfigService.seedDefaultConfig(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
+    },
+  });
+
+  const seedPlansMutation = useMutation({
+    mutationFn: () => adminConfigService.seedDefaultPlans(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
+    },
+  });
+
+  const configs = configData?.configs ?? [];
+
+  const grouped = configs.reduce(
+    (acc, item) => {
+      const cat = item.category || 'general';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    },
+    {} as Record<string, PlatformConfigItem[]>
+  );
+
+  const startEdit = (item: PlatformConfigItem) => {
+    setEditingKey(item.key);
+    setEditValue(item.raw_value);
+  };
+
+  const cancelEdit = () => {
+    setEditingKey(null);
+    setEditValue('');
+  };
+
+  const formatValue = (item: PlatformConfigItem) => {
+    if (item.type === 'bool')
+      return item.value ? 'Enabled' : 'Disabled';
+    if (item.type === 'float')
+      return `$${Number(item.value).toFixed(2)}`;
+    if (item.type === 'int' && Number(item.value) === -1)
+      return 'Unlimited';
+    return String(item.value);
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'bool': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      case 'int': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'float': return 'bg-amber-100 text-amber-700 border-amber-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -51,218 +109,169 @@ export default function PlatformPage() {
             Platform Configuration
           </h1>
           <p className="text-muted-foreground">
-            Adjust global platform settings, subscription plans, and maintenance
-            modes.
+            Manage global platform settings.
+            {configData && (
+              <span className="ml-1 font-medium">
+                {configData.total} total configs
+              </span>
+            )}
           </p>
         </div>
-        <Button
-          className="gap-2 shadow-sm"
-          onClick={() => updateConfigMutation.mutate({})}
-        >
-          <Save className="h-4 w-4" />
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => seedConfigMutation.mutate()}
+            disabled={seedConfigMutation.isPending}
+          >
+            {seedConfigMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4" />
+            )}
+            Seed Config
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => seedPlansMutation.mutate()}
+            disabled={seedPlansMutation.isPending}
+          >
+            {seedPlansMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Database className="h-4 w-4" />
+            )}
+            Seed Plans
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Core Settings */}
-        <div className="space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <SlidersHorizontal className="text-primary h-5 w-5" /> General
-                settings
-              </CardTitle>
-              <CardDescription>
-                Core threshold and timeout limits for the platform.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <ConfigInput
-                  label="Max Upload Size (MB)"
-                  value={config?.max_upload_size_mb}
-                  icon={Zap}
-                />
-                <ConfigInput
-                  label="Session Timeout (Min)"
-                  value={config?.default_session_timeout_minutes}
-                  icon={Clock}
-                />
-                <ConfigInput
-                  label="Max Concurrent Models"
-                  value={config?.max_concurrent_models}
-                  icon={Zap}
-                />
-                <ConfigInput
-                  label="LLM Timeout (Sec)"
-                  value={config?.llm_timeout_seconds}
-                  icon={Clock}
-                />
-              </div>
-
-              <div className="space-y-4 pt-4">
-                <ConfigToggle
-                  label="Enable Search"
-                  description="Allow models to perform real-time web search"
-                  enabled={config?.enable_web_search}
-                />
-                <ConfigToggle
-                  label="Enable Streaming"
-                  description="Real-time token streaming for all requests"
-                  enabled={config?.enable_streaming}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Maintenance Mode */}
-          <Card
-            className={cn(
-              'border-l-4 transition-colors',
-              config?.maintenance_mode
-                ? 'border-l-destructive bg-destructive/5'
-                : 'border-l-success bg-success/5'
-            )}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-full',
-                      config?.maintenance_mode
-                        ? 'bg-destructive/10 text-destructive'
-                        : 'bg-success/10 text-success'
-                    )}
-                  >
-                    <Lock className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-foreground font-bold">
-                      Maintenance Mode
-                    </h4>
-                    <p className="text-muted-foreground text-sm">
-                      Toggle public access to the platform for all users.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant={config?.maintenance_mode ? 'destructive' : 'outline'}
-                >
-                  {config?.maintenance_mode ? 'Disable Now' : 'Enable Mode'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
-
-        {/* Subscription Plans */}
+      ) : configs.length > 0 ? (
         <div className="space-y-6">
-          <Card className="h-full">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">Subscription Plans</CardTitle>
-                <CardDescription>Manage tiers and pricing.</CardDescription>
-              </div>
-              <Button size="icon" variant="ghost" className="h-8 w-8">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {plansLoading
-                ? Array.from({ length: 3 }).map((_, i) => (
+          {Object.entries(grouped).map(([category, items]) => (
+            <Card key={category}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg capitalize">
+                  <Settings2 className="text-primary h-5 w-5" />
+                  {category.replace(/_/g, ' ')}
+                </CardTitle>
+                <CardDescription>
+                  {items.length} configuration{' '}
+                  {items.length === 1 ? 'item' : 'items'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {items.map((item) => (
                     <div
-                      key={i}
-                      className="bg-muted/50 h-20 w-full animate-pulse rounded"
-                    />
-                  ))
-                : plans?.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className="group border-border bg-card hover:border-primary/50 relative rounded-lg border p-4 transition-all"
+                      key={item.key}
+                      className="border-border flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-foreground text-sm font-bold capitalize">
-                          {plan.name}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className="font-mono text-[10px]"
-                        >
-                          {formatCurrency(plan.price_monthly)}/mo
-                        </Badge>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {plan.features.slice(0, 3).map((f) => (
-                          <span
-                            key={f}
-                            className="text-muted-foreground text-[10px]"
-                          >
-                            {f} •{' '}
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold">
+                            {item.key.replace(/_/g, ' ')}
                           </span>
-                        ))}
-                        <span className="text-primary text-[10px]">
-                          and {plan.features.length - 3} more
-                        </span>
+                          <Badge
+                            variant="outline"
+                            className={`font-mono text-[10px] ${getTypeColor(item.type)}`}
+                          >
+                            {item.type}
+                          </Badge>
+                          {!item.is_editable && (
+                            <Badge variant="outline" className="text-[10px]">
+                              Read-only
+                            </Badge>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="text-muted-foreground mt-1 text-xs">
+                            {item.description}
+                          </p>
+                        )}
+                        <p className="text-muted-foreground mt-0.5 text-[10px]">
+                          Updated{' '}
+                          {new Date(item.updated_at).toLocaleDateString()}
+                        </p>
                       </div>
-                      <div className="absolute right-2 bottom-2 hidden group-hover:block">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive h-6 w-6"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                      <div className="flex items-center gap-2">
+                        {editingKey === item.key ? (
+                          <>
+                            <input
+                              className="border-input bg-background focus:ring-ring w-32 rounded-md border px-2 py-1 font-mono text-sm focus:ring-2 focus:outline-none"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              autoFocus
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() =>
+                                updateMutation.mutate({
+                                  key: item.key,
+                                  value: editValue,
+                                })
+                              }
+                              disabled={updateMutation.isPending}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={cancelEdit}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-foreground rounded-md bg-slate-50 px-3 py-1 font-mono text-sm font-semibold dark:bg-slate-900">
+                              {formatValue(item)}
+                            </span>
+                            {item.is_editable && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => startEdit(item)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfigInput({ label, value, icon: Icon }: any) {
-  return (
-    <div className="space-y-2">
-      <label className="text-muted-foreground text-xs font-bold tracking-wider uppercase">
-        {label}
-      </label>
-      <div className="relative">
-        <Icon className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-        <input
-          type="number"
-          defaultValue={value}
-          className="border-input bg-background focus:ring-primary w-full rounded-md border py-2 pr-4 pl-10 text-sm focus:ring-1 focus:outline-none"
-        />
-      </div>
-    </div>
-  );
-}
-
-function ConfigToggle({ label, description, enabled }: any) {
-  return (
-    <div className="border-border bg-muted/20 flex items-center justify-between rounded-lg border p-4">
-      <div className="space-y-1">
-        <h5 className="text-foreground text-sm font-bold">{label}</h5>
-        <p className="text-muted-foreground text-xs">{description}</p>
-      </div>
-      <div
-        className={cn(
-          'h-6 w-11 cursor-pointer rounded-full p-1 transition-colors',
-          enabled ? 'bg-primary' : 'bg-muted'
-        )}
-      >
-        <div
-          className={cn(
-            'bg-background h-4 w-4 rounded-full transition-transform',
-            enabled ? 'translate-x-5' : 'translate-x-0'
-          )}
-        />
-      </div>
+      ) : (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 p-12 text-center">
+            <SlidersHorizontal className="text-muted-foreground h-10 w-10" />
+            <div>
+              <p className="text-sm font-medium">No configuration found</p>
+              <p className="text-muted-foreground text-xs">
+                Use &quot;Seed Config&quot; to initialize default platform
+                settings.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

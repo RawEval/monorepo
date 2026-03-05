@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MessageSquare,
@@ -32,36 +32,68 @@ import { format } from 'date-fns';
 import { MobileSheet } from './mobile-sheet';
 import { authService } from '@/services/auth-service';
 
-export function Sidebar() {
+const MOBILE_BREAKPOINT = 768;
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(e.matches);
+    };
+    onChange(mql);
+    mql.addEventListener('change', onChange as (e: MediaQueryListEvent) => void);
+    return () =>
+      mql.removeEventListener('change', onChange as (e: MediaQueryListEvent) => void);
+  }, []);
+
+  return isMobile;
+}
+
+interface SidebarProps {
+  showOnDesktop?: boolean;
+}
+
+export function Sidebar({ showOnDesktop = true }: SidebarProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const projects = useProjectsStore((s) => s.projects);
   const selectedProjectId = useProjectsStore((s) => s.selectedProjectId);
   const selectProject = useProjectsStore((s) => s.selectProject);
-  const createProject = useProjectsStore((s) => s.createProject);
   const renameProject = useProjectsStore((s) => s.renameProject);
   const deleteProject = useProjectsStore((s) => s.deleteProject);
   const getMessages = useChatStore((s) => s.getMessages);
 
   const leftSidebarOpen = useUiStore((s) => s.leftSidebarOpen);
   const toggleLeftSidebar = useUiStore((s) => s.toggleLeftSidebar);
+  const setLeftSidebarOpen = useUiStore((s) => s.setLeftSidebarOpen);
 
-  const handleSelectChat = (id: string) => {
-    selectProject(id);
-    if (id === 'p1') {
-      router.push('/chat');
-    } else {
-      router.push(`/chat/${id}`);
+  useEffect(() => {
+    if (isMobile && leftSidebarOpen) {
+      setLeftSidebarOpen(false);
     }
-    if (isMobile) {
-      toggleLeftSidebar();
-    }
-  };
+    // Only run on mount / when breakpoint changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
+
+  const closeSidebarOnMobile = useCallback(() => {
+    if (isMobile) toggleLeftSidebar();
+  }, [isMobile, toggleLeftSidebar]);
+
+  const handleSelectChat = useCallback(
+    (id: string) => {
+      selectProject(id);
+      router.push(id === 'p1' ? '/chat' : `/chat/${id}`);
+      closeSidebarOnMobile();
+    },
+    [selectProject, router, closeSidebarOnMobile]
+  );
 
   const handleRename = (id: string, currentTitle: string) => {
     setEditingId(id);
@@ -82,11 +114,9 @@ export function Sidebar() {
       const nextProject = remaining[0];
       if (nextProject) {
         selectProject(nextProject.id);
-        if (nextProject.id === 'p1') {
-          router.push('/chat');
-        } else {
-          router.push(`/chat/${nextProject.id}`);
-        }
+        router.push(
+          nextProject.id === 'p1' ? '/chat' : `/chat/${nextProject.id}`
+        );
       } else {
         router.push('/chat');
       }
@@ -98,17 +128,9 @@ export function Sidebar() {
     return format(timestamp, 'MMM d, h:mm a');
   };
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
   const isLoading = useProjectsStore((s) => s.isLoading);
   const loadProjects = useProjectsStore((s) => s.loadProjects);
 
-  // Filter and sort projects
   const filteredProjects = useMemo(() => {
     let result = [...projects];
     if (searchQuery.trim()) {
@@ -122,12 +144,10 @@ export function Sidebar() {
     return result.sort((a, b) => b.updatedAt - a.updatedAt);
   }, [projects, searchQuery]);
 
-  // Load chat history from backend on mount
   useEffect(() => {
     loadProjects();
   }, [loadProjects]);
 
-  // Get user data from auth
   const [user, setUser] = useState<{ name: string; email: string } | null>(
     null
   );
@@ -141,27 +161,24 @@ export function Sidebar() {
           email: userData.email,
         });
       } catch {
-        // User not authenticated, will be handled by middleware
+        // Will be handled by middleware
       }
     };
     loadUser();
   }, []);
 
-  // Sidebar content component
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      {/* Header: Actions like Gemini (Menu, New Chat, Search) */}
+      {/* Header */}
       <div className="flex h-14 shrink-0 items-center justify-between px-3">
-        {/* Toggle Sidebar */}
         <button
           onClick={toggleLeftSidebar}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted flex h-10 w-10 shrink-0 touch-manipulation items-center justify-center rounded-full transition-colors active:scale-95"
           aria-label="Toggle sidebar"
         >
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Right side group: Search & New Chat */}
         <div className="flex items-center gap-1">
           {/* Animated Search */}
           <div
@@ -172,9 +189,7 @@ export function Sidebar() {
                 : 'hover:bg-muted/80 w-9 cursor-pointer justify-center border'
             )}
             onClick={() => {
-              if (!isSearchExpanded) {
-                setIsSearchExpanded(true);
-              }
+              if (!isSearchExpanded) setIsSearchExpanded(true);
             }}
           >
             <Search
@@ -210,18 +225,14 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* New Chat Action */}
           <button
             onClick={() => {
-              const newId = createProject();
-              selectProject(newId);
+              selectProject('p1');
               router.push('/chat');
-              if (isMobile) {
-                toggleLeftSidebar();
-              }
+              closeSidebarOnMobile();
             }}
             className={cn(
-              'text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors',
+              'text-muted-foreground hover:bg-muted hover:text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors active:scale-95',
               isSearchExpanded ? 'hidden' : 'flex'
             )}
             aria-label="New Chat"
@@ -232,7 +243,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Chat List - Scrollable */}
+      {/* Chat List */}
       <ScrollArea className="min-h-0 flex-1">
         <div className="p-2 pt-0">
           {isLoading ? (
@@ -325,12 +336,14 @@ export function Sidebar() {
                           </div>
                         </button>
 
-                        {/* Context Menu */}
+                        {/* Context menu — visible on active/touch, hover on desktop */}
                         <DropdownMenu>
                           <DropdownMenuTrigger
                             className={cn(
-                              'text-muted-foreground flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md opacity-0 transition-opacity group-hover:opacity-100 active:scale-95',
-                              isActive && 'opacity-100'
+                              'text-muted-foreground flex h-7 w-7 shrink-0 touch-manipulation items-center justify-center rounded-md transition-opacity active:scale-95',
+                              isActive
+                                ? 'opacity-100'
+                                : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
                             )}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -351,12 +364,7 @@ export function Sidebar() {
                               Rename
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => {
-                                // Archive = remove from list locally.
-                                // No dedicated archive endpoint yet — uses same
-                                // flow as delete but semantically distinct.
-                                handleDelete(project.id);
-                              }}
+                              onClick={() => handleDelete(project.id)}
                             >
                               <Archive className="h-4 w-4" />
                               Archive
@@ -386,9 +394,9 @@ export function Sidebar() {
           <button
             onClick={() => {
               router.push('/wallet');
-              if (isMobile) toggleLeftSidebar();
+              closeSidebarOnMobile();
             }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors active:scale-[0.98]"
           >
             <Wallet className="h-4 w-4 shrink-0" />
             Wallet
@@ -396,9 +404,9 @@ export function Sidebar() {
           <button
             onClick={() => {
               router.push('/pricing');
-              if (isMobile) toggleLeftSidebar();
+              closeSidebarOnMobile();
             }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors active:scale-[0.98]"
           >
             <Crown className="h-4 w-4 shrink-0" />
             Upgrade Plan
@@ -406,9 +414,9 @@ export function Sidebar() {
           <button
             onClick={() => {
               router.push('/settings');
-              if (isMobile) toggleLeftSidebar();
+              closeSidebarOnMobile();
             }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors active:scale-[0.98]"
           >
             <Settings className="h-4 w-4 shrink-0" />
             Settings
@@ -416,7 +424,7 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* User Profile - Sticky at bottom */}
+      {/* User Profile */}
       <div className="border-border bg-background shrink-0 border-t p-3 sm:p-4">
         {user ? (
           <div className="flex items-center gap-2 sm:gap-3">
@@ -430,7 +438,7 @@ export function Sidebar() {
               <p className="text-foreground truncate text-xs font-medium sm:text-sm">
                 {user.name}
               </p>
-              <p className="text-muted-foreground hidden truncate text-xs sm:block">
+              <p className="text-muted-foreground truncate text-xs">
                 {user.email}
               </p>
             </div>
@@ -440,7 +448,7 @@ export function Sidebar() {
             <div className="bg-muted h-7 w-7 shrink-0 animate-pulse rounded-full sm:h-8 sm:w-8" />
             <div className="min-w-0 flex-1">
               <div className="bg-muted h-3 w-20 animate-pulse rounded sm:h-4" />
-              <div className="bg-muted mt-1 hidden h-2 w-32 animate-pulse rounded sm:block" />
+              <div className="bg-muted mt-1 h-2 w-32 animate-pulse rounded" />
             </div>
           </div>
         )}
@@ -448,25 +456,22 @@ export function Sidebar() {
     </div>
   );
 
-  // Mobile: Use MobileSheet component
   if (isMobile) {
     return (
       <MobileSheet
         open={leftSidebarOpen}
-        onOpenChange={toggleLeftSidebar}
+        onOpenChange={(open) => setLeftSidebarOpen(open)}
         side="left"
-        className="w-[280px]"
       >
         <SidebarContent />
       </MobileSheet>
     );
   }
 
-  // Desktop: Regular sidebar
-  if (!leftSidebarOpen) return null;
+  if (!showOnDesktop || !leftSidebarOpen) return null;
 
   return (
-    <aside className="border-border bg-background relative z-auto flex h-screen w-[260px] flex-col border-r lg:block">
+    <aside className="border-border bg-background relative z-auto flex h-screen w-[260px] shrink-0 flex-col border-r">
       <SidebarContent />
     </aside>
   );

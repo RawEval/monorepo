@@ -1,95 +1,82 @@
-/**
- * Admin QC Config Service
- *
- * Manage Quality Control configurations and thresholds.
- */
-
 import { ApiService } from '../api-service';
 
 export interface QcConfig {
   id: number;
-  version: string;
-  name: string;
+  version_label: string;
   description: string | null;
   is_active: boolean;
-
-  // Thresholds
-  sbert_threshold: number;
-  cross_encoder_threshold: number;
-  nli_threshold: number;
-  iaa_threshold: number;
-  entropy_threshold: number;
-
-  // Judge Config
-  judge_model_count: number;
-  judge_majority_threshold: number;
-
-  created_at: string;
+  min_cohen_kappa: number;
+  min_fleiss_kappa: number;
+  min_krippendorff: number;
+  min_percentage_agreement: number;
+  consistency_threshold: number;
+  threshold_excellent: number;
+  threshold_good: number;
+  threshold_acceptable: number;
+  threshold_poor: number;
+  weighting_strategy: string | null;
+  tier_weights: Record<string, number> | null;
+  flag_logic: string | null;
+  auto_flag_enabled: boolean;
+  entropy_low_threshold: number;
+  expected_annotator_count: number;
+  default_models: string[] | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface CreateQcConfigRequest {
-  version: string;
-  name: string;
+export interface QcConfigCreateRequest {
+  version_label: string;
   description?: string;
-
-  sbert_threshold?: number;
-  cross_encoder_threshold?: number;
-  nli_threshold?: number;
-  iaa_threshold?: number;
-  entropy_threshold?: number;
-
-  judge_model_count?: number;
-  judge_majority_threshold?: number;
+  min_cohen_kappa?: number;
+  min_fleiss_kappa?: number;
+  min_krippendorff?: number;
+  min_percentage_agreement?: number;
+  consistency_threshold?: number;
+  threshold_excellent?: number;
+  threshold_good?: number;
+  threshold_acceptable?: number;
+  threshold_poor?: number;
+  weighting_strategy?: string;
+  tier_weights?: Record<string, number>;
+  flag_logic?: string;
+  auto_flag_enabled?: boolean;
+  entropy_low_threshold?: number;
+  expected_annotator_count?: number;
+  default_models?: string[];
+  is_active?: boolean;
 }
+
+export type QcConfigUpdateRequest = Partial<QcConfigCreateRequest>;
 
 export class AdminQcConfigService extends ApiService {
-  /**
-   * List all QC configurations
-   */
   async listQcConfigs(): Promise<QcConfig[]> {
-    const response = await this.client.get<QcConfig[]>('/admin/qc-configs');
+    const response = await this.client.get<QcConfig[]>('/admin/qc-config');
     return this.handleResponse(response);
   }
 
-  /**
-   * Create a new QC configuration
-   */
-  async createQcConfig(data: CreateQcConfigRequest): Promise<QcConfig> {
+  async getActiveQcConfig(): Promise<QcConfig> {
+    const response = await this.client.get<QcConfig>(
+      '/admin/qc-config/active'
+    );
+    return this.handleResponse(response);
+  }
+
+  async createQcConfig(data: QcConfigCreateRequest): Promise<QcConfig> {
     const response = await this.client.post<QcConfig>(
-      '/admin/qc-configs',
+      '/admin/qc-config',
       data
     );
     return this.handleResponse(response);
   }
 
-  /**
-   * Get a specific QC configuration
-   */
-  async getQcConfig(id: number): Promise<QcConfig> {
-    const response = await this.client.get<QcConfig>(`/admin/qc-configs/${id}`);
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Update a QC configuration
-   */
   async updateQcConfig(
-    id: number,
-    data: Partial<CreateQcConfigRequest>
+    configId: number,
+    data: QcConfigUpdateRequest
   ): Promise<QcConfig> {
-    const response = await this.client.patch<QcConfig>(
-      `/admin/qc-configs/${id}`,
+    const response = await this.client.put<QcConfig>(
+      `/admin/qc-config/${configId}`,
       data
-    );
-    return this.handleResponse(response);
-  }
-
-  /**
-   * Activate a specific QC configuration
-   */
-  async activateQcConfig(id: number): Promise<QcConfig> {
-    const response = await this.client.post<QcConfig>(
-      `/admin/qc-configs/${id}/activate`
     );
     return this.handleResponse(response);
   }

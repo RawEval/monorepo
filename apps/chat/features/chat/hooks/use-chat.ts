@@ -5,7 +5,6 @@ import { useProjectsStore } from '@/stores/projects-store';
 import { useChatStore } from '@/stores/chat-store';
 import { useUiStore } from '@/stores/ui-store';
 import { isApiError } from '@/lib/errors';
-import { getStoredToken } from '@/lib/auth';
 import { useChatSession } from '../api/get-chat-session';
 import { useMarkMessageFailed } from '../api/mark-message-failed';
 import { useQueryClient } from '@tanstack/react-query';
@@ -85,31 +84,26 @@ export function useChat(pathId?: string) {
   // Send Message — uses new /chat/sessions/{id}/messages endpoint
   // -------------------------------------------------------------------------
   const sendMessage = useCallback(
-    async (content: string, images?: string[]) => {
+    async (content: string, images?: string[], files?: File[]) => {
       sendUserMessage(projectId, content, images);
       touchProject(projectId);
       setError(null);
       setUpgradeRequired(false);
 
       try {
-        let userId: number | undefined;
-        const token = getStoredToken();
-        if (token) {
-          try {
-            const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
-            userId = payload.sub ?? payload.user_id ?? payload.id;
-          } catch {
-            // token decode failed — backend infers user from auth header
-          }
-        }
-
-        const files: File[] = [];
+        // Collect image files from data URLs
+        const imageFiles: File[] = [];
         if (images?.length) {
           for (const imageUrl of images) {
             try {
               if (imageUrl.startsWith('data:') || imageUrl.startsWith('http')) {
                 const blob = await fetch(imageUrl).then((r) => r.blob());
-                files.push(new File([blob], 'image.png', { type: blob.type }));
+                const ext = blob.type.split('/')[1] || 'png';
+                imageFiles.push(
+                  new File([blob], `image-${Date.now()}.${ext}`, {
+                    type: blob.type,
+                  })
+                );
               }
             } catch {
               // skip invalid images
@@ -117,10 +111,10 @@ export function useChat(pathId?: string) {
           }
         }
 
-        // Generate a temporary ID for the upcoming stream
+        const allFiles = [...imageFiles, ...(files ?? [])];
+
         const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-        // Optimistically insert an empty assistant message
         appendAssistantMessage(projectId, '', false, tempId, true);
         setIsStreaming(projectId, tempId, true);
 
@@ -135,18 +129,13 @@ export function useChat(pathId?: string) {
           activeBackendId = newSession.id;
           targetProjectId = String(activeBackendId);
 
-          // Migrate local store messages from "new" to the newly created session
           const existingMsgs = getMessages(projectId);
           if (existingMsgs.length > 0) {
             setMessages(targetProjectId, existingMsgs);
-            // We intentionally do not clear `p1` here to prevent the UI from
-            // flashing empty while `router.replace` is resolving the new path.
-            // It will be cleared the next time the user explicitly navigates to `/chat`.
           }
 
           router.replace(`/chat/${activeBackendId}`);
 
-          // Trigger a silent background reload of the sidebar projects
           useProjectsStore
             .getState()
             .loadProjects()
@@ -155,12 +144,27 @@ export function useChat(pathId?: string) {
             });
         }
 
-        // 2) Start streaming the message natively
+        // 2) Upload files and collect attachment IDs
+        let attachmentIds: number[] = [];
+        if (allFiles.length > 0) {
+          for (const file of allFiles) {
+            try {
+              const att = await chatService.uploadAttachment(
+                activeBackendId,
+                file
+              );
+              attachmentIds.push(att.attachment_id);
+            } catch (uploadErr) {
+              console.error('File upload failed:', uploadErr);
+            }
+          }
+        }
+
+        // 3) Start streaming the message
         await chatService.streamMessage(
           activeBackendId,
           content,
           {
-            userId,
             model: selectedModel.provider,
             modelName: selectedModel.model,
             models: [
@@ -170,7 +174,8 @@ export function useChat(pathId?: string) {
               },
             ],
             temperature: 0.7,
-            files: files.length > 0 ? files : undefined,
+            attachmentIds:
+              attachmentIds.length > 0 ? attachmentIds : undefined,
             webSearch: webSearchEnabled,
           },
           {
@@ -190,6 +195,12 @@ export function useChat(pathId?: string) {
                   queryKey: chatKeys.sessions(),
                 });
               }
+
+              // Reload sidebar projects so the new session title appears
+              useProjectsStore
+                .getState()
+                .loadProjects()
+                .catch(console.error);
             },
             onError: (err) => {
               setIsStreaming(targetProjectId, tempId, false);
