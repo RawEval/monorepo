@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchUser: async () => {
     set({ isLoading: true, error: null });
     try {
-      const user = await authService.getCurrentUser();
+      const user = (await authService.getCurrentUser()) as UserResponse;
       const isAdmin = ADMIN_ROLES.includes(user.role);
 
       if (!isAdmin) {
@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       );
 
       // Verify admin role
-      const user = await authService.getCurrentUser();
+      const user = (await authService.getCurrentUser()) as UserResponse;
       const isAdmin = ADMIN_ROLES.includes(user.role);
 
       if (!isAdmin) {

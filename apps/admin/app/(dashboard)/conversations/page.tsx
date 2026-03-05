@@ -32,10 +32,8 @@ import { cn } from '@raweval/utils';
 export default function ConversationsPage() {
   const [skip, setSkip] = useState(0);
   const limit = 20;
-  const [status, setStatus] = useState<AdminConversationStatus | undefined>(
-    undefined
-  );
-  const [domain, setDomain] = useState<string | undefined>(undefined);
+  const [status] = useState<AdminConversationStatus | undefined>(undefined);
+  const [domain] = useState<string | undefined>(undefined);
 
   const queryClient = useQueryClient();
 

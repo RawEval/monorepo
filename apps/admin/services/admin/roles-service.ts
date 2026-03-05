@@ -94,7 +94,7 @@ export class AdminRolesService extends ApiService {
     const response = await this.client.delete(
       `/admin/users/${userId}/roles/${roleId}`
     );
-    return this.handleResponse(response);
+    this.handleResponse(response);
   }
 }
 

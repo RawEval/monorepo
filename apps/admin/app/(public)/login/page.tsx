@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@raweval/ui/button';
 import {
@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
@@ -74,6 +74,144 @@ export default function AdminLoginPage() {
   };
 
   return (
+    <div className="relative w-full max-w-md">
+      {/* Logo area */}
+      <div
+        className={`mb-8 flex flex-col items-center gap-3 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}
+      >
+        <div className="bg-primary flex h-12 w-12 items-center justify-center rounded-xl">
+          <span className="text-primary-foreground text-lg font-bold">R</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-foreground text-xl font-semibold">
+            RawEval Admin
+          </span>
+          <Badge variant="destructive" className="gap-1 text-xs">
+            <Shield className="h-3 w-3" />
+            Internal
+          </Badge>
+        </div>
+      </div>
+
+      {/* Login Card */}
+      <Card
+        className={`border-border shadow-xl ${mounted ? 'animate-fade-in delay-100' : 'opacity-0'}`}
+      >
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-semibold">
+            Admin Sign In
+          </CardTitle>
+          <CardDescription>
+            Sign in with your admin credentials to access the dashboard
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Email */}
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className="text-foreground text-sm font-medium"
+              >
+                Email
+              </label>
+              <div className="relative">
+                <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    setError('');
+                  }}
+                  placeholder="admin@raweval.com"
+                  className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <label
+                htmlFor="password"
+                className="text-foreground text-sm font-medium"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value });
+                    setError('');
+                  }}
+                  placeholder="Enter your password"
+                  className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                  disabled={isLoading}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <Button
+              type="submit"
+              className="w-full gap-2"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in to Dashboard
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Footer */}
+      <p
+        className={`text-muted-foreground mt-6 text-center text-xs ${mounted ? 'animate-fade-in delay-200' : 'opacity-0'}`}
+      >
+        This is an internal admin dashboard. Unauthorized access is prohibited.
+      </p>
+    </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
     <div className="via-background flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 to-indigo-50/30 px-4 py-8 sm:py-12">
       {/* Background pattern */}
       <div
@@ -83,140 +221,16 @@ export default function AdminLoginPage() {
         }}
       />
 
-      <div className="relative w-full max-w-md">
-        {/* Logo area */}
-        <div
-          className={`mb-8 flex flex-col items-center gap-3 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}
-        >
-          <div className="bg-primary flex h-12 w-12 items-center justify-center rounded-xl">
-            <span className="text-primary-foreground text-lg font-bold">R</span>
+      <Suspense
+        fallback={
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground text-sm">Loading login...</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-foreground text-xl font-semibold">
-              RawEval Admin
-            </span>
-            <Badge variant="destructive" className="gap-1 text-xs">
-              <Shield className="h-3 w-3" />
-              Internal
-            </Badge>
-          </div>
-        </div>
-
-        {/* Login Card */}
-        <Card
-          className={`border-border shadow-xl ${mounted ? 'animate-fade-in delay-100' : 'opacity-0'}`}
-        >
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-semibold">
-              Admin Sign In
-            </CardTitle>
-            <CardDescription>
-              Sign in with your admin credentials to access the dashboard
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
-                  {error}
-                </div>
-              )}
-
-              {/* Email */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="text-foreground text-sm font-medium"
-                >
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                  <input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      setError('');
-                    }}
-                    placeholder="admin@raweval.com"
-                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="text-foreground text-sm font-medium"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value });
-                      setError('');
-                    }}
-                    placeholder="Enter your password"
-                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
-                    disabled={isLoading}
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit */}
-              <Button
-                type="submit"
-                className="w-full gap-2"
-                size="lg"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    Sign in to Dashboard
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p
-          className={`text-muted-foreground mt-6 text-center text-xs ${mounted ? 'animate-fade-in delay-200' : 'opacity-0'}`}
-        >
-          This is an internal admin dashboard. Unauthorized access is
-          prohibited.
-        </p>
-      </div>
+        }
+      >
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
