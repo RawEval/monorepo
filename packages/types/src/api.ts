@@ -1,6 +1,6 @@
 /**
  * API Types
- * 
+ *
  * Common types for API requests and responses
  */
 
@@ -25,9 +25,12 @@ export interface RequestHeaders {
 /**
  * Query Parameters
  */
-export interface QueryParams extends Record<string, string | number | boolean | undefined> {
+export interface QueryParams extends Record<
+  string,
+  string | number | boolean | undefined
+> {
   page?: number;
-  pageSize?: number;
+  page_size?: number;
   sort?: string;
   order?: 'asc' | 'desc';
   search?: string;
@@ -38,7 +41,7 @@ export interface QueryParams extends Record<string, string | number | boolean | 
  */
 export interface PaginationParams {
   page?: number;
-  pageSize?: number;
+  page_size?: number;
 }
 
 /**
@@ -107,10 +110,13 @@ export interface HealthCheckResponse {
   status: 'healthy' | 'degraded' | 'unhealthy';
   version: string;
   timestamp: string;
-  services?: Record<string, {
-    status: 'up' | 'down';
-    latency?: number;
-  }>;
+  services?: Record<
+    string,
+    {
+      status: 'up' | 'down';
+      latency?: number;
+    }
+  >;
 }
 
 /**

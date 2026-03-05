@@ -1,12 +1,7 @@
 import { apiClient } from '@/lib/api-client';
+import type { PaginatedResponse } from '@raweval/types';
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-}
+export type { PaginatedResponse };
 
 export abstract class ApiService {
   protected client = apiClient;
