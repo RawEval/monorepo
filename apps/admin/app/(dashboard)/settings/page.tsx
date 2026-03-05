@@ -3,36 +3,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
-import { Button } from '@raweval/ui/button';
-import {
-  Settings,
-  User,
-  Shield,
-  Loader2,
-  Globe,
-} from 'lucide-react';
+import { Settings, User, Shield, Loader2, Globe } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
-import { usersService } from '@/services/users-service';
-import { queryKeys } from '@/lib/react-query/query-keys';
+import { adminUsersService } from '@/services/admin/users-service';
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
 
   const { data: profileCompletion, isLoading: completionLoading } = useQuery({
     queryKey: ['profileCompletion'],
-    queryFn: () => usersService.getProfileCompletion(),
+    queryFn: () => adminUsersService.getProfileCompletion(),
   });
 
   const { data: accessiblePages, isLoading: pagesLoading } = useQuery({
     queryKey: ['accessiblePages'],
-    queryFn: () => usersService.getAccessiblePages(),
+    queryFn: () => adminUsersService.getAccessiblePages(),
   });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-foreground text-2xl font-semibold">Settings</h1>
+        <p className="text-muted-foreground text-sm">
           Account settings, profile, and access information
         </p>
       </div>
@@ -50,7 +42,7 @@ export default function SettingsPage() {
             {user ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-xl font-semibold text-primary">
+                  <div className="bg-primary/10 text-primary flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold">
                     {user.full_name?.charAt(0)?.toUpperCase() ||
                       user.email.charAt(0).toUpperCase()}
                   </div>
@@ -58,7 +50,7 @@ export default function SettingsPage() {
                     <h3 className="text-lg font-semibold">
                       {user.full_name || 'Admin User'}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {user.email}
                     </p>
                     <div className="mt-1 flex gap-2">
@@ -75,7 +67,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2 rounded-lg border border-border p-4">
+                <div className="border-border space-y-2 rounded-lg border p-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">User ID</span>
                     <span className="code-label">{user.id}</span>
@@ -94,7 +86,7 @@ export default function SettingsPage() {
               </div>
             ) : (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             )}
           </CardContent>
@@ -111,21 +103,21 @@ export default function SettingsPage() {
           <CardContent>
             {completionLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : profileCompletion ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Completion
                   </span>
                   <span className="metric text-lg font-semibold">
                     {profileCompletion.completion_percentage}%
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
                   <div
-                    className="h-full bg-primary transition-all"
+                    className="bg-primary h-full transition-all"
                     style={{
                       width: `${profileCompletion.completion_percentage}%`,
                     }}
@@ -135,8 +127,12 @@ export default function SettingsPage() {
                   <div className="space-y-1">
                     <p className="text-sm font-medium">Missing fields:</p>
                     <div className="flex flex-wrap gap-1">
-                      {profileCompletion.missing_fields.map((field) => (
-                        <Badge key={field} variant="outline" className="text-xs">
+                      {profileCompletion.missing_fields.map((field: string) => (
+                        <Badge
+                          key={field}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {field}
                         </Badge>
                       ))}
@@ -145,7 +141,7 @@ export default function SettingsPage() {
                 )}
               </div>
             ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">
+              <p className="text-muted-foreground py-8 text-center text-sm">
                 Unable to load profile completion data
               </p>
             )}
@@ -163,27 +159,29 @@ export default function SettingsPage() {
           <CardContent>
             {pagesLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : accessiblePages && accessiblePages.length > 0 ? (
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {accessiblePages.map((page) => (
-                  <div
-                    key={page.page}
-                    className="flex items-center justify-between rounded-lg border border-border p-3"
-                  >
-                    <span className="text-sm">{page.page}</span>
-                    <Badge
-                      variant={page.accessible ? 'default' : 'destructive'}
-                      className="text-xs"
+                {accessiblePages.map(
+                  (page: { page: string; accessible: boolean }) => (
+                    <div
+                      key={page.page}
+                      className="border-border flex items-center justify-between rounded-lg border p-3"
                     >
-                      {page.accessible ? 'Allowed' : 'Denied'}
-                    </Badge>
-                  </div>
-                ))}
+                      <span className="text-sm">{page.page}</span>
+                      <Badge
+                        variant={page.accessible ? 'default' : 'destructive'}
+                        className="text-xs"
+                      >
+                        {page.accessible ? 'Allowed' : 'Denied'}
+                      </Badge>
+                    </div>
+                  )
+                )}
               </div>
             ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">
+              <p className="text-muted-foreground py-8 text-center text-sm">
                 No access permission data available
               </p>
             )}

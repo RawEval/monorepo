@@ -32,7 +32,7 @@ export function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from login page
   if (hasToken && isPublicRoute(pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

@@ -11,13 +11,21 @@ import {
   CardTitle,
 } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
-import { Mail, Lock, Eye, EyeOff, Loader2, Shield, ArrowRight } from 'lucide-react';
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  Shield,
+  ArrowRight,
+} from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const redirectTo = searchParams.get('redirect') || '/';
   const { login, isLoading } = useAuthStore();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -66,7 +74,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 via-background to-indigo-50/30 px-4 py-8 sm:py-12">
+    <div className="via-background flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 to-indigo-50/30 px-4 py-8 sm:py-12">
       {/* Background pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -80,11 +88,11 @@ export default function AdminLoginPage() {
         <div
           className={`mb-8 flex flex-col items-center gap-3 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">R</span>
+          <div className="bg-primary flex h-12 w-12 items-center justify-center rounded-xl">
+            <span className="text-primary-foreground text-lg font-bold">R</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xl font-semibold text-foreground">
+            <span className="text-foreground text-xl font-semibold">
               RawEval Admin
             </span>
             <Badge variant="destructive" className="gap-1 text-xs">
@@ -109,7 +117,7 @@ export default function AdminLoginPage() {
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-lg border p-3 text-sm">
                   {error}
                 </div>
               )}
@@ -118,12 +126,12 @@ export default function AdminLoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="email"
-                  className="text-sm font-medium text-foreground"
+                  className="text-foreground text-sm font-medium"
                 >
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="email"
                     type="email"
@@ -133,7 +141,7 @@ export default function AdminLoginPage() {
                       setError('');
                     }}
                     placeholder="admin@raweval.com"
-                    className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isLoading}
                     required
                   />
@@ -144,12 +152,12 @@ export default function AdminLoginPage() {
               <div className="space-y-2">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-foreground"
+                  className="text-foreground text-sm font-medium"
                 >
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
@@ -159,14 +167,14 @@ export default function AdminLoginPage() {
                       setError('');
                     }}
                     placeholder="Enter your password"
-                    className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
                     disabled={isLoading}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
                     disabled={isLoading}
                   >
                     {showPassword ? (
@@ -203,7 +211,7 @@ export default function AdminLoginPage() {
 
         {/* Footer */}
         <p
-          className={`mt-6 text-center text-xs text-muted-foreground ${mounted ? 'animate-fade-in delay-200' : 'opacity-0'}`}
+          className={`text-muted-foreground mt-6 text-center text-xs ${mounted ? 'animate-fade-in delay-200' : 'opacity-0'}`}
         >
           This is an internal admin dashboard. Unauthorized access is
           prohibited.

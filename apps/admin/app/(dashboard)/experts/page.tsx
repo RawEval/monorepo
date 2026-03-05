@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Badge } from '@raweval/ui/badge';
 import { Button } from '@raweval/ui/button';
@@ -13,22 +13,19 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
-  ArrowUpDown,
 } from 'lucide-react';
-import { expertsService } from '@/services/experts-service';
-import type { ExpertResponse } from '@/services/experts-service';
+import { adminExpertsService } from '@/services/admin';
 import { queryKeys } from '@/lib/react-query/query-keys';
 
 const PAGE_SIZE = 20;
 
 export default function ExpertsPage() {
-  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
 
   const { data: experts, isLoading } = useQuery({
     queryKey: queryKeys.expertsList(page * PAGE_SIZE, PAGE_SIZE),
-    queryFn: () => expertsService.getExperts(page * PAGE_SIZE, PAGE_SIZE),
+    queryFn: () => adminExpertsService.getExperts(page * PAGE_SIZE, PAGE_SIZE),
   });
 
   const filteredExperts = experts?.filter((e) =>
@@ -44,10 +41,10 @@ export default function ExpertsPage() {
       {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-foreground text-2xl font-semibold">
             Expert Management
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             View and manage registered experts, tiers, and certifications
           </p>
         </div>
@@ -55,13 +52,13 @@ export default function ExpertsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by ID or specialization..."
-          className="w-full rounded-lg border border-input bg-background py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 sm:max-w-sm"
+          className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none sm:max-w-sm"
         />
       </div>
 
@@ -76,12 +73,12 @@ export default function ExpertsPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
           ) : filteredExperts && filteredExperts.length > 0 ? (
             <>
               {/* Table header */}
-              <div className="mb-2 hidden items-center gap-4 border-b border-border px-4 pb-2 text-xs font-medium text-muted-foreground sm:flex">
+              <div className="border-border text-muted-foreground mb-2 hidden items-center gap-4 border-b px-4 pb-2 text-xs font-medium sm:flex">
                 <span className="w-16">ID</span>
                 <span className="w-16">Tier</span>
                 <span className="flex-1">Specializations</span>
@@ -94,9 +91,9 @@ export default function ExpertsPage() {
                 {filteredExperts.map((expert) => (
                   <div
                     key={expert.id}
-                    className="flex flex-col gap-2 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:gap-4"
+                    className="border-border flex flex-col gap-2 rounded-lg border p-4 sm:flex-row sm:items-center sm:gap-4"
                   >
-                    <span className="code-label w-16 text-muted-foreground">
+                    <span className="code-label text-muted-foreground w-16">
                       #{expert.id}
                     </span>
                     <div className="w-16">
@@ -110,8 +107,7 @@ export default function ExpertsPage() {
                         }
                         className="gap-0.5"
                       >
-                        <Award className="h-3 w-3" />
-                        T{expert.tier}
+                        <Award className="h-3 w-3" />T{expert.tier}
                       </Badge>
                     </div>
                     <div className="flex flex-1 flex-wrap gap-1">
@@ -146,7 +142,7 @@ export default function ExpertsPage() {
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Page {page + 1}
                 </span>
                 <Button
@@ -164,7 +160,7 @@ export default function ExpertsPage() {
               </div>
             </>
           ) : (
-            <p className="py-12 text-center text-sm text-muted-foreground">
+            <p className="text-muted-foreground py-12 text-center text-sm">
               {search ? 'No experts match your search' : 'No experts found'}
             </p>
           )}

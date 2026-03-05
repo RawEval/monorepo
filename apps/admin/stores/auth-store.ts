@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { authService } from '@/services/auth-service';
-import type { UserResponse } from '@/services/users-service';
+import type { AdminUserView as UserResponse } from '@/services/admin/users-service';
 import { storeToken, clearToken } from '@/lib/auth';
 
 interface AuthState {
@@ -33,7 +33,7 @@ interface AuthState {
 
 const ADMIN_ROLES = ['admin', 'super_admin'];
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isLoading: false,
   isAuthenticated: false,
@@ -104,9 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (err) {
       set({ isLoading: false });
       const message =
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred.';
+        err instanceof Error ? err.message : 'An unexpected error occurred.';
       return { success: false, error: message };
     }
   },

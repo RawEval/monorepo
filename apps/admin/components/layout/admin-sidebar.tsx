@@ -1,220 +1,214 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@raweval/utils';
-import { Badge } from '@raweval/ui/badge';
-import { Button } from '@raweval/ui/button';
 import {
   LayoutDashboard,
   Users,
   FileText,
-  ListTodo,
-  DollarSign,
-  UserCog,
+  Activity,
+  Wallet,
+  Coins,
+  ShieldCheck,
   Settings,
+  History,
   Shield,
-  LogOut,
-  ChevronsLeft,
-  ChevronsRight,
-  X,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
-import { useAuthStore } from '@/stores/auth-store';
 
-const NAV_ITEMS = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ElementType;
+}
+
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
   {
-    label: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
+    label: 'Core',
+    items: [
+      {
+        title: 'Dashboard',
+        href: '/',
+        icon: LayoutDashboard,
+      },
+      {
+        title: 'Users',
+        href: '/users',
+        icon: Users,
+      },
+      {
+        title: 'Conversations',
+        href: '/conversations',
+        icon: FileText,
+      },
+      {
+        title: 'Pipeline',
+        href: '/pipeline',
+        icon: Activity,
+      },
+      {
+        title: 'Experts',
+        href: '/experts',
+        icon: ShieldCheck,
+      },
+      {
+        title: 'Tasks',
+        href: '/tasks',
+        icon: SlidersHorizontal,
+      },
+    ],
   },
   {
-    label: 'Experts',
-    href: '/dashboard/experts',
-    icon: Users,
+    label: 'Monitoring',
+    items: [
+      {
+        title: 'Wallets',
+        href: '/wallets',
+        icon: Wallet,
+      },
+      {
+        title: 'Payments',
+        href: '/payments',
+        icon: Coins,
+      },
+      {
+        title: 'Audit Logs',
+        href: '/audit',
+        icon: History,
+      },
+    ],
   },
   {
-    label: 'Prompts',
-    href: '/dashboard/prompts',
-    icon: FileText,
-  },
-  {
-    label: 'Tasks',
-    href: '/dashboard/tasks',
-    icon: ListTodo,
-  },
-  {
-    label: 'Payments',
-    href: '/dashboard/payments',
-    icon: DollarSign,
-  },
-  {
-    label: 'Users',
-    href: '/dashboard/users',
-    icon: UserCog,
-  },
-  {
-    label: 'Settings',
-    href: '/dashboard/settings',
-    icon: Settings,
+    label: 'Platform',
+    items: [
+      {
+        title: 'QC Config',
+        href: '/qc-config',
+        icon: Shield,
+      },
+      {
+        title: 'Roles',
+        href: '/roles',
+        icon: Settings,
+      },
+      {
+        title: 'Config',
+        href: '/platform',
+        icon: SlidersHorizontal,
+      },
+    ],
   },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const {
-    sidebarOpen,
-    sidebarCollapsed,
-    setSidebarOpen,
-    toggleSidebarCollapsed,
-  } = useUIStore();
-  const { user, logout } = useAuthStore();
-
-  const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard';
-    return pathname.startsWith(href);
-  };
+  const { sidebarOpen, toggleSidebar } = useUIStore();
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-          aria-hidden="true"
-        />
+    <aside
+      className={cn(
+        'border-border bg-card relative flex flex-col border-r transition-all duration-300 ease-in-out',
+        sidebarOpen ? 'w-64' : 'w-20'
       )}
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          'fixed inset-y-0 left-0 z-50 flex flex-col border-r border-border bg-sidebar transition-all duration-200',
-          'lg:static lg:z-auto',
-          sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-64',
-          sidebarOpen
-            ? 'w-64 translate-x-0'
-            : '-translate-x-full lg:translate-x-0'
-        )}
-      >
-        {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">
-                  R
-                </span>
-              </div>
-              <span className="text-sm font-semibold text-sidebar-foreground">
-                Admin
-              </span>
-              <Badge variant="destructive" className="gap-0.5 text-[10px] px-1.5 py-0">
-                <Shield className="h-2.5 w-2.5" />
-                <span className="sr-only">Internal only</span>
-              </Badge>
-            </div>
+    >
+      {/* Sidebar Header */}
+      <div className="border-border flex h-16 items-center border-b px-4">
+        <Link href="/" className="flex items-center gap-2 overflow-hidden">
+          <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+            <span className="text-primary-foreground text-lg font-bold">R</span>
+          </div>
+          {sidebarOpen && (
+            <span className="text-foreground text-lg font-bold tracking-tight whitespace-nowrap">
+              RawEval <span className="text-primary">Admin</span>
+            </span>
           )}
+        </Link>
+      </div>
 
-          {sidebarCollapsed && (
-            <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">
-                R
-              </span>
-            </div>
-          )}
-
-          {/* Close (mobile) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 lg:hidden"
-            onClick={() => setSidebarOpen(false)}
+      {/* Navigation Groups */}
+      <div className="scroll-area flex-1 overflow-x-hidden overflow-y-auto py-4">
+        {NAV_GROUPS.map((group, groupIdx) => (
+          <div
+            key={group.label}
+            className={cn('mb-6 px-4', groupIdx === 0 && 'mt-2')}
           >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close sidebar</span>
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4" role="navigation">
-          <ul className="flex flex-col gap-1">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                      active
-                        ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
-                    )}
-                    title={sidebarCollapsed ? item.label : undefined}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* Footer */}
-        <div className="border-t border-sidebar-border px-3 py-3">
-          {/* Collapse toggle (desktop only) */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mb-2 hidden w-full justify-start gap-3 text-sidebar-foreground/70 lg:flex"
-            onClick={toggleSidebarCollapsed}
-          >
-            {sidebarCollapsed ? (
-              <ChevronsRight className="h-4 w-4 shrink-0" />
+            {sidebarOpen ? (
+              <h3 className="text-muted-foreground/70 mb-2 px-2 text-xs font-semibold tracking-wider uppercase">
+                {group.label}
+              </h3>
             ) : (
-              <>
-                <ChevronsLeft className="h-4 w-4 shrink-0" />
-                <span>Collapse</span>
-              </>
+              <div className="border-border/50 mb-2 h-4 w-full border-b" />
             )}
-          </Button>
+            <nav className="space-y-1">
+              {group.items.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      !sidebarOpen && 'justify-center px-0'
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        'h-5 w-5 shrink-0',
+                        isActive
+                          ? 'text-primary'
+                          : 'text-muted-foreground group-hover:text-accent-foreground',
+                        sidebarOpen && 'mr-3'
+                      )}
+                    />
+                    {sidebarOpen && <span>{item.title}</span>}
+                    {!sidebarOpen && (
+                      <div className="border-border bg-popover text-popover-foreground absolute left-full z-50 ml-4 hidden rounded-md border px-2 py-1 text-xs whitespace-nowrap shadow-md group-hover:block">
+                        {item.title}
+                      </div>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        ))}
+      </div>
 
-          {/* User section */}
-          {user && !sidebarCollapsed && (
-            <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                {user.full_name?.charAt(0)?.toUpperCase() || user.email.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 truncate">
-                <p className="truncate text-sm font-medium text-sidebar-foreground">
-                  {user.full_name || 'Admin'}
-                </p>
-                <p className="truncate text-xs text-sidebar-foreground/50">
-                  {user.role}
-                </p>
-              </div>
-            </div>
+      {/* Sidebar Footer */}
+      <div className="border-border border-t p-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'text-muted-foreground hover:text-foreground flex w-full items-center',
+            sidebarOpen ? 'justify-start px-2' : 'justify-center px-0'
           )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'w-full gap-3 text-sidebar-foreground/70 hover:text-destructive',
-              sidebarCollapsed ? 'justify-center px-0' : 'justify-start'
-            )}
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span>Sign Out</span>}
-          </Button>
-        </div>
-      </aside>
-    </>
+          onClick={toggleSidebar}
+        >
+          {sidebarOpen ? (
+            <>
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              <span>Collapse Sidebar</span>
+            </>
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </aside>
   );
 }

@@ -1,11 +1,18 @@
 /**
  * API Service Base
- * 
+ *
  * Base service class for API integration
  */
 
 import { apiClient } from '@raweval/api-client';
+import { createAuthInterceptor } from '@raweval/api-client/interceptors';
 import type { ApiResponse, PaginatedResponse } from '@raweval/types';
+import { getStoredToken } from '@/lib/auth';
+
+// Add the auth interceptor to read the token from cookies (instead of the default localStorage)
+apiClient
+  .getInterceptors()
+  .useRequest(createAuthInterceptor(() => getStoredToken()));
 
 export abstract class ApiService {
   protected client = apiClient;
@@ -34,7 +41,7 @@ export abstract class ApiService {
    * Handle paginated response
    */
   protected handlePaginatedResponse<T>(
-    response: PaginatedResponse<T>,
+    response: PaginatedResponse<T>
   ): PaginatedResponse<T> {
     return response;
   }

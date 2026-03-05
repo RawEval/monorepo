@@ -15,7 +15,7 @@ import {
   AlertTriangle,
   Layers,
 } from 'lucide-react';
-import { workbenchService } from '@/services/workbench-service';
+import { adminWorkbenchService } from '@/services/admin';
 import { queryKeys } from '@/lib/react-query/query-keys';
 
 const PAGE_SIZE = 20;
@@ -29,14 +29,18 @@ export default function TasksPage() {
   const { data: tasks, isLoading: tasksLoading } = useQuery({
     queryKey: queryKeys.availableTasks(),
     queryFn: () =>
-      workbenchService.getAvailableTasks(undefined, page * PAGE_SIZE, PAGE_SIZE),
+      adminWorkbenchService.getAvailableTasks(
+        undefined,
+        page * PAGE_SIZE,
+        PAGE_SIZE
+      ),
     enabled: tab === 'tasks',
   });
 
   const { data: batches, isLoading: batchesLoading } = useQuery({
     queryKey: queryKeys.taskBatches(page * PAGE_SIZE, PAGE_SIZE),
     queryFn: () =>
-      workbenchService.getTaskBatches(page * PAGE_SIZE, PAGE_SIZE),
+      adminWorkbenchService.getTaskBatches(page * PAGE_SIZE, PAGE_SIZE),
     enabled: tab === 'batches',
   });
 
@@ -67,10 +71,10 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
+        <h1 className="text-foreground text-2xl font-semibold">
           Task Management
         </h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Manage workbench tasks, batches, and expert allocations
         </p>
       </div>
@@ -80,7 +84,10 @@ export default function TasksPage() {
         <Button
           variant={tab === 'tasks' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => { setTab('tasks'); setPage(0); }}
+          onClick={() => {
+            setTab('tasks');
+            setPage(0);
+          }}
           className="gap-1.5"
         >
           <ListTodo className="h-4 w-4" />
@@ -89,7 +96,10 @@ export default function TasksPage() {
         <Button
           variant={tab === 'batches' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => { setTab('batches'); setPage(0); }}
+          onClick={() => {
+            setTab('batches');
+            setPage(0);
+          }}
           className="gap-1.5"
         >
           <Layers className="h-4 w-4" />
@@ -106,7 +116,7 @@ export default function TasksPage() {
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             </div>
           ) : tab === 'tasks' && tasks ? (
             <div className="space-y-2">
@@ -114,7 +124,7 @@ export default function TasksPage() {
                 tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center justify-between rounded-lg border border-border p-4"
+                    className="border-border flex items-center justify-between rounded-lg border p-4"
                   >
                     <div className="flex items-center gap-3">
                       <span className="code-label text-muted-foreground">
@@ -131,7 +141,7 @@ export default function TasksPage() {
                         {task.priority}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex items-center gap-4 text-xs">
                       <span>Prompt #{task.prompt_id}</span>
                       <span>Batch #{task.batch_id}</span>
                       {task.expert_id && <span>Expert #{task.expert_id}</span>}
@@ -139,7 +149,7 @@ export default function TasksPage() {
                   </div>
                 ))
               ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
+                <p className="text-muted-foreground py-12 text-center text-sm">
                   No tasks found
                 </p>
               )}
@@ -150,7 +160,7 @@ export default function TasksPage() {
                 batches.map((batch) => (
                   <div
                     key={batch.id}
-                    className="rounded-lg border border-border p-4"
+                    className="border-border rounded-lg border p-4"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -164,19 +174,19 @@ export default function TasksPage() {
                           {batch.status}
                         </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {new Date(batch.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     {batch.description && (
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="text-muted-foreground mt-1 text-sm">
                         {batch.description}
                       </p>
                     )}
                   </div>
                 ))
               ) : (
-                <p className="py-12 text-center text-sm text-muted-foreground">
+                <p className="text-muted-foreground py-12 text-center text-sm">
                   No batches found
                 </p>
               )}
@@ -195,7 +205,7 @@ export default function TasksPage() {
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Page {page + 1}
             </span>
             <Button

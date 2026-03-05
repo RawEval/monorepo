@@ -1,39 +1,9 @@
 /**
- * Admin App Services
+ * Admin Application Services
  *
- * Re-export all services for easy importing
+ * Central export point for all services.
  */
 
-export { ApiService } from './api-service';
-export {
-  AuthService,
-  authService,
-  type LoginRequest,
-} from './auth-service';
-export {
-  ExpertsService,
-  expertsService,
-  type ExpertResponse,
-} from './experts-service';
-export {
-  WorkbenchService,
-  workbenchService,
-  type TaskBatch,
-  type TaskResponse,
-} from './workbench-service';
-export {
-  UsersService,
-  usersService,
-  type UserResponse,
-} from './users-service';
-export {
-  PromptsService,
-  promptsService,
-  type PromptResponseFromAPI,
-  type FailedPromptResponse,
-} from './prompts-service';
-export {
-  PaymentsService,
-  paymentsService,
-  type PaymentStatistics,
-} from './payments-service';
+export * from './api-service';
+export * from './auth-service';
+export * from './admin';

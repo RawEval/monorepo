@@ -1,10 +1,10 @@
 /**
- * Workbench Service
- * 
- * Service for workbench operations (task allocation, submission, etc.)
+ * Admin Workbench Service
+ *
+ * Manage task batches, expert allocations, and submissions.
  */
 
-import { ApiService } from './api-service';
+import { ApiService } from '../api-service';
 
 export interface TaskBatch {
   id: number;
@@ -25,12 +25,6 @@ export interface AllocateExpertRequest {
   task_ids: number[];
 }
 
-export interface TaskSubmission {
-  task_id: number;
-  corrected_response: string;
-  notes?: string | null;
-}
-
 export interface SubmitTaskRequest {
   task_id: number;
   corrected_response: string;
@@ -49,16 +43,14 @@ export interface TaskResponse {
   created_at: string;
 }
 
-export class WorkbenchService extends ApiService {
+export class AdminWorkbenchService extends ApiService {
   /**
    * Create a task batch
    */
-  async createTaskBatch(
-    data: CreateTaskBatchRequest,
-  ): Promise<TaskBatch> {
+  async createTaskBatch(data: CreateTaskBatchRequest): Promise<TaskBatch> {
     const response = await this.client.post<TaskBatch>(
       '/workbench/batches',
-      data,
+      data
     );
     return this.handleResponse(response);
   }
@@ -68,7 +60,7 @@ export class WorkbenchService extends ApiService {
    */
   async getTaskBatches(skip = 0, limit = 100): Promise<TaskBatch[]> {
     const response = await this.client.get<TaskBatch[]>(
-      `/workbench/batches?skip=${skip}&limit=${limit}`,
+      `/workbench/batches?skip=${skip}&limit=${limit}`
     );
     return this.handleResponse(response);
   }
@@ -78,7 +70,7 @@ export class WorkbenchService extends ApiService {
    */
   async getTaskBatch(batchId: number): Promise<TaskBatch> {
     const response = await this.client.get<TaskBatch>(
-      `/workbench/batches/${batchId}`,
+      `/workbench/batches/${batchId}`
     );
     return this.handleResponse(response);
   }
@@ -88,12 +80,11 @@ export class WorkbenchService extends ApiService {
    */
   async allocateExperts(
     batchId: number,
-    allocations: AllocateExpertRequest[],
+    allocations: AllocateExpertRequest[]
   ): Promise<void> {
-    await this.client.post(
-      `/workbench/batches/${batchId}/allocate`,
-      { allocations },
-    );
+    await this.client.post(`/workbench/batches/${batchId}/allocate`, {
+      allocations,
+    });
   }
 
   /**
@@ -102,24 +93,21 @@ export class WorkbenchService extends ApiService {
   async reallocateExpert(
     batchId: number,
     expertId: number,
-    taskIds: number[],
+    taskIds: number[]
   ): Promise<void> {
-    await this.client.post(
-      `/workbench/batches/${batchId}/reallocate`,
-      {
-        expert_id: expertId,
-        task_ids: taskIds,
-      },
-    );
+    await this.client.post(`/workbench/batches/${batchId}/reallocate`, {
+      expert_id: expertId,
+      task_ids: taskIds,
+    });
   }
 
   /**
-   * Get available tasks for expert
+   * Get available tasks for expert or all tasks
    */
   async getAvailableTasks(
     expertId?: number,
     skip = 0,
-    limit = 100,
+    limit = 100
   ): Promise<TaskResponse[]> {
     const params = new URLSearchParams({
       skip: skip.toString(),
@@ -130,7 +118,7 @@ export class WorkbenchService extends ApiService {
     }
 
     const response = await this.client.get<TaskResponse[]>(
-      `/workbench/tasks?${params.toString()}`,
+      `/workbench/tasks?${params.toString()}`
     );
     return this.handleResponse(response);
   }
@@ -141,7 +129,7 @@ export class WorkbenchService extends ApiService {
   async submitTask(data: SubmitTaskRequest): Promise<TaskResponse> {
     const response = await this.client.post<TaskResponse>(
       '/workbench/tasks/submit',
-      data,
+      data
     );
     return this.handleResponse(response);
   }
@@ -151,10 +139,10 @@ export class WorkbenchService extends ApiService {
    */
   async getTask(taskId: number): Promise<TaskResponse> {
     const response = await this.client.get<TaskResponse>(
-      `/workbench/tasks/${taskId}`,
+      `/workbench/tasks/${taskId}`
     );
     return this.handleResponse(response);
   }
 }
 
-export const workbenchService = new WorkbenchService();
+export const adminWorkbenchService = new AdminWorkbenchService();

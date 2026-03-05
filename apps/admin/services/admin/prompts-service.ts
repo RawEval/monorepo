@@ -1,10 +1,10 @@
 /**
- * Prompts Service
- * 
- * Service for managing prompts and failed prompts
+ * Admin Prompts Service
+ *
+ * Manage prompts and failed prompts requiring review.
  */
 
-import { ApiService } from './api-service';
+import { ApiService } from '../api-service';
 
 export interface PromptResponseFromAPI {
   id: number;
@@ -26,13 +26,13 @@ export interface FailedPromptResponse {
   updated_at: string;
 }
 
-export class PromptsService extends ApiService {
+export class AdminPromptsService extends ApiService {
   /**
    * Get all prompts
    */
   async getPrompts(skip = 0, limit = 100): Promise<PromptResponseFromAPI[]> {
     const response = await this.client.get<PromptResponseFromAPI[]>(
-      `/prompts?skip=${skip}&limit=${limit}`,
+      `/prompts?skip=${skip}&limit=${limit}`
     );
     return this.handleResponse(response);
   }
@@ -42,7 +42,7 @@ export class PromptsService extends ApiService {
    */
   async getPromptById(promptId: number): Promise<PromptResponseFromAPI> {
     const response = await this.client.get<PromptResponseFromAPI>(
-      `/prompts/${promptId}`,
+      `/prompts/${promptId}`
     );
     return this.handleResponse(response);
   }
@@ -55,13 +55,13 @@ export class PromptsService extends ApiService {
   }
 
   /**
-   * Get failed prompts
+   * Get failed prompts with filtering
    */
   async getFailedPrompts(
     skip = 0,
     limit = 100,
     status?: string,
-    priority?: string,
+    priority?: string
   ): Promise<FailedPromptResponse[]> {
     const params = new URLSearchParams({
       skip: skip.toString(),
@@ -71,7 +71,7 @@ export class PromptsService extends ApiService {
     if (priority) params.append('priority', priority);
 
     const response = await this.client.get<FailedPromptResponse[]>(
-      `/failed-prompts?${params.toString()}`,
+      `/failed-prompts?${params.toString()}`
     );
     return this.handleResponse(response);
   }
@@ -81,13 +81,13 @@ export class PromptsService extends ApiService {
    */
   async getFailedPromptById(
     failedPromptId: number,
-    includeConversations = true,
+    includeConversations = true
   ): Promise<FailedPromptResponse> {
     const response = await this.client.get<FailedPromptResponse>(
-      `/failed-prompts/${failedPromptId}?include_conversations=${includeConversations}`,
+      `/failed-prompts/${failedPromptId}?include_conversations=${includeConversations}`
     );
     return this.handleResponse(response);
   }
 }
 
-export const promptsService = new PromptsService();
+export const adminPromptsService = new AdminPromptsService();

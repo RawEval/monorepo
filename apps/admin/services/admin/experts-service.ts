@@ -1,10 +1,10 @@
 /**
- * Experts Service
- * 
- * Service for expert-related operations
+ * Admin Experts Service
+ *
+ * Manage registered experts, tiers, and certifications.
  */
 
-import { ApiService } from './api-service';
+import { ApiService } from '../api-service';
 
 export interface ExpertRegistrationRequest {
   user_id: number;
@@ -44,14 +44,16 @@ export interface UpdateTierRequest {
   reason?: string;
 }
 
-export class ExpertsService extends ApiService {
+export class AdminExpertsService extends ApiService {
   /**
    * Register as an expert
    */
-  async registerExpert(data: ExpertRegistrationRequest): Promise<ExpertResponse> {
+  async registerExpert(
+    data: ExpertRegistrationRequest
+  ): Promise<ExpertResponse> {
     const response = await this.client.post<ExpertResponse>(
       '/experts/register',
-      data,
+      data
     );
     return this.handleResponse(response);
   }
@@ -61,17 +63,17 @@ export class ExpertsService extends ApiService {
    */
   async getExpert(expertId: number): Promise<ExpertResponse> {
     const response = await this.client.get<ExpertResponse>(
-      `/experts/${expertId}`,
+      `/experts/${expertId}`
     );
     return this.handleResponse(response);
   }
 
   /**
-   * Get all experts
+   * Get all experts with pagination
    */
   async getExperts(skip = 0, limit = 100): Promise<ExpertResponse[]> {
     const response = await this.client.get<ExpertResponse[]>(
-      `/experts?skip=${skip}&limit=${limit}`,
+      `/experts?skip=${skip}&limit=${limit}`
     );
     return this.handleResponse(response);
   }
@@ -81,11 +83,11 @@ export class ExpertsService extends ApiService {
    */
   async updateExpertTier(
     expertId: number,
-    data: UpdateTierRequest,
+    data: UpdateTierRequest
   ): Promise<ExpertResponse> {
     const response = await this.client.put<ExpertResponse>(
       `/experts/${expertId}/tier`,
-      data,
+      data
     );
     return this.handleResponse(response);
   }
@@ -94,10 +96,10 @@ export class ExpertsService extends ApiService {
    * Get expert certifications
    */
   async getExpertCertifications(
-    expertId: number,
+    expertId: number
   ): Promise<ExpertCertification[]> {
     const response = await this.client.get<ExpertCertification[]>(
-      `/experts/${expertId}/certifications`,
+      `/experts/${expertId}/certifications`
     );
     return this.handleResponse(response);
   }
@@ -112,14 +114,14 @@ export class ExpertsService extends ApiService {
       issuer: string;
       date_issued: string;
       expiry_date?: string | null;
-    },
+    }
   ): Promise<ExpertCertification> {
     const response = await this.client.post<ExpertCertification>(
       `/experts/${expertId}/certifications`,
-      certification,
+      certification
     );
     return this.handleResponse(response);
   }
 }
 
-export const expertsService = new ExpertsService();
+export const adminExpertsService = new AdminExpertsService();

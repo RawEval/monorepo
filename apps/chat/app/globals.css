@@ -1,4 +1,5 @@
 @import '@raweval/config/theme';
+@source '../../../packages/ui/src';
 
 /* Chat-specific styles */
 .chat-message-enter {
@@ -19,7 +20,9 @@
 
 /* Typing indicator animation */
 @keyframes typing-indicator {
-  0%, 60%, 100% {
+  0%,
+  60%,
+  100% {
     opacity: 0.4;
     transform: translateY(0);
   }
@@ -65,12 +68,16 @@ html {
 
 /* Hover state improvements */
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .hover-lift:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.1), 0 8px 24px -4px rgb(0 0 0 / 0.06);
+  box-shadow:
+    0 4px 12px -2px rgb(0 0 0 / 0.1),
+    0 8px 24px -4px rgb(0 0 0 / 0.06);
 }
 
 /* Selection color with blue accent */
@@ -92,9 +99,9 @@ a:hover {
 /* Mobile-specific enhancements */
 @media (max-width: 768px) {
   /* Better touch targets for interactive elements */
-  button:not([class*="icon"]):not(.touch-manipulation),
-  a[role="button"],
-  [role="button"]:not(button) {
+  button:not([class*='icon']):not(.touch-manipulation),
+  a[role='button'],
+  [role='button']:not(button) {
     min-height: 44px;
     min-width: 44px;
   }
@@ -116,7 +123,7 @@ a:hover {
   .touch-manipulation {
     touch-action: manipulation;
   }
-  
+
   /* Clean input focus on mobile */
   textarea:focus,
   input:focus {
@@ -175,7 +182,7 @@ a:hover {
   }
 
   /* Bottom nav specific */
-  nav[role="navigation"] {
+  nav[role='navigation'] {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
