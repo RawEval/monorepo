@@ -1,10 +1,15 @@
 /**
  * Admin App Services
- * 
+ *
  * Re-export all services for easy importing
  */
 
 export { ApiService } from './api-service';
+export {
+  AuthService,
+  authService,
+  type LoginRequest,
+} from './auth-service';
 export {
   ExpertsService,
   expertsService,
