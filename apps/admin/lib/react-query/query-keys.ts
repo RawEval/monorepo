@@ -15,6 +15,8 @@ export const queryKeys = {
     list: (params: Record<string, unknown>) =>
       ['conversations', 'list', params] as const,
     detail: (id: number) => ['conversations', 'detail', id] as const,
+    full: (id: number) => ['conversations', 'full', id] as const,
+    qcDetail: (id: number) => ['conversations', 'qc-detail', id] as const,
     rubric: (id: number) => ['conversations', 'rubric', id] as const,
     statusHistory: (id: number) =>
       ['conversations', 'status-history', id] as const,

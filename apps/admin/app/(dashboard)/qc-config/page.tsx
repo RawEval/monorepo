@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Settings2,
   Zap,
+  Pencil,
 } from 'lucide-react';
 import { adminQcConfigService } from '@/services/admin/qc-config-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
@@ -22,16 +23,47 @@ import {
 } from '@raweval/ui/card';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { cn } from '@raweval/utils';
+import type { QcConfig, QcConfigCreateRequest } from '@/services/admin/qc-config-service';
+
+const DEFAULT_CREATE: QcConfigCreateRequest = {
+  version_label: '',
+  description: '',
+  is_active: false,
+  min_cohen_kappa: 0.4,
+  min_fleiss_kappa: 0.4,
+  min_krippendorff: 0.4,
+  min_percentage_agreement: 0.6,
+  consistency_threshold: 0.5,
+  threshold_excellent: 0.8,
+  threshold_good: 0.6,
+  threshold_acceptable: 0.4,
+  threshold_poor: 0.2,
+  auto_flag_enabled: true,
+  entropy_low_threshold: 0.3,
+  expected_annotator_count: 9,
+};
 
 export default function QcConfigPage() {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editConfig, setEditConfig] = useState<QcConfig | null>(null);
+  const [form, setForm] = useState<QcConfigCreateRequest>(DEFAULT_CREATE);
 
-  const { data: configs, isLoading } = useQuery({
+  const { data: configList, isLoading } = useQuery({
     queryKey: queryKeys.qcConfig.list,
     queryFn: () => adminQcConfigService.listQcConfigs(),
   });
+
+  const configs = configList?.configs ?? [];
 
   const activateMutation = useMutation({
     mutationFn: (id: number) =>
@@ -40,6 +72,46 @@ export default function QcConfigPage() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.qcConfig.all });
     },
   });
+
+  const createMutation = useMutation({
+    mutationFn: (data: QcConfigCreateRequest) =>
+      adminQcConfigService.createQcConfig(data),
+    onSuccess: () => {
+      setCreateOpen(false);
+      setForm(DEFAULT_CREATE);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.qcConfig.all });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<QcConfigCreateRequest> }) =>
+      adminQcConfigService.updateQcConfig(id, data),
+    onSuccess: () => {
+      setEditConfig(null);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.qcConfig.all });
+    },
+  });
+
+  const openEdit = (config: QcConfig) => {
+    setEditConfig(config);
+    setForm({
+      version_label: config.version_label,
+      description: config.description ?? '',
+      is_active: config.is_active,
+      min_cohen_kappa: config.min_cohen_kappa,
+      min_fleiss_kappa: config.min_fleiss_kappa,
+      min_krippendorff: config.min_krippendorff,
+      min_percentage_agreement: config.min_percentage_agreement,
+      consistency_threshold: config.consistency_threshold,
+      threshold_excellent: config.threshold_excellent,
+      threshold_good: config.threshold_good,
+      threshold_acceptable: config.threshold_acceptable,
+      threshold_poor: config.threshold_poor,
+      auto_flag_enabled: config.auto_flag_enabled,
+      entropy_low_threshold: config.entropy_low_threshold,
+      expected_annotator_count: config.expected_annotator_count,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -53,7 +125,7 @@ export default function QcConfigPage() {
             pipeline.
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4" />
           New Version
         </Button>
@@ -66,7 +138,7 @@ export default function QcConfigPage() {
               <CardContent className="bg-muted/50 h-32" />
             </Card>
           ))
-        ) : configs && Array.isArray(configs) ? (
+        ) : configs.length > 0 ? (
           configs.map((config) => (
             <Card
               key={config.id}
@@ -120,6 +192,15 @@ export default function QcConfigPage() {
                         Set as Active
                       </Button>
                     )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => openEdit(config)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -203,6 +284,122 @@ export default function QcConfigPage() {
           </Card>
         )}
       </div>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>New QC configuration</DialogTitle>
+            <CardDescription>
+              Create a new versioned QC config. If you set as active, all others will be deactivated.
+            </CardDescription>
+          </DialogHeader>
+          <QcConfigForm
+            form={form}
+            setForm={setForm}
+            onSubmit={() => createMutation.mutate(form)}
+            isPending={createMutation.isPending}
+            submitLabel="Create"
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editConfig != null} onOpenChange={(open) => !open && setEditConfig(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit QC configuration</DialogTitle>
+            <CardDescription>
+              Update thresholds and settings. Setting as active will deactivate all other configs.
+            </CardDescription>
+          </DialogHeader>
+          {editConfig && (
+            <QcConfigForm
+              form={form}
+              setForm={setForm}
+              onSubmit={() => updateMutation.mutate({ id: editConfig.id, data: form })}
+              isPending={updateMutation.isPending}
+              submitLabel="Save"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function QcConfigForm({
+  form,
+  setForm,
+  onSubmit,
+  isPending,
+  submitLabel,
+}: {
+  form: QcConfigCreateRequest;
+  setForm: React.Dispatch<React.SetStateAction<QcConfigCreateRequest>>;
+  onSubmit: () => void;
+  isPending: boolean;
+  submitLabel: string;
+}) {
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit();
+      }}
+    >
+      <div className="space-y-4 px-6 py-2">
+        <div>
+          <label className="text-muted-foreground mb-1 block text-xs font-medium">Version label</label>
+          <input
+            value={form.version_label}
+            onChange={(e) => setForm((f) => ({ ...f, version_label: e.target.value }))}
+            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+            required
+          />
+        </div>
+        <div>
+          <label className="text-muted-foreground mb-1 block text-xs font-medium">Description</label>
+          <input
+            value={form.description ?? ''}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="is_active"
+            checked={form.is_active ?? false}
+            onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+            className="rounded border"
+          />
+          <label htmlFor="is_active" className="text-sm">Set as active</label>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <NumField label="Cohen Kappa" value={form.min_cohen_kappa} onChange={(v) => setForm((f) => ({ ...f, min_cohen_kappa: v }))} />
+          <NumField label="Fleiss Kappa" value={form.min_fleiss_kappa} onChange={(v) => setForm((f) => ({ ...f, min_fleiss_kappa: v }))} />
+          <NumField label="% Agreement" value={form.min_percentage_agreement} onChange={(v) => setForm((f) => ({ ...f, min_percentage_agreement: v }))} />
+          <NumField label="Expected annotators" value={form.expected_annotator_count} onChange={(v) => setForm((f) => ({ ...f, expected_annotator_count: v }))} />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={() => setForm(DEFAULT_CREATE)}>Reset</Button>
+        <Button type="submit" disabled={isPending || !form.version_label.trim()}>{submitLabel}</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+function NumField({ label, value, onChange }: { label: string; value?: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <label className="text-muted-foreground mb-1 block text-xs font-medium">{label}</label>
+      <input
+        type="number"
+        step="0.01"
+        value={value ?? ''}
+        onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+        className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+      />
     </div>
   );
 }
