@@ -29,10 +29,8 @@ export const queryKeys = {
     list: (params: Record<string, unknown>) =>
       ['experts', 'list', params] as const,
     detail: (id: number) => ['experts', 'detail', id] as const,
-    scoreHistory: (id: number) =>
-      ['experts', 'score-history', id] as const,
-    trajectory: (id: number) =>
-      ['experts', 'trajectory', id] as const,
+    scoreHistory: (id: number) => ['experts', 'score-history', id] as const,
+    trajectory: (id: number) => ['experts', 'trajectory', id] as const,
   },
 
   batches: {
@@ -41,8 +39,7 @@ export const queryKeys = {
       ['batches', 'list', params] as const,
     detail: (id: number) => ['batches', 'detail', id] as const,
     quality: (id: number) => ['batches', 'quality', id] as const,
-    qualityHistory: (id: number) =>
-      ['batches', 'quality-history', id] as const,
+    qualityHistory: (id: number) => ['batches', 'quality-history', id] as const,
   },
 
   pipeline: {
@@ -81,10 +78,8 @@ export const queryKeys = {
       ['payments', 'payouts', params] as const,
     payoutConfig: ['payments', 'payout-config'] as const,
     payoutConfigHistory: ['payments', 'payout-config-history'] as const,
-    byUser: (userId: number) =>
-      ['payments', 'by-user', userId] as const,
-    byBatch: (batchId: number) =>
-      ['payments', 'by-batch', batchId] as const,
+    byUser: (userId: number) => ['payments', 'by-user', userId] as const,
+    byBatch: (batchId: number) => ['payments', 'by-batch', batchId] as const,
   },
 
   qcConfig: {
@@ -93,10 +88,28 @@ export const queryKeys = {
     active: ['qc-config', 'active'] as const,
   },
 
+  judgeConfig: {
+    all: ['judge-config'] as const,
+    list: ['judge-config', 'list'] as const,
+    active: ['judge-config', 'active'] as const,
+    defaults: ['judge-config', 'defaults'] as const,
+  },
+
+  modelAnalytics: {
+    all: ['model-analytics'] as const,
+    failureSummary: (params: Record<string, unknown>) =>
+      ['model-analytics', 'failure-summary', params] as const,
+    failureTrend: (params: Record<string, unknown>) =>
+      ['model-analytics', 'failure-trend', params] as const,
+    qcBreakdown: (params: Record<string, unknown>) =>
+      ['model-analytics', 'qc-breakdown', params] as const,
+    comparison: (params: Record<string, unknown>) =>
+      ['model-analytics', 'comparison', params] as const,
+  },
+
   config: {
     all: ['config'] as const,
-    platform: (category?: string) =>
-      ['config', 'platform', category] as const,
+    platform: (category?: string) => ['config', 'platform', category] as const,
   },
 
   audit: {
@@ -107,8 +120,7 @@ export const queryKeys = {
 
   analytics: {
     all: ['analytics'] as const,
-    leaderboard: (tier?: number) =>
-      ['analytics', 'leaderboard', tier] as const,
+    leaderboard: (tier?: number) => ['analytics', 'leaderboard', tier] as const,
     qualityTrends: (domain?: string) =>
       ['analytics', 'quality-trends', domain] as const,
     tierChanges: ['analytics', 'tier-changes'] as const,
@@ -118,10 +130,8 @@ export const queryKeys = {
     all: ['iaa'] as const,
     overview: ['iaa', 'overview'] as const,
     batch: (batchId: number) => ['iaa', 'batch', batchId] as const,
-    conversation: (id: number) =>
-      ['iaa', 'conversation', id] as const,
-    expert: (expertId: number) =>
-      ['iaa', 'expert', expertId] as const,
+    conversation: (id: number) => ['iaa', 'conversation', id] as const,
+    expert: (expertId: number) => ['iaa', 'expert', expertId] as const,
   },
 
   reviewers: {

@@ -175,7 +175,7 @@ export interface SessionDetail {
  * Paginated Sessions Response
  */
 export interface PaginatedSessionsResponse {
-  sessions: SessionDetail[];
+  items: SessionDetail[];
   total: number;
   page: number;
   page_size: number;

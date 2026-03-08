@@ -8,6 +8,7 @@ export * from './allocations-service';
 export * from './wallet-service';
 export * from './payments-service';
 export * from './qc-config-service';
+export * from './judge-config-service';
 export * from './config-service';
 export * from './audit-service';
 export * from './analytics-service';

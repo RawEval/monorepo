@@ -89,8 +89,10 @@ export default function ConversationsPage() {
     ...(model ? { model } : {}),
     ...(qcFlagStatus ? { qc_flag_status: qcFlagStatus } : {}),
     ...(failureType ? { failure_type: failureType } : {}),
-    ...(qcVersion ? { qc_version: qcVersion } : {}),
-    ...(annotatorTier ? { annotator_tier: parseInt(annotatorTier, 10) as 1 | 2 | 3 } : {}),
+    ...(qcVersion ? { qc_version: parseInt(qcVersion, 10) } : {}),
+    ...(annotatorTier
+      ? { annotator_tier: parseInt(annotatorTier, 10) as 1 | 2 | 3 }
+      : {}),
     ...(minIaaScore ? { min_iaa_score: parseFloat(minIaaScore) } : {}),
     ...(maxCost ? { max_cost: parseFloat(maxCost) } : {}),
     ...(domain ? { domain } : {}),
@@ -280,7 +282,9 @@ export default function ConversationsPage() {
       {filtersOpen && (
         <Card className="border-border/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Filter failed conversations</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Filter failed conversations
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -396,7 +400,9 @@ export default function ConversationsPage() {
                   <option value="pending_analysis">Pending Analysis</option>
                   <option value="analysis_complete">Analysis Complete</option>
                   <option value="in_annotation">In Annotation</option>
-                  <option value="annotation_complete">Annotation Complete</option>
+                  <option value="annotation_complete">
+                    Annotation Complete
+                  </option>
                   <option value="needs_human_review">Needs Human Review</option>
                   <option value="completed">Completed</option>
                 </select>
@@ -516,7 +522,8 @@ export default function ConversationsPage() {
                                 href={`/conversations/${conv.conversation_id}?tab=conversation`}
                                 className="flex cursor-pointer items-center gap-2"
                               >
-                                <ExternalLink className="h-4 w-4" /> View Full Detail
+                                <ExternalLink className="h-4 w-4" /> View Full
+                                Detail
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
@@ -538,7 +545,9 @@ export default function ConversationsPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-primary cursor-pointer gap-2"
-                              onClick={() => setRerunConvId(conv.conversation_id)}
+                              onClick={() =>
+                                setRerunConvId(conv.conversation_id)
+                              }
                             >
                               <RefreshCcw className="h-4 w-4" /> Re-run QC
                             </DropdownMenuItem>
@@ -603,7 +612,10 @@ export default function ConversationsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={rerunConvId != null} onOpenChange={(open) => !open && setRerunConvId(null)}>
+      <Dialog
+        open={rerunConvId != null}
+        onOpenChange={(open) => !open && setRerunConvId(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Re-run QC</DialogTitle>
@@ -645,10 +657,7 @@ export default function ConversationsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRerunConvId(null)}
-            >
+            <Button variant="outline" onClick={() => setRerunConvId(null)}>
               Cancel
             </Button>
             <Button

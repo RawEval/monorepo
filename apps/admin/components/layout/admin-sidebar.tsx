@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Layers,
   Globe,
-  BarChart3,
+  TrendingUp,
+  Gavel,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
@@ -53,7 +54,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: 'Wallets', href: '/wallets', icon: Wallet },
       { title: 'Payments', href: '/payments', icon: Coins },
-      { title: 'Analytics', href: '/prompts', icon: BarChart3 },
+      { title: 'Model Analytics', href: '/model-analytics', icon: TrendingUp },
       { title: 'Audit Logs', href: '/audit', icon: History },
     ],
   },
@@ -61,6 +62,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Platform',
     items: [
       { title: 'QC Config', href: '/qc-config', icon: Shield },
+      { title: 'Judge Config', href: '/judge-config', icon: Gavel },
       { title: 'Domains', href: '/roles', icon: Globe },
       { title: 'Config', href: '/platform', icon: SlidersHorizontal },
       { title: 'Settings', href: '/settings', icon: Settings },

@@ -1,16 +1,30 @@
 import { ApiService, type PaginatedResponse } from '../api-service';
 
+export type { PaginatedResponse };
+
 export interface AuditLogEntry {
   id: number;
   admin_user_id: number;
+  admin_email: string | null;
   action: string;
+  action_category: string;
   resource_type: string;
-  resource_id: string | null;
-  old_value: Record<string, unknown> | null;
-  new_value: Record<string, unknown> | null;
+  resource_id: number | null;
+  resource_identifier: string | null;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  diff: Record<string, unknown> | null;
   ip_address: string | null;
   user_agent: string | null;
+  request_path: string | null;
+  request_method: string | null;
+  status: string;
+  error_message: string | null;
   created_at: string;
+  updated_at: string | null;
+  /** Legacy shape — may or may not be present depending on API version */
+  old_value?: Record<string, unknown> | null;
+  new_value?: Record<string, unknown> | null;
   admin_user?: {
     id: number;
     email: string;

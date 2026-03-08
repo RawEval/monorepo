@@ -1,13 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  Activity,
-  RefreshCcw,
-  BarChart3,
-  Globe,
-  Loader2,
-} from 'lucide-react';
+import { Activity, RefreshCcw, BarChart3, Globe, Loader2 } from 'lucide-react';
 import { adminPipelineService } from '@/services/admin/pipeline-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
 import {
@@ -103,7 +97,11 @@ export default function PipelinePage() {
                     </CardTitle>
                     {overview.phase_avg_duration_ms?.[phase.phase] != null && (
                       <CardDescription>
-                        Avg: {(overview.phase_avg_duration_ms[phase.phase]! / 1000).toFixed(1)}s
+                        Avg:{' '}
+                        {(
+                          overview.phase_avg_duration_ms[phase.phase]! / 1000
+                        ).toFixed(1)}
+                        s
                       </CardDescription>
                     )}
                   </CardHeader>
@@ -116,7 +114,9 @@ export default function PipelinePage() {
                         >
                           <div
                             className="h-2 w-2 rounded-full"
-                            style={{ backgroundColor: s.color_hex }}
+                            style={{
+                              backgroundColor: s.color_hex ?? undefined,
+                            }}
                           />
                           <span className="text-muted-foreground text-xs">
                             {s.display_name}
@@ -255,7 +255,9 @@ export default function PipelinePage() {
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center gap-2">
                 <div className="bg-success h-2 w-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                <span className="text-foreground text-sm">Total in Pipeline</span>
+                <span className="text-foreground text-sm">
+                  Total in Pipeline
+                </span>
               </div>
               <span className="text-muted-foreground font-mono text-sm font-bold">
                 {overview?.total_tasks ?? 0}
@@ -265,7 +267,9 @@ export default function PipelinePage() {
               <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary h-2 w-2 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
-                  <span className="text-foreground text-sm">Active Domains</span>
+                  <span className="text-foreground text-sm">
+                    Active Domains
+                  </span>
                 </div>
                 <span className="text-muted-foreground font-mono text-sm font-bold">
                   {domainSummary.length}

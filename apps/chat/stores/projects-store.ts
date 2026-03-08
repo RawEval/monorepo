@@ -54,27 +54,25 @@ export const useProjectsStore = create<ProjectsState & ProjectsActions>()(
           page_size: 50,
         });
 
-        if (response && response.sessions && response.sessions.length > 0) {
-          const backendProjects: Project[] = response.sessions.map(
-            (session) => ({
-              id: String(session.id),
-              backendId: session.id,
-              title:
-                session.title ||
-                session.last_user_message?.substring(0, 30) ||
-                'Chat Session',
-              description:
-                session.system_prompt ||
-                session.last_assistant_message?.substring(0, 50) ||
-                'Conversation history',
-              updatedAt: session.updated_at
-                ? new Date(session.updated_at).getTime()
-                : session.created_at
-                  ? new Date(session.created_at).getTime()
-                  : Date.now(),
-              status: session.status,
-            })
-          );
+        if (response && response.items && response.items.length > 0) {
+          const backendProjects: Project[] = response.items.map((session) => ({
+            id: String(session.id),
+            backendId: session.id,
+            title:
+              session.title ||
+              session.last_user_message?.substring(0, 30) ||
+              'Chat Session',
+            description:
+              session.system_prompt ||
+              session.last_assistant_message?.substring(0, 50) ||
+              'Conversation history',
+            updatedAt: session.updated_at
+              ? new Date(session.updated_at).getTime()
+              : session.created_at
+                ? new Date(session.created_at).getTime()
+                : Date.now(),
+            status: session.status,
+          }));
 
           set((s) => {
             const allProjects = [defaultProject, ...backendProjects];
