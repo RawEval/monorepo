@@ -11,6 +11,7 @@ export interface AdminFailedConversation {
   user_email: string | null;
   user_full_name: string | null;
   domain: string | null;
+  domain_display_name: string | null;
   subdomain: string | null;
   domain_id: number | null;
   failed_model: string | null;
@@ -458,11 +459,17 @@ export interface QcCase {
   failed_model: string | null;
   failed_provider: string | null;
   failed_message_id: number | null;
-  judge_config_id: number | null;
+  judge_config_id: string | number | null;
   judge_config_version: number | null;
   resolved_at: string | null;
   created_at: string | null;
   updated_at: string | null;
+  pipeline_type?: string | null;
+  correctness_checks?: any[];
+  semantic_match_status?: string | null;
+  holistic_score?: number | null;
+  holistic_evaluation_id?: number | null;
+  holistic_override_applied?: boolean | null;
 }
 
 export interface QcJudgeOutput {
@@ -717,16 +724,23 @@ export interface FailedConversationQcDetailModel {
   fpf: FailedPromptFinalObj | null;
   assistant_message: AssistantMessageSummary | null;
   qc_case: QcCase | null;
-  qc_judges: QcJudgeOutput[];
-  qc_fraud_signals: QcFraudSignal[];
-  qc_intent_objects: QcIntentObject[];
-  qc_rubric: QcRubric | null;
-  qc_pii_maps: QcPiiMap[];
-  qc_status_history: QcStatusHistoryEntry[];
-  verdict_failed_prompt: VerdictFailedPrompt[];
-  verdict_false_positive: VerdictFalsePositive[];
-  verdict_needs_human_review: VerdictNeedsHumanReview[];
-  analysis_rubric: AnalysisRubricV2 | null;
+  qc_judges?: QcJudgeOutput[];
+  qc_fraud_signals?: QcFraudSignal[];
+  qc_intent_objects?: QcIntentObject[] | null;
+  qc_rubric?: any;
+  qc_rubric_criteria?: QcRubricCriterion[];
+  verdict_tables?: {
+    failed_prompt: VerdictFailedPrompt | null;
+    false_positive: VerdictFalsePositive | null;
+    needs_human_review: VerdictNeedsHumanReview | null;
+  } | null;
+  semantic_matches?: any[];
+  holistic_evaluation?: any;
+  qc_status_history?: any[];
+  verdict_failed_prompt?: any[];
+  verdict_false_positive?: any[];
+  verdict_needs_human_review?: any[];
+  analysis_rubric?: any;
 }
 
 export interface FailedConversationQcDetailSharedUserMessage {
@@ -743,113 +757,19 @@ export interface FailedConversationQcDetailSharedUserMessage {
 }
 
 export interface FailedConversationQcDetailShared {
-  user_id: number | null;
-  user_email: string | null;
-  user_full_name: string | null;
-  workflow_name: string | null;
-  workflow_type: string | null;
-  web_search_enabled: boolean | null;
-  created_at: string | null;
+  user: {
+    id: number | null;
+    email: string | null;
+    full_name?: string | null;
+  } | null;
   user_messages: FailedConversationQcDetailSharedUserMessage[];
   attachments: Array<Record<string, unknown>>;
-  model_analysis: {
-    id: number | null;
-    conversation_id: number | null;
-    analysis_text: string | null;
-    model_used: string | null;
-    created_at: string | null;
-  } | null;
-  error_markings: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    error_type: string | null;
-    error_text: string | null;
-    turn_number: number | null;
-    severity: string | null;
-    created_at: string | null;
-  }>;
-  conversation_questions: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    question_text: string | null;
-    question_type: string | null;
-    turn_number: number | null;
-    created_at: string | null;
-  }>;
-  question_responses: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    question_id: number | null;
-    response_text: string | null;
-    created_at: string | null;
-  }>;
-  qc_summary: {
-    id: number | null;
-    conversation_id: number | null;
-    overall_score: number | null;
-    verdict: string | null;
-    created_at: string | null;
-  } | null;
-  qc_runs: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    qc_version: number | null;
-    status: string | null;
-    score: number | null;
-    created_at: string | null;
-  }>;
-  web_search_records: Array<Record<string, unknown>>;
-  semantic_entropy_results: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    num_samples: number | null;
-    raw_entropy: number | null;
+  semantic_entropy: {
     normalized_entropy: number | null;
-    stability_level: string | null;
-    cluster_sizes: Record<string, unknown> | null;
-    total_latency_ms: number | null;
-    created_at: string | null;
-  }>;
-  judge_evaluations: Array<{
-    id: number | null;
-    conversation_id: number | null;
-    judge_run: number | null;
-    judge_model: string | null;
-    claim_analysis: Record<string, unknown> | null;
-    failure_score: number | null;
-    verdict: string | null;
-    claims_supported: number | null;
-    claims_contradicted: number | null;
-    claims_insufficient: number | null;
-    latency_ms: number | null;
-    tokens_used: number | null;
-    created_at: string | null;
-  }>;
-  judge_majority_verdict: {
-    id: number | null;
-    conversation_id: number | null;
-    judge_1_verdict: string | null;
-    judge_2_verdict: string | null;
-    judge_3_verdict: string | null;
-    majority_verdict: string | null;
-    mean_failure_score: number | null;
-    verdict_confidence: number | null;
-    entropy_boosted: boolean | null;
-    created_at: string | null;
+    num_samples: number | null;
   } | null;
-  failure_attribution: {
-    id: number | null;
-    conversation_id: number | null;
-    ambiguous_prompt: number | null;
-    underspecified_input: number | null;
-    model_hallucination: number | null;
-    model_reasoning_error: number | null;
-    missing_external_knowledge: number | null;
-    adversarial_prompt: number | null;
-    primary_cause: string | null;
-    adversarial_score: number | null;
-    created_at: string | null;
-  } | null;
+  // Retaining some old fields for compatibility if needed
+  workflow_name?: string | null;
 }
 
 export interface FailedConversationQcDetailResponse {
@@ -1131,6 +1051,42 @@ export class AdminConversationsService extends ApiService {
       `/admin/failed-conversations/${conversationId}/annotation-config`,
       data
     );
+    return this.handleResponse(response);
+  }
+
+  // ── Chat Analysis Summary & Specific Endpoints ────────────────────────────
+
+  async getQcSummary(conversationId: number, failedModel?: string): Promise<any> {
+    const query = failedModel ? `?failed_model=${encodeURIComponent(failedModel)}` : '';
+    const response = await this.client.get(`/chat/qc/summary/${conversationId}${query}`);
+    return this.handleResponse(response);
+  }
+
+  async getEntropyDetails(conversationId: number): Promise<any> {
+    const response = await this.client.get(`/chat/failure/analysis/${conversationId}/entropy`);
+    return this.handleResponse(response);
+  }
+
+  async getJudgeDetails(conversationId: number, model?: string): Promise<any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    const response = await this.client.get(`/chat/failure/analysis/${conversationId}/judges${query}`);
+    return this.handleResponse(response);
+  }
+
+  async getAnalysisRubric(conversationId: number, model?: string): Promise<any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    const response = await this.client.get(`/chat/failure/analysis/${conversationId}/rubric${query}`);
+    return this.handleResponse(response);
+  }
+
+  async getFailureAttribution(conversationId: number): Promise<any> {
+    const response = await this.client.get(`/chat/failure/analysis/${conversationId}/attribution`);
+    return this.handleResponse(response);
+  }
+
+  async getPipelineStatus(conversationId: number, model?: string): Promise<any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    const response = await this.client.get(`/chat/failure/status/${conversationId}${query}`);
     return this.handleResponse(response);
   }
 }

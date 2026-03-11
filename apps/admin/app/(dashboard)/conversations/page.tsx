@@ -436,8 +436,9 @@ export default function ConversationsPage() {
               <thead className="border-border bg-muted/30 text-muted-foreground border-b text-xs font-medium tracking-wider uppercase">
                 <tr>
                   <th className="px-6 py-3">ID</th>
-                  <th className="px-6 py-3">QC Status</th>
+                  <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">Domain</th>
+                  <th className="px-6 py-3">Model</th>
                   <th className="px-6 py-3">Failure Type</th>
                   <th className="px-6 py-3">User / Prob</th>
                   <th className="px-6 py-3 text-right">Actions</th>
@@ -467,25 +468,38 @@ export default function ConversationsPage() {
                         <Badge
                           variant="outline"
                           className={cn(
-                            'gap-1 py-0.5',
-                            getStatusColor(conv.qc_status)
+                            'gap-1 py-0.5 whitespace-nowrap capitalize',
+                            getStatusColor(conv.qc_status || conv.status)
                           )}
                         >
-                          {getStatusIcon(conv.qc_status)}
-                          {(conv.qc_status ?? 'pending').replace(/_/g, ' ')}
+                          {getStatusIcon(conv.qc_status || conv.status)}
+                          {(conv.qc_status || conv.status || 'pending').replace(
+                            /_/g,
+                            ' '
+                          )}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-foreground text-xs font-medium capitalize">
-                          {conv.domain || 'N/A'}
+                          {conv.domain_display_name || conv.domain || 'N/A'}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="text-foreground text-xs leading-none font-bold whitespace-nowrap">
+                            {conv.failed_model || conv.model_used || 'N/A'}
+                          </span>
+                          <span className="text-muted-foreground mt-1 text-[10px] tracking-widest uppercase">
+                            {conv.failed_provider || 'N/A'}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         {conv.failure_type && (
                           <Badge
                             variant="outline"
                             className={cn(
-                              'py-0.5',
+                              'py-0.5 capitalize',
                               conv.failure_type === 'both'
                                 ? 'bg-destructive/10 text-destructive border-destructive/20'
                                 : 'bg-muted text-muted-foreground border-border'
