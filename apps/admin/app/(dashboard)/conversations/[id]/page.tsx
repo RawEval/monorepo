@@ -273,7 +273,7 @@ export default function ConversationDetailPage() {
                   {tab === 'rubric' && (rubricLoading ? <LoadingTab /> : <RubricTab criteria={rubricData || activeModel?.qc_rubric} />)}
                   {tab === 'judges' && (judgesLoading ? <LoadingTab /> : <JudgesTab judges={judgesData || activeModel?.qc_judges} />)}
                   {tab === 'fraud' && <FraudTab signals={activeModel?.qc_fraud_signals} />}
-                  {tab === 'holistic' && <HolisticTab holistic={activeModel?.qc_case?.holistic_score} />}
+                  {tab === 'holistic' && <HolisticTab holistic={activeModel?.qc_holistic_evaluation || activeModel?.qc_case} />}
                   {tab === 'attribution' && <AttributionTab attribution={attributionData} />}
                   {tab === 'entropy' && <EntropyTab entropy={entropyData} shared={shared} qcCase={qcCase} />}
                   {tab === 'timeline' && <TimelineTab timeline={activeModel?.qc_status_history} pipeline={pipelineStatus} />}
@@ -520,8 +520,8 @@ function JudgesTab({ judges }: { judges?: any[] }) {
              </div>
              <CardContent className="p-5">
                 {j.reasoning ? (
-                  <div className="bg-muted/30 border border-border/50 rounded-xl p-4 text-sm leading-relaxed text-foreground/90">
-                     {j.reasoning}
+                  <div className="bg-muted/30 border border-border/50 rounded-xl p-4 text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
+                     {typeof j.reasoning === 'object' ? JSON.stringify(j.reasoning, null, 2) : j.reasoning}
                   </div>
                 ) : (
                   <p className="text-xs italic text-muted-foreground">No reasoning provided by the judge.</p>
@@ -575,7 +575,7 @@ function FraudTab({ signals }: { signals?: any[] }) {
                           "bg-muted"
                        )}>
                           <strong className="block mb-1 opacity-80 uppercase tracking-widest text-[9px]">Evidence Match:</strong>
-                          {s.evidence}
+                          {typeof s.evidence === 'object' ? JSON.stringify(s.evidence, null, 2) : s.evidence}
                        </div>
                     )}
                  </CardContent>
