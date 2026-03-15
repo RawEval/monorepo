@@ -123,7 +123,13 @@ export function Header() {
       : null;
 
   return (
-    <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/80 safe-area-inset-top sticky top-0 z-40 h-14 border-b backdrop-blur-xl">
+    <header
+      className="safe-area-inset-top sticky top-0 z-40 h-14 backdrop-blur-xl"
+      style={{
+        background: 'var(--color-bg-base)',
+        borderBottom: '1px solid var(--color-border)',
+      }}
+    >
       <div className="flex h-full items-center justify-between px-3 sm:px-4">
         {/* Left: Hamburger + Logo + mobile title */}
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">

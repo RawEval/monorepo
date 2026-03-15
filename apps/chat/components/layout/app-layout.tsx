@@ -18,7 +18,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isChatPage = pathname.startsWith('/chat') || pathname === '/';
 
   return (
-    <div className="bg-background flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-bg-base)' }}>
       {/* Sidebar — always rendered so the mobile sheet is accessible from any page */}
       <Sidebar showOnDesktop={isChatPage} />
 

@@ -1,6 +1,4 @@
 import { Metadata } from 'next';
-import { SectionHeader } from '@raweval/ui/section-header';
-import { Button } from '@raweval/ui/button';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -8,100 +6,89 @@ export const metadata: Metadata = {
   description: 'Join us in building the evaluation layer for the AI industry.',
 };
 
+const openRoles = [
+  { role: 'Senior Full Stack Engineer', dept: 'Engineering', location: 'San Francisco / Remote', type: 'Full-time' },
+  { role: 'ML Research Scientist', dept: 'Research', location: 'San Francisco', type: 'Full-time' },
+  { role: 'Product Designer', dept: 'Design', location: 'Remote', type: 'Full-time' },
+  { role: 'Enterprise Sales Lead', dept: 'GTM', location: 'New York / Remote', type: 'Full-time' },
+  { role: 'Data Quality Lead', dept: 'Operations', location: 'Remote', type: 'Full-time' },
+];
+
+const perks = [
+  'Competitive salary + equity',
+  'Full medical, dental, vision',
+  'Flexible remote policy',
+  '$2,000 equipment budget',
+  'Unlimited PTO',
+  'Annual team offsite',
+];
+
 export default function CareersPage() {
   return (
-    <main className="bg-background min-h-screen pt-24 lg:pt-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <SectionHeader
-          title="Join the Team"
-          description="We are a team of researchers, engineers, and builders obsessed with AI quality. Come build the future with us."
-          className="mb-16"
-        />
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--section-y))' }}>
 
-        <div className="mb-24">
-          <h2 className="text-foreground mb-8 text-2xl font-bold">
-            Open Positions
-          </h2>
-          <div className="grid gap-4">
-            {[
-              {
-                role: 'Senior Full Stack Engineer',
-                department: 'Engineering',
-                location: 'San Francisco / Remote',
-                type: 'Full-time',
-              },
-              {
-                role: 'Machine Learning Research Scientist',
-                department: 'Research',
-                location: 'San Francisco',
-                type: 'Full-time',
-              },
-              {
-                role: 'Product Designer',
-                department: 'Design',
-                location: 'Remote',
-                type: 'Full-time',
-              },
-              {
-                role: 'Enterprise Sales Lead',
-                department: 'GTM',
-                location: 'New York / Remote',
-                type: 'Full-time',
-              },
-            ].map((job) => (
-              <div
-                key={job.role}
-                className="border-border group flex flex-col items-start justify-between rounded-xl border bg-white p-6 transition-colors hover:border-blue-300 sm:flex-row sm:items-center"
-              >
+      <section style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', paddingBottom: 'var(--section-y)' }}>
+        <div style={{ maxWidth: 600 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>Careers</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-6)' }}>
+            Help build the evaluation infrastructure for the AI industry.
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>
+            We&apos;re a small team working on a hard problem. If you care about AI quality, data, and building systems that matter — we want to hear from you.
+          </p>
+        </div>
+      </section>
+
+      <section style={{ borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-8)' }}>Open positions</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--color-border)' }}>
+            {openRoles.map((job) => (
+              <div key={job.role} style={{ background: 'var(--color-bg-base)', padding: 'var(--space-5)', display: 'flex', flexWrap: 'wrap' as const, alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-4)' }}>
                 <div>
-                  <h3 className="text-foreground text-lg font-semibold transition-colors group-hover:text-blue-600">
-                    {job.role}
-                  </h3>
-                  <div className="text-muted-foreground mt-1 flex gap-3 text-sm">
-                    <span>{job.department}</span>
-                    <span>•</span>
-                    <span>{job.location}</span>
-                    <span>•</span>
-                    <span>{job.type}</span>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>{job.role}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', display: 'flex', gap: 'var(--space-3)' }}>
+                    <span>{job.dept}</span><span>·</span><span>{job.location}</span><span>·</span><span>{job.type}</span>
                   </div>
                 </div>
-                <div className="mt-4 sm:mt-0">
-                  <Button variant="outline" asChild>
-                    <Link href="/careers/apply">Apply Now</Link>
-                  </Button>
-                </div>
+                <a href={`mailto:careers@raweval.com?subject=Application: ${job.role}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', textDecoration: 'none', padding: '7px 14px', border: '1px solid var(--color-signal-border)', borderRadius: 'var(--radius-sm)' }}>Apply →</a>
               </div>
             ))}
           </div>
-          <p className="text-muted-foreground mt-8 text-center">
-            Don't see your role? Email us at{' '}
-            <a
-              href="mailto:careers@raweval.com"
-              className="text-blue-600 hover:underline"
-            >
-              careers@raweval.com
-            </a>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-8)' }}>
+            Don&apos;t see your role? Email <a href="mailto:careers@raweval.com" style={{ color: 'var(--color-signal)', textDecoration: 'none' }}>careers@raweval.com</a>
           </p>
         </div>
+      </section>
 
-        <div className="mb-24 rounded-3xl bg-slate-900 p-8 text-center text-white lg:p-16">
-          <h2 className="mb-6 text-3xl font-bold">
-            Not an employee? Join as an Expert.
-          </h2>
-          <p className="mx-auto mb-8 max-w-2xl text-lg text-blue-100">
-            You don't need to work at RawEval to contribute. Join our expert
-            network, review prompts on your own schedule, and earn competitive
-            rates.
-          </p>
-          <Button
-            size="lg"
-            className="bg-white text-slate-900 hover:bg-slate-100"
-            asChild
-          >
-            <Link href="/experts">Become an Expert</Link>
-          </Button>
+      <section style={{ background: 'var(--color-bg-surface)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-10)' }}>Compensation &amp; benefits</div>
+          <div className="grid-cols-3-md">
+            {perks.map((p) => (
+              <div key={p} style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-signal)', flexShrink: 0, marginTop: '1px' }}>◈</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{p}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section style={{ background: 'var(--color-bg-inverse)' }}>
+        <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)', textAlign: 'center' as const }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-inverse)', fontWeight: 400, lineHeight: 'var(--leading-tight)', margin: '0 0 var(--space-5)' }}>
+            Join as an Expert instead.
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-inverse-muted)', maxWidth: 440, margin: '0 auto var(--space-8)' }}>
+            Annotate prompts on your own schedule. Earn competitive rates. No full-time commitment required.
+          </p>
+          <Link href="/experts" style={{ display: 'inline-block', background: 'var(--color-signal)', color: 'var(--color-text-inverse)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 28px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}>
+            Become an Expert →
+          </Link>
+        </div>
+      </section>
+
     </main>
   );
 }

@@ -1,40 +1,49 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
-import { Geist, Geist_Mono, JetBrains_Mono } from 'next/font/google';
+import { DM_Mono, Instrument_Serif } from 'next/font/google';
 import { Suspense } from 'react';
 import { StaffToolbar } from '../components/staff-toolbar';
 import { Navbar } from '../components/navbar';
 import { Footer } from '../components/footer';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const dmMono = DM_Mono({
+  variable: '--font-dm-mono',
   subsets: ['latin'],
+  weight: ['400', '500'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-instrument-serif',
   subsets: ['latin'],
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-jetbrains',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'RawEval | AI Evaluation Infrastructure',
+  title: {
+    default: 'RawEval | Human-Verified AI Evaluation Infrastructure',
+    template: '%s | RawEval',
+  },
   description:
-    'Infrastructure for AI evaluation at scale. Shadow Search, Expert Gauntlet, Gold Dataset, Enterprise API.',
-  keywords: [
-    'AI',
-    'evaluation',
-    'infrastructure',
-    'machine learning',
-    'ML',
-    'enterprise',
-  ],
+    'The end-to-end pipeline that catches failed AI interactions, puts them in front of verified domain experts, and delivers audit-ready training data to frontier labs.',
+  keywords: ['AI evaluation', 'RLHF', 'training data', 'EU AI Act', 'annotation infrastructure', 'human feedback', 'model alignment'],
+  openGraph: {
+    type: 'website',
+    siteName: 'RawEval',
+    title: 'RawEval | Human-Verified AI Evaluation Infrastructure',
+    description: 'Catch AI failures. Route to verified experts. Get training-ready data back.',
+    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'RawEval' }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'RawEval | Human-Verified AI Evaluation Infrastructure',
+    description: 'Catch AI failures. Route to verified experts. Get training-ready data back.',
+    images: ['/logo.png'],
+  },
+  metadataBase: new URL('https://www.raweval.com'),
 };
 
 export default function RootLayout({
@@ -51,7 +60,8 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        className={`${dmMono.variable} ${instrumentSerif.variable} antialiased`}
+        style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}
       >
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`

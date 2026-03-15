@@ -1,121 +1,115 @@
 import { Metadata } from 'next';
-import { SectionHeader } from '@raweval/ui/section-header';
-import { CheckCircle2, Users, Globe, Target } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'About Us | RawEval',
-  description: 'Our mission is to build the gold standard for AI evaluation.',
+  description: 'Our mission is to build the gold standard for AI evaluation — human-verified, at scale.',
 };
+
+const values = [
+  { label: 'Truth above all', body: 'We do not compromise on data quality. Every correction is verified, every score is earned. There are no shortcuts in evaluation.' },
+  { label: 'Human-centric AI', body: 'Verified human judgment is the key that unlocks the next frontier of AI capability. Domain expertise cannot be synthesized.' },
+  { label: 'Meritocracy', body: "Our experts are tiered on proven performance, not credentials. The best evaluators rise — regardless of where they're from." },
+];
+
+const stats = [
+  { value: '2,400+', label: 'Certified experts' },
+  { value: '96.8%', label: 'Accuracy rate' },
+  { value: '45+', label: 'Countries' },
+  { value: '47K+', label: 'Evaluations shipped' },
+];
 
 export default function AboutPage() {
   return (
-    <main className="bg-background min-h-screen pt-24 lg:pt-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <SectionHeader
-          title="About RawEval"
-          description="We are building the infrastructure for the next generation of AI. Rigorous, human-verified evaluation at scale."
-          className="mb-16"
-        />
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--section-y))' }}>
 
-        <div className="mb-24 grid gap-12 lg:grid-cols-2 lg:gap-8">
-          <div className="flex flex-col justify-center">
-            <h2 className="text-foreground mb-6 text-3xl font-bold tracking-tight sm:text-4xl">
-              Our Mission
-            </h2>
-            <p className="text-muted-foreground mb-6 text-lg leading-8">
-              To ensure Artificial General Intelligence is safe, reliable, and
-              beneficial, we need rigorous evaluation. Synthetic benchmarks are
-              no longer enough. We are building the world's largest network of
-              verified domain experts to stress-test, correct, and improve AI
-              models.
-            </p>
-            <div className="space-y-4">
-              {[
-                'Gold-standard human verification',
-                'Global network of domain experts',
-                'Advanced anti-cheat security',
-                'Data-driven quality metrics',
-              ].map((item) => (
-                <div key={item} className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-blue-600" />
-                  <span className="text-foreground">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 lg:p-12">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                <Users className="mb-4 h-8 w-8 text-blue-600" />
-                <div className="text-foreground mb-1 text-2xl font-bold">
-                  2,400+
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  Certified Experts
-                </div>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                <Target className="mb-4 h-8 w-8 text-emerald-600" />
-                <div className="text-foreground mb-1 text-2xl font-bold">
-                  96.8%
-                </div>
-                <div className="text-muted-foreground text-sm">
-                  Accuracy Rate
-                </div>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                <Globe className="mb-4 h-8 w-8 text-purple-600" />
-                <div className="text-foreground mb-1 text-2xl font-bold">
-                  45+
-                </div>
-                <div className="text-muted-foreground text-sm">Countries</div>
-              </div>
-              <div className="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
-                <CheckCircle2 className="mb-4 h-8 w-8 text-amber-600" />
-                <div className="text-foreground mb-1 text-2xl font-bold">
-                  47K+
-                </div>
-                <div className="text-muted-foreground text-sm">Evaluations</div>
-              </div>
-            </div>
-          </div>
+      {/* Hero */}
+      <section style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', paddingBottom: 'var(--section-y)' }}>
+        <div style={{ maxWidth: 640 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>About</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-6)' }}>
+            We&apos;re building the evaluation layer the AI industry doesn&apos;t yet have.
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>
+            Synthetic benchmarks are saturated. AI labs evaluate their models with data generated by their own models. RawEval fixes this — a global network of verified domain experts who stress-test, correct, and score frontier models, producing ground-truth training data that cannot be faked.
+          </p>
         </div>
+      </section>
 
-        <div className="mb-24 border-t border-slate-200 pt-16">
-          <h2 className="text-foreground mb-12 text-center text-3xl font-bold tracking-tight">
-            Our Values
-          </h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                title: 'Truth above all',
-                description:
-                  'We do not compromise on data quality. Every correction is verified, every score is earned.',
-              },
-              {
-                title: 'Human-centric AI',
-                description:
-                  'We believe human expertise is the key to unlocking the next level of AI capability.',
-              },
-              {
-                title: 'Meritocracy',
-                description:
-                  'Our experts are tiered based on proven performance, not just credentials.',
-              },
-            ].map((value) => (
-              <div
-                key={value.title}
-                className="rounded-xl border border-slate-100 bg-slate-50 p-8"
-              >
-                <h3 className="text-foreground mb-4 text-xl font-semibold">
-                  {value.title}
-                </h3>
-                <p className="text-muted-foreground">{value.description}</p>
+      {/* Stats */}
+      <section style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg-surface)' }}>
+        <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--space-12) var(--section-x)' }}>
+          <div className="stats-grid" style={{ display: 'grid', gap: 'var(--space-8)' }}>
+            {stats.map((s) => (
+              <div key={s.label}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-2xl)', color: 'var(--color-text-primary)', fontWeight: 500, letterSpacing: 'var(--tracking-tight)' }}>{s.value}</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', marginTop: 'var(--space-1)' }}>{s.label}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Mission */}
+      <section style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
+        <div className="grid-cols-2-lg">
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>Mission</div>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-6)' }}>
+              To ensure AI is safe, reliable, and honest — we need rigorous evaluation.
+            </h2>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: '0 0 var(--space-5)' }}>
+              We are building the world&apos;s largest network of verified domain experts to produce the highest-quality evaluation data available to AI labs and enterprises.
+            </p>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>
+              Every expert passes a multi-stage vetting process: credential verification, domain skill tests, and live evaluation audits. We don&apos;t let anyone annotate until we know they&apos;re excellent.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)', alignContent: 'start' }}>
+            {[
+              { label: 'Gold-standard human verification', icon: '✦' },
+              { label: 'Global expert network', icon: '◈' },
+              { label: 'Anti-cheat biometric security', icon: '⬡' },
+              { label: 'Data-driven quality metrics', icon: '◎' },
+            ].map((item) => (
+              <div key={item.label} style={{ padding: 'var(--space-5)', background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-lg)', color: 'var(--color-signal)', marginBottom: 'var(--space-3)' }}>{item.icon}</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-snug)' }}>{item.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Values */}
+      <section style={{ background: 'var(--color-bg-surface)', borderTop: '1px solid var(--color-border)' }}>
+        <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-10)' }}>Values</div>
+          <div className="grid-cols-3-md">
+            {values.map((v) => (
+              <div key={v.label} style={{ paddingTop: 'var(--space-5)', borderTop: '2px solid var(--color-border)' }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-xl)', color: 'var(--color-text-primary)', fontWeight: 400, margin: '0 0 var(--space-4)' }}>{v.label}</h3>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>{v.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team CTA */}
+      <section style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
+        <div style={{ maxWidth: 560 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', fontWeight: 400, lineHeight: 'var(--leading-tight)', margin: '0 0 var(--space-6)' }}>
+            Built by researchers, engineers, and builders obsessed with AI quality.
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: '0 0 var(--space-8)' }}>
+            We come from ML research, data infrastructure, and enterprise software. We&apos;ve seen firsthand how bad evaluation data breaks alignment — and decided to fix it.
+          </p>
+          <a href="/careers" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', textDecoration: 'none' }}>
+            View open roles →
+          </a>
+        </div>
+      </section>
+
     </main>
   );
 }
