@@ -1,50 +1,134 @@
 'use client';
 
-import Link from 'next/link';
-import { Button } from '@raweval/ui/button';
-import { ArrowRight, Sparkles } from 'lucide-react';
-import { appUrls } from '@raweval/utils/urls';
+import { useState } from 'react';
 
 export function CTASection() {
+  const [formData, setFormData] = useState({ name: '', email: '', company: '' });
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitted(true);
+  }
+
   return (
-    <section className="relative overflow-hidden py-24 lg:py-32">
-      {/* Animated background gradient */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-50/50 via-purple-50/30 to-cyan-50/50" />
-      
-      <div className="relative mx-auto max-w-4xl px-6 lg:px-8">
-        <div className="text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/25">
-            <Sparkles className="h-4 w-4" />
-            <span>Ready to Get Started?</span>
-          </div>
-          <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            Pick Your Platform and Start
+    <section id="get-access" style={{ width: '100%', background: 'var(--color-signal)' }}>
+      <div
+        style={{
+          maxWidth: 'var(--max-content)',
+          margin: '0 auto',
+          padding: 'var(--section-y) var(--section-x)',
+          display: 'grid',
+          gap: 'var(--space-12)',
+          alignItems: 'start',
+        }}
+        className="grid-cols-1 lg:grid-cols-2"
+      >
+        {/* Left */}
+        <div>
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 'var(--text-3xl)',
+              lineHeight: 'var(--leading-tight)',
+              letterSpacing: 'var(--tracking-tight)',
+              color: 'var(--color-text-inverse)',
+              fontWeight: 'var(--weight-normal)' as unknown as number,
+              marginBottom: 'var(--space-4)',
+            }}
+          >
+            The pipe is built. First deliveries are loading.
           </h2>
-          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl text-lg leading-relaxed">
-            Choose the platform that fits your needs. Chat for users, Workbench for experts, or Enterprise for teams.
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'var(--text-base)',
+              lineHeight: 'var(--leading-relaxed)',
+              color: 'var(--color-text-inverse-muted)',
+            }}
+          >
+            Three infra layers live. Payment rails wired. Expert vetting pipeline running.
+            The first 500-sample batch ships within 30 days of your LOI.
           </p>
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button 
-              size="lg" 
-              className="h-12 gap-2 px-8 text-base bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-xl transition-all" 
-              asChild
+        </div>
+
+        {/* Right — Form */}
+        <div>
+          {submitted ? (
+            <div
+              style={{
+                background: 'rgba(245,242,236,0.15)',
+                border: '1px solid rgba(245,242,236,0.25)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-8)',
+                textAlign: 'center',
+              }}
             >
-              <Link href={appUrls.landing('/#platforms')}>
-                Explore All Platforms
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-12 px-8 text-base"
-              asChild
-            >
-              <Link href={appUrls.chat()}>
-                Start Chatting
-              </Link>
-            </Button>
-          </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', color: 'var(--color-text-inverse)', letterSpacing: 'var(--tracking-wide)' }}>
+                Request received →
+              </div>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-inverse-muted)', marginTop: 'var(--space-2)' }}>
+                We&apos;ll be in touch within 48 hours.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {[
+                { key: 'name', placeholder: 'Your name', type: 'text' },
+                { key: 'email', placeholder: 'Work email', type: 'email' },
+                { key: 'company', placeholder: 'Company / team', type: 'text' },
+              ].map((field) => (
+                <input
+                  key={field.key}
+                  type={field.type}
+                  placeholder={field.placeholder}
+                  required
+                  value={formData[field.key as keyof typeof formData]}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                  style={{
+                    background: 'rgba(245,242,236,0.15)',
+                    border: '1px solid rgba(245,242,236,0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: 'var(--color-text-inverse)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-base)',
+                    padding: '12px 16px',
+                    width: '100%',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              ))}
+              <button
+                type="submit"
+                style={{
+                  background: 'transparent',
+                  color: 'var(--color-text-inverse)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 'var(--text-xs)',
+                  letterSpacing: 'var(--tracking-wide)',
+                  padding: '12px 24px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid rgba(245,242,236,0.4)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                  marginTop: 'var(--space-1)',
+                }}
+              >
+                Request early access →
+              </button>
+              <p
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  color: 'rgba(245,242,236,0.4)',
+                  marginTop: 'var(--space-1)',
+                }}
+              >
+                Pre-seed · $800K round · raweval.com · sales@raweval.com
+              </p>
+            </form>
+          )}
         </div>
       </div>
     </section>

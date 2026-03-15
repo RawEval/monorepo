@@ -1,0 +1,115 @@
+/* =============================================
+   RawEval Design Tokens — Single Source of Truth
+   All apps MUST import this file. No local overrides.
+   ============================================= */
+
+:root {
+  /* === BACKGROUNDS === */
+  --color-bg-base:       #f5f2ec;
+  --color-bg-surface:    #ede9e0;
+  --color-bg-muted:      #e4dfd3;
+  --color-bg-inverse:    #0d0d0d;
+
+  /* === TEXT === */
+  --color-text-primary:  #0d0d0d;
+  --color-text-secondary:#3a3a3a;
+  --color-text-muted:    #6b6b6b;
+  --color-text-faint:    #9a9a9a;
+  --color-text-inverse:  #f5f2ec;
+  --color-text-inverse-muted: rgba(245, 242, 236, 0.55);
+  --color-text-inverse-faint: rgba(245, 242, 236, 0.35);
+
+  /* === BRAND / SIGNAL === */
+  --color-signal:        #d4440c;
+  --color-signal-hover:  #bf3a09;
+  --color-signal-subtle: rgba(212, 68, 12, 0.08);
+  --color-signal-border: rgba(212, 68, 12, 0.25);
+  --color-signal-light:  #ff6b35;
+
+  /* === SEMANTIC === */
+  --color-success:       #2d7a4e;
+  --color-success-subtle:rgba(45, 122, 78, 0.08);
+  --color-success-border:rgba(45, 122, 78, 0.2);
+
+  --color-info:          #185fa5;
+  --color-info-subtle:   rgba(24, 95, 165, 0.08);
+  --color-info-border:   rgba(24, 95, 165, 0.2);
+
+  --color-warning:       #8a6a00;
+  --color-warning-subtle:rgba(138, 106, 0, 0.08);
+
+  --color-error:         #c0392b;
+  --color-error-subtle:  rgba(192, 57, 43, 0.08);
+
+  /* === BORDERS === */
+  --color-border:        rgba(13, 13, 13, 0.1);
+  --color-border-strong: rgba(13, 13, 13, 0.18);
+  --color-border-inverse:rgba(245, 242, 236, 0.1);
+  --color-border-inverse-strong: rgba(245, 242, 236, 0.2);
+
+  /* === FONT FAMILIES === */
+  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono:    'DM Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* === FONT SIZES === */
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-md:   17px;
+  --text-lg:   20px;
+  --text-xl:   24px;
+  --text-2xl:  32px;
+  --text-3xl:  clamp(32px, 4vw, 48px);
+  --text-4xl:  clamp(44px, 5.5vw, 72px);
+
+  /* === LINE HEIGHTS === */
+  --leading-tight:  1.08;
+  --leading-snug:   1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed:1.7;
+
+  /* === FONT WEIGHTS === */
+  --weight-normal:  400;
+  --weight-medium:  500;
+
+  /* === LETTER SPACING === */
+  --tracking-tight:  -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.06em;
+  --tracking-wider:   0.12em;
+
+  /* === SPACING === */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+
+  /* === SECTION PADDING === */
+  --section-x: 48px;
+  --section-y: 80px;
+
+  /* === MAX WIDTHS === */
+  --max-content: 1100px;
+  --max-prose:   560px;
+  --max-narrow:  420px;
+
+  /* === BORDER RADIUS === */
+  --radius-sm:  3px;
+  --radius-md:  6px;
+  --radius-lg:  8px;
+  --radius-xl:  12px;
+  --radius-full:9999px;
+
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 4px rgba(13, 13, 13, 0.06);
+  --shadow-md: 0 2px 12px rgba(13, 13, 13, 0.08);
+}

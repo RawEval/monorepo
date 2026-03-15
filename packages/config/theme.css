@@ -92,11 +92,8 @@
 
 /* ===========================================
    TYPOGRAPHY SYSTEM
-   - Body: Geist (default)
-   - Metrics/Code/States: JetBrains Mono
    =========================================== */
 
-/* JetBrains Mono for metrics, code labels, system states */
 .font-metric {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-feature-settings:
@@ -105,7 +102,6 @@
   letter-spacing: -0.02em;
 }
 
-/* For percentages, counts, latency values */
 .metric {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-feature-settings:
@@ -114,14 +110,12 @@
   font-weight: 500;
 }
 
-/* For IDs, codes, technical labels */
 .code-label {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 0.875em;
   letter-spacing: 0.02em;
 }
 
-/* For status badges, system states */
 .system-state {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-weight: 500;
@@ -130,12 +124,14 @@
   font-size: 0.75em;
 }
 
-/* Smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
 
-/* Marquee animation for logos */
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+
 @keyframes marquee {
   0% {
     transform: translateX(0%);
@@ -149,14 +145,6 @@ html {
   animation: marquee 30s linear infinite;
 }
 
-/* ===========================================
-   MOTION SYSTEM
-   - Subtle only
-   - Prefer: Opacity fades, Grid parallax, Pulse animations
-   - Avoid: Slide-ins, Bouncy transitions
-   =========================================== */
-
-/* Fade in animation - opacity only, no slide */
 @keyframes fade-in {
   0% {
     opacity: 0;
@@ -170,7 +158,6 @@ html {
   animation: fade-in 0.5s ease-out forwards;
 }
 
-/* Legacy support - minimal vertical movement */
 @keyframes fade-in-up {
   0% {
     opacity: 0;
@@ -186,7 +173,6 @@ html {
   animation: fade-in-up 0.5s ease-out forwards;
 }
 
-/* Stagger delays */
 .delay-100 {
   animation-delay: 100ms;
 }
@@ -203,15 +189,6 @@ html {
   animation-delay: 500ms;
 }
 
-/* Gradient text */
-.gradient-text {
-  background: linear-gradient(135deg, #0f172a 0%, #3b82f6 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Card hover effect - subtle shadow only, no movement */
 .card-hover {
   transition:
     box-shadow 0.3s ease,
@@ -223,22 +200,6 @@ html {
   border-color: var(--border);
 }
 
-/* Flow diagram connector */
-.flow-connector {
-  position: relative;
-}
-
-.flow-connector::after {
-  content: '';
-  position: absolute;
-  right: -24px;
-  top: 50%;
-  width: 24px;
-  height: 2px;
-  background: linear-gradient(90deg, #e2e8f0 0%, #3b82f6 100%);
-}
-
-/* Glow pulse animation - subtle */
 @keyframes glow-pulse {
   0%,
   100% {
@@ -253,7 +214,6 @@ html {
   animation: glow-pulse 2.5s ease-in-out infinite;
 }
 
-/* Status pulse - for indicators */
 @keyframes status-pulse {
   0%,
   100% {
@@ -270,121 +230,15 @@ html {
   animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* Data flow animation - vertical opacity only */
-@keyframes data-pulse {
-  0% {
-    opacity: 0;
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
   }
-  20% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
+  to {
+    transform: translateX(-50%);
   }
 }
 
-.animate-data-pulse {
-  animation: data-pulse 3s ease-in-out infinite;
-}
-
-/* Scan line animation */
-@keyframes scan-line {
-  0% {
-    opacity: 0;
-    top: 0%;
-  }
-  10% {
-    opacity: 0.5;
-  }
-  90% {
-    opacity: 0.5;
-  }
-  100% {
-    opacity: 0;
-    top: 100%;
-  }
-}
-
-.animate-scan-line {
-  animation: scan-line 4s ease-in-out infinite;
-}
-
-/* Subtle float animation - very minimal */
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-.animate-float {
-  animation: float 5s ease-in-out infinite;
-}
-
-/* Grid parallax effect */
-@keyframes grid-drift {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 32px 32px;
-  }
-}
-
-.animate-grid-parallax {
-  animation: grid-drift 20s linear infinite;
-}
-
-/* Subtle grid fade */
-@keyframes grid-fade {
-  0%,
-  100% {
-    opacity: 0.03;
-  }
-  50% {
-    opacity: 0.06;
-  }
-}
-
-.animate-grid-fade {
-  animation: grid-fade 8s ease-in-out infinite;
-}
-
-/* Border glow on hover */
-.glow-border {
-  position: relative;
-}
-
-.glow-border::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    135deg,
-    var(--glow-color, #3b82f6) 0%,
-    transparent 50%,
-    var(--glow-color, #3b82f6) 100%
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.glow-border:hover::before {
-  opacity: 1;
+.ticker-track {
+  animation: ticker-scroll 22s linear infinite;
 }

@@ -1,102 +1,55 @@
 import { Metadata } from 'next';
-import { SectionHeader } from '@raweval/ui/section-header';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Blog | RawEval',
-  description: 'Insights on AI evaluation, data quality, and model alignment.',
+  description: 'Insights on AI evaluation, data quality, and model alignment from the RawEval team.',
 };
+
+const posts = [
+  { title: 'The Problem with Synthetic Evaluation Data', date: 'Jan 15, 2026', category: 'Research', excerpt: 'Why evaluating models with model-generated data creates a feedback loop of mediocrity — and how to break out of it.', readTime: '5 min', slug: 'synthetic-evaluation-problem' },
+  { title: 'Introducing the 3-3-3 Verification Protocol', date: 'Jan 8, 2026', category: 'Product', excerpt: 'How we ensure 99.9% accuracy in data labeling through our multi-tier expert consensus system.', readTime: '4 min', slug: '3-3-3-verification' },
+  { title: 'Case Study: Scaling RLHF for Legal LLMs', date: 'Dec 5, 2025', category: 'Case Study', excerpt: 'How a leading legal tech firm improved model accuracy by 40% using verified RawEval expert annotations.', readTime: '8 min', slug: 'legal-llm-case-study' },
+  { title: 'Detecting AI-Generated Text in 2026', date: 'Nov 28, 2025', category: 'Engineering', excerpt: 'Our new keystroke dynamics and biometric analysis approach to anti-cheat detection in expert annotation.', readTime: '6 min', slug: 'detecting-ai-text-2026' },
+  { title: 'Why RLHF Needs a Supply Chain', date: 'Nov 15, 2025', category: 'Research', excerpt: 'Treating human feedback as a supply chain problem — with quality controls, traceability, and sourcing standards.', readTime: '7 min', slug: 'rlhf-supply-chain' },
+  { title: 'The Future of Human Work in the AI Age', date: 'Oct 30, 2025', category: 'Opinion', excerpt: 'As AI advances, the value of verified human judgment and domain expertise will only increase — not decrease.', readTime: '5 min', slug: 'future-of-human-work' },
+];
 
 export default function BlogPage() {
   return (
-    <main className="bg-background min-h-screen pt-24 lg:pt-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <SectionHeader
-          title="RawEval Blog"
-          description="Latest updates, research, and thinking from the RawEval team."
-          className="mb-16"
-        />
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--section-y))' }}>
+      <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', paddingBottom: 'var(--section-y)' }}>
 
-        <div className="mb-24 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              title: 'The Problem with Synthetic Evaluation Data',
-              date: 'January 15, 2026',
-              category: 'Research',
-              excerpt:
-                'Why evaluating models with model-generated data creates a feedback loop of mediocrity.',
-              readTime: '5 min read',
-            },
-            {
-              title: 'Introducing the 3-3-3 Verification Protocol',
-              date: 'January 8, 2026',
-              category: 'Product',
-              excerpt:
-                'How we ensure 99.9% accuracy in data labeling through our multi-tier consensus system.',
-              readTime: '4 min read',
-            },
-            {
-              title: 'RawEval raises $12M Series A',
-              date: 'December 20, 2025',
-              category: 'Company',
-              excerpt:
-                'Accelerating our mission to build the gold standard for AI evaluation infrastructure.',
-              readTime: '2 min read',
-            },
-            {
-              title: 'Case Study: Scaling RLHF for Legal LLMs',
-              date: 'December 5, 2025',
-              category: 'Case Study',
-              excerpt:
-                'How a leading legal tech firm improved model accuracy by 40% using RawEval experts.',
-              readTime: '8 min read',
-            },
-            {
-              title: 'Detecting AI-Generated Text in 2026',
-              date: 'November 28, 2025',
-              category: 'Engineering',
-              excerpt:
-                'Our new keystroke dynamics and biometric analysis approach to anti-cheat.',
-              readTime: '6 min read',
-            },
-            {
-              title: 'The Future of Human Work in the AI Age',
-              date: 'November 15, 2025',
-              category: 'Opinion',
-              excerpt:
-                'As AI advances, the value of verified human judgment and expertise will only increase.',
-              readTime: '5 min read',
-            },
-          ].map((post) => (
+        <div style={{ marginBottom: 'var(--space-16)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>Blog</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-5)' }}>
+            Writing on evaluation,<br />quality, and alignment.
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', maxWidth: 480, margin: 0 }}>
+            Research, product updates, and long-form thinking from the RawEval team.
+          </p>
+        </div>
+
+        <div className="grid-cols-3-md">
+          {posts.map((post) => (
             <Link
-              key={post.title}
-              href={`/blog/${post.title.toLowerCase().replace(/ /g, '-')}`}
-              className="border-border group flex flex-col overflow-hidden rounded-xl border bg-white transition-shadow hover:shadow-md"
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              style={{ display: 'block', textDecoration: 'none', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-6)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.7')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
-              <div className="flex h-48 items-center justify-center bg-slate-100 text-slate-400">
-                {/* Placeholder for blog image */}
-                <span className="text-sm">Image Placeholder</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase' }}>{post.category}</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wide)' }}>{post.readTime}</span>
               </div>
-              <div className="flex flex-1 flex-col p-6">
-                <div className="text-muted-foreground mb-3 flex items-center justify-between text-xs">
-                  <span className="font-medium text-blue-600">
-                    {post.category}
-                  </span>
-                  <span>{post.date}</span>
-                </div>
-                <h3 className="text-foreground mb-2 text-xl font-bold transition-colors group-hover:text-blue-600">
-                  {post.title}
-                </h3>
-                <p className="text-muted-foreground mb-4 line-clamp-3 flex-1 text-sm">
-                  {post.excerpt}
-                </p>
-                <div className="text-xs font-medium text-slate-500">
-                  {post.readTime}
-                </div>
-              </div>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-snug)', fontWeight: 400, margin: '0 0 var(--space-3)' }}>{post.title}</h3>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)', margin: '0 0 var(--space-4)' }}>{post.excerpt}</p>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wide)' }}>{post.date}</div>
             </Link>
           ))}
         </div>
+
       </div>
     </main>
   );

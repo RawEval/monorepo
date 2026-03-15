@@ -1,166 +1,64 @@
 import { Metadata } from 'next';
-import { SectionHeader } from '@raweval/ui/section-header';
-import { Button } from '@raweval/ui/button';
-import { Card, CardContent } from '@raweval/ui/card';
-import { Input } from '@raweval/ui/input';
-import { Textarea } from '@raweval/ui/textarea';
-import { Label } from '@raweval/ui/label';
-import { Mail, MessageSquare, Building2, MapPin } from 'lucide-react';
+import { ContactForm } from './contact-form';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | RawEval',
-  description: 'Get in touch with the RawEval team.',
+  title: 'Contact | RawEval',
+  description: 'Get in touch with the RawEval team for enterprise sales, expert applications, press, or general inquiries.',
 };
+
+const channels = [
+  { label: 'Enterprise sales', desc: 'Pricing & integration questions', email: 'sales@raweval.com' },
+  { label: 'Expert network', desc: 'Joining as an annotator or evaluator', email: 'experts@raweval.com' },
+  { label: 'Press & media', desc: 'Coverage, interviews, partnerships', email: 'press@raweval.com' },
+  { label: 'General', desc: 'Everything else', email: 'hello@raweval.com' },
+];
 
 export default function ContactPage() {
   return (
-    <main className="bg-background min-h-screen pt-24 lg:pt-32">
-      <div className="mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <SectionHeader
-          title="Contact Us"
-          description="We'd love to hear from you. Choose the right channel or send us a message directly."
-          className="mb-16"
-        />
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--section-y))' }}>
+      <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', paddingBottom: 'var(--section-y)' }}>
 
-        <div className="grid gap-12 lg:grid-cols-3">
-          {/* Contact Channels */}
-          <div className="space-y-6 lg:col-span-1">
-            <h3 className="text-foreground mb-4 text-xl font-semibold">
-              Direct Channels
-            </h3>
+        <div style={{ marginBottom: 'var(--space-16)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>Contact</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-5)' }}>
+            Get in touch.
+          </h1>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-muted)', maxWidth: 480, margin: 0 }}>
+            Choose the right channel below or send us a direct message.
+          </p>
+        </div>
 
-            <Card className="transition-colors hover:border-blue-300">
-              <CardContent className="flex items-start gap-4 p-6">
-                <div className="flex-shrink-0 rounded-lg bg-blue-100 p-3">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="text-foreground font-medium">Sales</h4>
-                  <p className="text-muted-foreground mb-2 text-sm">
-                    Enterprise inquiries & pricing
-                  </p>
-                  <a
-                    href="mailto:sales@raweval.com"
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    sales@raweval.com
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="grid-cols-2-lg">
 
-            <Card className="transition-colors hover:border-emerald-300">
-              <CardContent className="flex items-start gap-4 p-6">
-                <div className="flex-shrink-0 rounded-lg bg-emerald-100 p-3">
-                  <MessageSquare className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h4 className="text-foreground font-medium">
-                    Expert Support
-                  </h4>
-                  <p className="text-muted-foreground mb-2 text-sm">
-                    Workbench & payment help
-                  </p>
-                  <a
-                    href="mailto:experts@raweval.com"
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    experts@raweval.com
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="transition-colors hover:border-purple-300">
-              <CardContent className="flex items-start gap-4 p-6">
-                <div className="flex-shrink-0 rounded-lg bg-purple-100 p-3">
-                  <Mail className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <h4 className="text-foreground font-medium">General Info</h4>
-                  <p className="text-muted-foreground mb-2 text-sm">
-                    Press & partnerships
-                  </p>
-                  <a
-                    href="mailto:hello@raweval.com"
-                    className="text-sm font-medium text-blue-600 hover:underline"
-                  >
-                    hello@raweval.com
-                  </a>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="mt-8">
-              <h4 className="text-foreground mb-4 flex items-center gap-2 font-semibold">
-                <MapPin className="h-5 w-5 text-slate-500" />
-                Our Headquarters
-              </h4>
-              <p className="text-muted-foreground ml-7 text-sm">
-                548 Market St
-                <br />
-                San Francisco, CA 94104
-                <br />
-                United States
-              </p>
+          {/* Channels */}
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-6)' }}>Direct channels</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              {channels.map((c) => (
+                <a
+                  key={c.email}
+                  href={`mailto:${c.email}`}
+                  style={{ display: 'block', padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', textDecoration: 'none', background: 'var(--color-bg-surface)' }}
+                >
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>{c.label}</div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>{c.desc}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)' }}>{c.email}</div>
+                </a>
+              ))}
+            </div>
+            <div style={{ marginTop: 'var(--space-8)', padding: 'var(--space-5)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg-surface)' }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-3)' }}>Office</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
+                548 Market St<br />San Francisco, CA 94104
+              </div>
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardContent className="p-8">
-                <h3 className="text-foreground mb-2 text-2xl font-bold">
-                  Send us a message
-                </h3>
-                <p className="text-muted-foreground mb-8">
-                  Fill out the form below and we'll get back to you within 24
-                  hours.
-                </p>
+          {/* Form */}
+          <ContactForm />
 
-                <form className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="first-name">First name</Label>
-                      <Input id="first-name" placeholder="Jane" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="last-name">Last name</Label>
-                      <Input id="last-name" placeholder="Doe" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="jane@company.com"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
-                    <Input id="subject" placeholder="How can we help?" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Tell us more about your project..."
-                      className="min-h-[150px]"
-                    />
-                  </div>
-
-                  <Button type="submit" size="lg" className="w-full sm:w-auto">
-                    Send Message
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
         </div>
+
       </div>
     </main>
   );

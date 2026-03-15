@@ -1,28 +1,31 @@
+import { TickerStrip } from '@/components/ticker-strip';
 import { HeroSection } from '@/components/hero-section';
-import { LogosSection } from '@/components/logos-section';
-import { PlatformsShowcase } from '@/components/platforms-showcase';
-import { HowItWorks } from '@/components/how-it-works';
-import { WorkflowVisualization } from '@/components/workflow-visualization';
-import { ExpertGrid } from '@/components/expert-grid';
-import { AnnotationDemo } from '@/components/annotation-demo';
-import { ValidationDelivery } from '@/components/validation-delivery';
-import { PlatformSection } from '@/components/platform-section';
-import { SecuritySection } from '@/components/security-section';
+import { ProblemSection } from '@/components/problem-section';
+import { PipelineHeader } from '@/components/pipeline-header';
+import { PlatformCapture } from '@/components/platform-capture';
+import { Connector } from '@/components/connector';
+import { PlatformExperts } from '@/components/platform-experts';
+import { PlatformWorkbench } from '@/components/platform-workbench';
+import { DeliverySection } from '@/components/delivery-section';
+import { WhyNowSection } from '@/components/why-now-section';
+import { WhoWeServeSection } from '@/components/who-we-serve-section';
 import { CTASection } from '@/components/cta-section';
 
 export default function Home() {
   return (
-    <main className="bg-background min-h-screen">
+    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)' }}>
+      <TickerStrip />
       <HeroSection />
-      <LogosSection />
-      <PlatformsShowcase />
-      <HowItWorks />
-      <WorkflowVisualization />
-      <ExpertGrid />
-      <AnnotationDemo />
-      <ValidationDelivery />
-      <PlatformSection />
-      <SecuritySection />
+      <ProblemSection />
+      <PipelineHeader />
+      <PlatformCapture />
+      <Connector label="Verified failures → Expert Queue" />
+      <PlatformExperts />
+      <Connector label="Verified experts → Workbench" />
+      <PlatformWorkbench />
+      <DeliverySection />
+      <WhyNowSection />
+      <WhoWeServeSection />
       <CTASection />
     </main>
   );

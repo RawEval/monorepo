@@ -1,81 +1,159 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@raweval/ui/button';
-import { ArrowRight } from 'lucide-react';
-import { appUrls } from '@raweval/utils/urls';
-import { SystemDiagram } from '@/components/system-diagram';
+
+const stats = [
+  { number: '∞', label: 'Failed prompts that disappear every day — uncaptured' },
+  { number: '0', label: 'Neutral full-pipeline infra providers today' },
+  { number: '$1B+', label: 'Spent/yr by frontier labs on unverifiable data' },
+  { number: '9×', label: 'Experts review every single prompt batch' },
+];
 
 export function HeroSection() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
-    <section className="relative overflow-hidden pt-32 pb-20 lg:pt-40 lg:pb-32">
-      {/* Background gradient */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-50/50 via-white to-white" />
-
-      {/* Grid pattern */}
+    <section style={{ width: '100%', background: 'var(--color-bg-base)' }}>
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='%230f172a'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e")`,
+          maxWidth: 'var(--max-content)',
+          margin: '0 auto',
+          padding: '96px var(--section-x) var(--section-y)',
         }}
-      />
-
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Hero content */}
-        <div className="mx-auto mb-16 max-w-4xl text-center">
-          <h1
-            className={`text-foreground mb-6 text-4xl leading-[1.1] font-semibold tracking-tight md:text-5xl lg:text-6xl ${mounted ? 'animate-fade-in-up' : 'opacity-0'} `}
+      >
+        {/* Eyebrow */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
+          <span
+            style={{
+              display: 'block',
+              width: '20px',
+              height: '1px',
+              background: 'var(--color-signal)',
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: 'var(--tracking-wider)',
+              textTransform: 'uppercase',
+              color: 'var(--color-signal)',
+            }}
           >
-            Human-verified AI evaluation infrastructure
-          </h1>
-          <p
-            className={`text-muted-foreground mx-auto mb-8 max-w-2xl text-lg md:text-xl ${mounted ? 'animate-fade-in-up delay-100' : 'opacity-0'} `}
-          >
-            Capture, validate, and deliver gold-standard training data through
-            secure expert networks. Multi-platform ecosystem for users, experts,
-            and organizations.
-          </p>
-          <div
-            className={`flex flex-col items-center justify-center gap-4 sm:flex-row ${mounted ? 'animate-fade-in-up delay-200' : 'opacity-0'} `}
-          >
-            <Button size="lg" className="h-12 gap-2 px-6 text-base" asChild>
-              <Link href={appUrls.landing('/#platforms')}>
-                Explore Platforms
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="h-12 px-6 text-base"
-              asChild
-            >
-              <Link href={appUrls.landing('/#how-it-works')}>
-                Learn How It Works
-              </Link>
-            </Button>
-          </div>
+            AI Evaluation Infrastructure
+          </span>
         </div>
 
-        {/* System diagram */}
-        <div
-          className={`border-border relative rounded-2xl border bg-white p-8 shadow-xl lg:p-12 ${mounted ? 'animate-fade-in-up delay-300' : 'opacity-0'} `}
+        {/* H1 */}
+        <h1
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'var(--text-4xl)',
+            lineHeight: 'var(--leading-tight)',
+            letterSpacing: 'var(--tracking-tight)',
+            color: 'var(--color-text-primary)',
+            fontWeight: 'var(--weight-normal)' as unknown as number,
+            maxWidth: '800px',
+            marginBottom: 'var(--space-6)',
+          }}
         >
-          <div className="absolute -top-3 left-8 flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-xs font-medium text-white">
-            <span>Interactive System Flow</span>
-            <ArrowRight className="h-3 w-3" />
-          </div>
-          <SystemDiagram />
-          <p className="text-muted-foreground mt-6 text-center text-sm">
-            Click any step to explore in detail →
-          </p>
+          AI models fail every second.{' '}
+          <em>Nobody is capturing it.</em>
+        </h1>
+
+        {/* Sub */}
+        <p
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: 'var(--text-md)',
+            lineHeight: 'var(--leading-relaxed)',
+            color: 'var(--color-text-secondary)',
+            maxWidth: '540px',
+            marginBottom: 'var(--space-8)',
+          }}
+        >
+          RawEval is the end-to-end pipeline that catches failed AI interactions, puts
+          them in front of verified domain experts, and delivers audit-ready,
+          provenance-rich training data to the labs that need it most.
+        </p>
+
+        {/* CTAs */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: 'var(--space-10)' }}>
+          <Link
+            href="#how-it-works"
+            style={{
+              background: 'var(--color-bg-inverse)',
+              color: 'var(--color-text-inverse)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--text-xs)',
+              letterSpacing: 'var(--tracking-wide)',
+              padding: '12px 24px',
+              borderRadius: 'var(--radius-sm)',
+              textDecoration: 'none',
+              transition: 'opacity 0.15s ease',
+              display: 'inline-block',
+            }}
+          >
+            See how it works ↓
+          </Link>
+          <Link
+            href="https://chat.raweval.com"
+            style={{
+              background: 'transparent',
+              color: 'var(--color-text-primary)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 'var(--text-xs)',
+              letterSpacing: 'var(--tracking-wide)',
+              padding: '12px 24px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-border-strong)',
+              textDecoration: 'none',
+              transition: 'background 0.15s ease, border-color 0.15s ease',
+              display: 'inline-block',
+            }}
+          >
+            Try the chat →
+          </Link>
+        </div>
+
+        {/* Stats Row */}
+        <div
+          style={{
+            borderTop: '1px solid var(--color-border)',
+            paddingTop: 'var(--space-10)',
+            display: 'grid',
+            gap: 'var(--space-6)',
+          }}
+          className="grid-cols-2 sm:grid-cols-4"
+        >
+          {stats.map((stat) => (
+            <div key={stat.number}>
+              <div
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '40px',
+                  color: 'var(--color-text-primary)',
+                  lineHeight: 'var(--leading-tight)',
+                  marginBottom: 'var(--space-2)',
+                }}
+              >
+                {stat.number}
+              </div>
+              <div
+                style={{
+                  fontSize: 'var(--text-sm)',
+                  color: 'var(--color-text-muted)',
+                  lineHeight: 'var(--leading-snug)',
+                }}
+              >
+                {stat.label}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>

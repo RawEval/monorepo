@@ -6,7 +6,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Button } from '@raweval/ui/button';
 import { cn } from '@raweval/utils';
 import { format } from 'date-fns';
 
@@ -66,7 +65,8 @@ export function ChatMessage({
               {images.map((img, idx) => (
                 <div
                   key={idx}
-                  className="group border-border relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border shadow-sm transition-shadow hover:shadow-md sm:h-28 sm:w-28 md:h-32 md:w-32"
+                  className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl shadow-sm transition-shadow hover:shadow-md sm:h-28 sm:w-28 md:h-32 md:w-32"
+                  style={{ border: '1px solid var(--color-border)' }}
                 >
                   <img
                     src={img}
@@ -80,14 +80,20 @@ export function ChatMessage({
           )}
 
           {content && (
-            <div className="bg-muted text-foreground rounded-2xl px-4 py-2.5 shadow-none drop-shadow sm:px-5 sm:py-3">
+            <div
+              className="msg-user px-4 py-2.5 sm:px-5 sm:py-3"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
               <p className="text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">
                 {content}
               </p>
             </div>
           )}
 
-          <div className="text-muted-foreground mr-1 text-right text-[11px] font-medium opacity-50">
+          <div
+            className="mr-1 text-right text-[11px] opacity-50"
+            style={{ color: 'var(--color-text-faint)', fontFamily: 'var(--font-mono)' }}
+          >
             {format(new Date(createdAt), 'MMM d, h:mm a')}
           </div>
         </div>
@@ -105,13 +111,13 @@ export function ChatMessage({
             {/* Thinking indicator */}
             {isStreaming && !hasContent && (
               <div className="flex items-center gap-1.5 py-2">
-                <div className="thinking-dot bg-foreground/40 h-1.5 w-1.5 rounded-full" />
+                <div className="thinking-dot h-1.5 w-1.5 rounded-full" />
                 <div
-                  className="thinking-dot bg-foreground/40 h-1.5 w-1.5 rounded-full"
+                  className="thinking-dot h-1.5 w-1.5 rounded-full"
                   style={{ animationDelay: '160ms' }}
                 />
                 <div
-                  className="thinking-dot bg-foreground/40 h-1.5 w-1.5 rounded-full"
+                  className="thinking-dot h-1.5 w-1.5 rounded-full"
                   style={{ animationDelay: '320ms' }}
                 />
               </div>
@@ -120,13 +126,14 @@ export function ChatMessage({
             {hasContent && (
               <div
                 className={cn(
-                  'prose prose-sm sm:prose-base dark:prose-invert text-card-foreground max-w-none',
+                  'prose prose-sm sm:prose-base max-w-none',
                   'prose-pre:my-3 prose-pre:p-0 prose-pre:bg-transparent',
                   'prose-code:before:content-none prose-code:after:content-none',
                   'prose-img:rounded-xl prose-img:max-h-80',
                   'prose-table:text-sm prose-table:overflow-x-auto',
                   isStreaming && 'streaming-prose'
                 )}
+                style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
               >
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -145,7 +152,14 @@ export function ChatMessage({
                       if (isInline) {
                         return (
                           <code
-                            className="bg-muted text-foreground rounded-md px-1.5 py-0.5 font-mono text-[0.85em]"
+                            style={{
+                              background: 'var(--color-bg-muted)',
+                              color: 'var(--color-text-primary)',
+                              borderRadius: 'var(--radius-md)',
+                              padding: '1px 6px',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '0.85em',
+                            }}
                             {...props}
                           >
                             {children}
@@ -157,28 +171,53 @@ export function ChatMessage({
                       const blockId = `${language}-${codeString.slice(0, 20)}`;
 
                       return (
-                        <div className="code-block border-border relative my-3 overflow-hidden rounded-xl border bg-[#1E1E1E] shadow-sm sm:my-4">
-                          <div className="flex items-center justify-between bg-[#2D2D2D] px-3 py-1.5 sm:px-4 sm:py-2">
-                            <span className="text-[11px] font-medium text-gray-400 sm:text-xs">
+                        <div
+                          className="code-block relative my-3 overflow-hidden shadow-sm sm:my-4"
+                          style={{
+                            background: 'var(--color-bg-inverse)',
+                            border: '1px solid rgba(245,242,236,0.08)',
+                            borderRadius: 'var(--radius-md)',
+                          }}
+                        >
+                          <div
+                            className="flex items-center justify-between px-3 py-1.5 sm:px-4 sm:py-2"
+                            style={{ background: 'rgba(245,242,236,0.04)', borderBottom: '1px solid rgba(245,242,236,0.06)' }}
+                          >
+                            <span
+                              style={{
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '10px',
+                                letterSpacing: 'var(--tracking-wide)',
+                                color: 'rgba(245,242,236,0.35)',
+                              }}
+                            >
                               {language || 'code'}
                             </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 gap-1 rounded-md px-2 text-[10px] text-gray-300 hover:bg-white/10 hover:text-white sm:gap-1.5"
-                              onClick={() =>
-                                handleCopyCode(codeString, blockId)
-                              }
+                            <button
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontFamily: 'var(--font-mono)',
+                                fontSize: '10px',
+                                letterSpacing: 'var(--tracking-wide)',
+                                color: codeCopied === blockId ? 'var(--color-success)' : 'rgba(245,242,236,0.4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 8px',
+                                borderRadius: 'var(--radius-sm)',
+                                transition: 'color 0.15s ease',
+                              }}
+                              onClick={() => handleCopyCode(codeString, blockId)}
                             >
                               {codeCopied === blockId ? (
-                                <Check className="h-3 w-3 text-green-400" />
+                                <Check style={{ width: '12px', height: '12px' }} />
                               ) : (
-                                <Copy className="h-3 w-3" />
+                                <Copy style={{ width: '12px', height: '12px' }} />
                               )}
-                              <span className="hidden xs:inline">
-                                {codeCopied === blockId ? 'Copied' : 'Copy'}
-                              </span>
-                            </Button>
+                              {codeCopied === blockId ? 'Copied' : 'Copy'}
+                            </button>
                           </div>
                           <div className="overflow-x-auto p-3 text-[12px] leading-relaxed sm:p-4 sm:text-[13px]">
                             <SyntaxHighlighter
@@ -222,7 +261,7 @@ export function ChatMessage({
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-primary hover:text-primary/80 font-medium underline underline-offset-4"
+                        style={{ color: 'var(--color-signal)', textDecoration: 'underline', textUnderlineOffset: '4px' }}
                       >
                         {children}
                       </a>
@@ -240,56 +279,64 @@ export function ChatMessage({
             )}
           </div>
 
-          {/* Action buttons — always visible on mobile, hover on desktop */}
+          {/* Action buttons */}
           {!isStreaming && hasContent && (
             <div className="flex flex-wrap items-center gap-1 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={handleCopy}
-                className={cn(
-                  'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs transition-colors',
-                  copied
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-muted active:bg-muted'
-                )}
+                style={{
+                  background: copied ? 'var(--color-success-subtle)' : 'transparent',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: copied ? 'var(--color-success)' : 'var(--color-text-muted)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: 'var(--tracking-wide)',
+                  padding: '5px 10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                }}
                 aria-label="Copy message"
               >
                 {copied ? (
-                  <Check className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                  <Check style={{ width: '12px', height: '12px' }} />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 shrink-0" />
+                  <Copy style={{ width: '12px', height: '12px' }} />
                 )}
-                <span className="text-[11px]">
-                  {copied ? 'Copied' : 'Copy'}
-                </span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+
+              <button
                 onClick={handleWrong}
                 disabled={isMarkingWrong || isActuallyFailed}
-                className={cn(
-                  'h-8 shrink-0 touch-manipulation gap-1.5 rounded-lg px-2.5 text-xs font-medium transition-colors',
-                  isActuallyFailed
-                    ? 'bg-destructive/10 text-destructive border-destructive/20 border'
-                    : 'text-muted-foreground hover:bg-destructive/5 hover:text-destructive active:bg-destructive/10 active:text-destructive'
-                )}
+                style={{
+                  background: isActuallyFailed ? 'var(--color-signal-subtle)' : 'transparent',
+                  border: `1px solid ${isActuallyFailed ? 'var(--color-signal-border)' : 'var(--color-border)'}`,
+                  borderRadius: 'var(--radius-md)',
+                  color: isActuallyFailed ? 'var(--color-signal)' : 'var(--color-text-muted)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  letterSpacing: 'var(--tracking-wide)',
+                  padding: '5px 10px',
+                  cursor: isMarkingWrong || isActuallyFailed ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                  opacity: isMarkingWrong ? 0.6 : 1,
+                }}
                 aria-label="Mark as wrong"
               >
                 {isMarkingWrong ? (
-                  <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+                  <Loader2 style={{ width: '12px', height: '12px', animation: 'spin 1s linear infinite' }} />
                 ) : (
-                  <XCircle className="h-3.5 w-3.5 shrink-0" />
+                  <XCircle style={{ width: '12px', height: '12px' }} />
                 )}
-                <span className="text-[11px]">
-                  {isMarkingWrong
-                    ? 'Marking…'
-                    : isActuallyFailed
-                      ? 'Marked'
-                      : 'Wrong'}
-                </span>
-              </Button>
+                {isMarkingWrong ? 'Marking…' : isActuallyFailed ? 'Marked' : 'Wrong'}
+              </button>
             </div>
           )}
         </div>

@@ -471,7 +471,10 @@ export function Sidebar({ showOnDesktop = true }: SidebarProps) {
   if (!showOnDesktop || !leftSidebarOpen) return null;
 
   return (
-    <aside className="border-border bg-background relative z-auto flex h-screen w-[260px] shrink-0 flex-col border-r">
+    <aside
+      className="relative z-auto flex h-screen w-[260px] shrink-0 flex-col"
+      style={{ background: 'var(--color-bg-base)', borderRight: '1px solid var(--color-border)' }}
+    >
       <SidebarContent />
     </aside>
   );
