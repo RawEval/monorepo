@@ -11,6 +11,9 @@ import {
   Settings2,
   Zap,
   Pencil,
+  Info,
+  AlertTriangle,
+  Users,
 } from 'lucide-react';
 import { adminQcConfigService } from '@/services/admin/qc-config-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
@@ -30,8 +33,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@raweval/utils';
 import type { QcConfig, QcConfigCreateRequest } from '@/services/admin/qc-config-service';
+import { QC_CONFIG_META } from '@/lib/qc-constants';
 
 const DEFAULT_CREATE: QcConfigCreateRequest = {
   version_label: '',
@@ -110,6 +115,10 @@ export default function QcConfigPage() {
       auto_flag_enabled: config.auto_flag_enabled,
       entropy_low_threshold: config.entropy_low_threshold,
       expected_annotator_count: config.expected_annotator_count,
+      collusion_min_repeat_batches: config.collusion_min_repeat_batches,
+      outlier_disagreement_threshold: config.outlier_disagreement_threshold,
+      tier_dominance_divergence_threshold: config.tier_dominance_divergence_threshold,
+      consecutive_low_agreement_probation: config.consecutive_low_agreement_probation,
     });
   };
 
@@ -122,14 +131,32 @@ export default function QcConfigPage() {
           </h1>
           <p className="text-muted-foreground">
             Manage Quality Control thresholds and parameters for the evaluation
-            pipeline.
+            pipeline. Each config version is immutable once created — create a new version to change settings.
           </p>
         </div>
-        <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+        <Button className="gap-2" onClick={() => { setForm(DEFAULT_CREATE); setCreateOpen(true); }}>
           <Plus className="h-4 w-4" />
           New Version
         </Button>
       </div>
+
+      {/* Quick reference guide */}
+      <Card className="border-blue-500/20 bg-blue-500/5">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-800 mb-1">How QC Config Works</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                <li><strong>IAA Thresholds</strong> — Minimum inter-annotator agreement scores. If annotations fall below these, the batch is flagged for review.</li>
+                <li><strong>Quality Bands</strong> — Score ranges that classify QC verdict confidence (Excellent &gt; Good &gt; Acceptable &gt; Poor).</li>
+                <li><strong>Auto Flag</strong> — When enabled, conversations breaching thresholds are automatically escalated without manual intervention.</li>
+                <li><strong>Only one config can be active</strong> — Activating a config deactivates all others. Old configs remain for audit history.</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         {isLoading ? (
@@ -226,13 +253,16 @@ export default function QcConfigPage() {
                       <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
                         <Zap className="text-primary h-4 w-4" /> IAA Thresholds
                       </h4>
+                      <p className="text-xs text-muted-foreground -mt-2">
+                        Inter-Annotator Agreement minimums. Annotations below these are flagged.
+                      </p>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <ThresholdItem label="Cohen's Kappa" value={config.min_cohen_kappa} />
-                        <ThresholdItem label="Fleiss' Kappa" value={config.min_fleiss_kappa} />
-                        <ThresholdItem label="Krippendorff" value={config.min_krippendorff} />
-                        <ThresholdItem label="% Agreement" value={config.min_percentage_agreement} />
-                        <ThresholdItem label="Consistency" value={config.consistency_threshold} />
-                        <ThresholdItem label="Entropy Low" value={config.entropy_low_threshold} />
+                        <ThresholdItem field="min_cohen_kappa" value={config.min_cohen_kappa} />
+                        <ThresholdItem field="min_fleiss_kappa" value={config.min_fleiss_kappa} />
+                        <ThresholdItem field="min_krippendorff" value={config.min_krippendorff} />
+                        <ThresholdItem field="min_percentage_agreement" value={config.min_percentage_agreement} />
+                        <ThresholdItem field="consistency_threshold" value={config.consistency_threshold} />
+                        <ThresholdItem field="entropy_low_threshold" value={config.entropy_low_threshold} />
                       </div>
                     </div>
 
@@ -240,27 +270,34 @@ export default function QcConfigPage() {
                       <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold">
                         <Settings2 className="text-primary h-4 w-4" /> Quality Bands
                       </h4>
+                      <p className="text-xs text-muted-foreground -mt-2">
+                        Score ranges that classify verdict confidence level.
+                      </p>
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <ThresholdItem label="Excellent" value={config.threshold_excellent} />
-                        <ThresholdItem label="Good" value={config.threshold_good} />
-                        <ThresholdItem label="Acceptable" value={config.threshold_acceptable} />
-                        <ThresholdItem label="Poor" value={config.threshold_poor} />
+                        <ThresholdItem field="threshold_excellent" value={config.threshold_excellent} />
+                        <ThresholdItem field="threshold_good" value={config.threshold_good} />
+                        <ThresholdItem field="threshold_acceptable" value={config.threshold_acceptable} />
+                        <ThresholdItem field="threshold_poor" value={config.threshold_poor} />
                       </div>
-                      <div className="border-border bg-muted/20 rounded-lg border p-4">
+                      <div className="border-border bg-muted/20 rounded-lg border p-4 space-y-2">
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Auto Flag</span>
+                          <Tooltip content={QC_CONFIG_META.auto_flag_enabled?.description || ''} side="right">
+                            <span className="text-muted-foreground flex items-center gap-1 cursor-help">Auto Flag <Info className="h-3 w-3 text-muted-foreground/50" /></span>
+                          </Tooltip>
                           <Badge variant={config.auto_flag_enabled ? 'default' : 'outline'}>
                             {config.auto_flag_enabled ? 'Enabled' : 'Disabled'}
                           </Badge>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Expected Annotators</span>
+                        <div className="flex items-center justify-between text-sm">
+                          <Tooltip content={QC_CONFIG_META.expected_annotator_count?.description || ''} side="right">
+                            <span className="text-muted-foreground flex items-center gap-1 cursor-help">Expected Annotators <Info className="h-3 w-3 text-muted-foreground/50" /></span>
+                          </Tooltip>
                           <span className="text-foreground font-mono font-bold">
                             {config.expected_annotator_count}
                           </span>
                         </div>
                         {config.weighting_strategy && (
-                          <div className="mt-2 flex items-center justify-between text-sm">
+                          <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Weighting</span>
                             <span className="text-foreground font-mono text-xs">
                               {config.weighting_strategy}
@@ -270,6 +307,29 @@ export default function QcConfigPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Advanced Settings Section */}
+                  {(config.collusion_min_repeat_batches != null || config.outlier_disagreement_threshold != null || config.tier_dominance_divergence_threshold != null || config.consecutive_low_agreement_probation != null) && (
+                    <div className="mt-6 pt-6 border-t border-border">
+                      <h4 className="text-foreground flex items-center gap-2 text-sm font-semibold mb-3">
+                        <AlertTriangle className="text-yellow-500 h-4 w-4" /> Advanced Anomaly Detection
+                      </h4>
+                      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+                        {config.collusion_min_repeat_batches != null && (
+                          <ThresholdItem field="collusion_min_repeat_batches" value={config.collusion_min_repeat_batches} />
+                        )}
+                        {config.outlier_disagreement_threshold != null && (
+                          <ThresholdItem field="outlier_disagreement_threshold" value={config.outlier_disagreement_threshold} />
+                        )}
+                        {config.tier_dominance_divergence_threshold != null && (
+                          <ThresholdItem field="tier_dominance_divergence_threshold" value={config.tier_dominance_divergence_threshold} />
+                        )}
+                        {config.consecutive_low_agreement_probation != null && (
+                          <ThresholdItem field="consecutive_low_agreement_probation" value={config.consecutive_low_agreement_probation} />
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               )}
             </Card>
@@ -286,7 +346,7 @@ export default function QcConfigPage() {
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New QC configuration</DialogTitle>
             <CardDescription>
@@ -304,7 +364,7 @@ export default function QcConfigPage() {
       </Dialog>
 
       <Dialog open={editConfig != null} onOpenChange={(open) => !open && setEditConfig(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit QC configuration</DialogTitle>
             <CardDescription>
@@ -346,13 +406,14 @@ function QcConfigForm({
         onSubmit();
       }}
     >
-      <div className="space-y-4 px-6 py-2">
+      <div className="space-y-5 px-6 py-2">
         <div>
           <label className="text-muted-foreground mb-1 block text-xs font-medium">Version label</label>
           <input
             value={form.version_label}
             onChange={(e) => setForm((f) => ({ ...f, version_label: e.target.value }))}
             className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+            placeholder="e.g., v2.1-stricter-kappa"
             required
           />
         </div>
@@ -362,6 +423,7 @@ function QcConfigForm({
             value={form.description ?? ''}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             className="border-input bg-background w-full rounded-lg border px-3 py-2 text-sm"
+            placeholder="What changed and why"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -372,13 +434,45 @@ function QcConfigForm({
             onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
             className="rounded border"
           />
-          <label htmlFor="is_active" className="text-sm">Set as active</label>
+          <label htmlFor="is_active" className="text-sm">Set as active <span className="text-xs text-muted-foreground">(deactivates all others)</span></label>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <NumField label="Cohen Kappa" value={form.min_cohen_kappa} onChange={(v) => setForm((f) => ({ ...f, min_cohen_kappa: v }))} />
-          <NumField label="Fleiss Kappa" value={form.min_fleiss_kappa} onChange={(v) => setForm((f) => ({ ...f, min_fleiss_kappa: v }))} />
-          <NumField label="% Agreement" value={form.min_percentage_agreement} onChange={(v) => setForm((f) => ({ ...f, min_percentage_agreement: v }))} />
-          <NumField label="Expected annotators" value={form.expected_annotator_count} onChange={(v) => setForm((f) => ({ ...f, expected_annotator_count: v }))} />
+
+        {/* IAA Thresholds */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-primary" /> IAA Thresholds
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <NumFieldWithTip field="min_cohen_kappa" value={form.min_cohen_kappa} onChange={(v) => setForm((f) => ({ ...f, min_cohen_kappa: v }))} />
+            <NumFieldWithTip field="min_fleiss_kappa" value={form.min_fleiss_kappa} onChange={(v) => setForm((f) => ({ ...f, min_fleiss_kappa: v }))} />
+            <NumFieldWithTip field="min_percentage_agreement" value={form.min_percentage_agreement} onChange={(v) => setForm((f) => ({ ...f, min_percentage_agreement: v }))} />
+            <NumFieldWithTip field="consistency_threshold" value={form.consistency_threshold} onChange={(v) => setForm((f) => ({ ...f, consistency_threshold: v }))} />
+            <NumFieldWithTip field="min_krippendorff" value={form.min_krippendorff} onChange={(v) => setForm((f) => ({ ...f, min_krippendorff: v }))} />
+            <NumFieldWithTip field="entropy_low_threshold" value={form.entropy_low_threshold} onChange={(v) => setForm((f) => ({ ...f, entropy_low_threshold: v }))} />
+          </div>
+        </div>
+
+        {/* Quality Bands */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Settings2 className="h-3.5 w-3.5 text-primary" /> Quality Bands
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <NumFieldWithTip field="threshold_excellent" value={form.threshold_excellent} onChange={(v) => setForm((f) => ({ ...f, threshold_excellent: v }))} />
+            <NumFieldWithTip field="threshold_good" value={form.threshold_good} onChange={(v) => setForm((f) => ({ ...f, threshold_good: v }))} />
+            <NumFieldWithTip field="threshold_acceptable" value={form.threshold_acceptable} onChange={(v) => setForm((f) => ({ ...f, threshold_acceptable: v }))} />
+            <NumFieldWithTip field="threshold_poor" value={form.threshold_poor} onChange={(v) => setForm((f) => ({ ...f, threshold_poor: v }))} />
+          </div>
+        </div>
+
+        {/* Operations */}
+        <div className="border-t border-border pt-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5 text-primary" /> Operations
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <NumFieldWithTip field="expected_annotator_count" value={form.expected_annotator_count} onChange={(v) => setForm((f) => ({ ...f, expected_annotator_count: v }))} />
+          </div>
         </div>
       </div>
       <DialogFooter>
@@ -389,10 +483,18 @@ function QcConfigForm({
   );
 }
 
-function NumField({ label, value, onChange }: { label: string; value?: number; onChange: (v: number) => void }) {
+function NumFieldWithTip({ field, value, onChange }: { field: string; value?: number; onChange: (v: number) => void }) {
+  const meta = QC_CONFIG_META[field];
   return (
     <div>
-      <label className="text-muted-foreground mb-1 block text-xs font-medium">{label}</label>
+      <label className="text-muted-foreground mb-1 flex items-center gap-1 text-xs font-medium">
+        {meta?.label || field}
+        {meta?.description && (
+          <Tooltip content={meta.description} side="top">
+            <Info className="h-3 w-3 text-muted-foreground/50 cursor-help" />
+          </Tooltip>
+        )}
+      </label>
       <input
         type="number"
         step="0.01"
@@ -404,12 +506,16 @@ function NumField({ label, value, onChange }: { label: string; value?: number; o
   );
 }
 
-function ThresholdItem({ label, value }: { label: string; value: number }) {
+function ThresholdItem({ field, value }: { field: string; value: number }) {
+  const meta = QC_CONFIG_META[field];
   return (
     <div className="border-border bg-card flex flex-col gap-1 rounded-md border p-3 shadow-sm">
-      <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase">
-        {label}
-      </span>
+      <Tooltip content={meta?.description || field} side="top">
+        <span className="text-muted-foreground text-[10px] font-medium tracking-wider uppercase flex items-center gap-1 cursor-help">
+          {meta?.label || field}
+          <Info className="h-2.5 w-2.5 text-muted-foreground/40" />
+        </span>
+      </Tooltip>
       <span className="text-foreground font-mono text-lg font-bold">
         {typeof value === 'number' ? value.toFixed(3) : 'N/A'}
       </span>

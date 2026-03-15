@@ -42,6 +42,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { cn } from '@raweval/utils';
+import { getVerdictTheme, getVerdictLabel } from '@/lib/qc-constants';
 
 const PAGE_SIZE = 20;
 const SORT_FIELDS = [
@@ -437,6 +438,7 @@ export default function ConversationsPage() {
                 <tr>
                   <th className="px-6 py-3">ID</th>
                   <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">QC Verdict</th>
                   <th className="px-6 py-3">Domain</th>
                   <th className="px-6 py-3">Model</th>
                   <th className="px-6 py-3">Failure Type</th>
@@ -448,7 +450,7 @@ export default function ConversationsPage() {
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={6} className="px-6 py-4">
+                      <td colSpan={7} className="px-6 py-4">
                         <div className="bg-muted h-4 w-full rounded" />
                       </td>
                     </tr>
@@ -478,6 +480,21 @@ export default function ConversationsPage() {
                             ' '
                           )}
                         </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        {conv.qc_outcome ? (
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'py-0.5 text-[10px] uppercase font-bold tracking-wider whitespace-nowrap',
+                              getVerdictTheme(conv.qc_outcome)
+                            )}
+                          >
+                            {getVerdictLabel(conv.qc_outcome)}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">&mdash;</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-foreground text-xs font-medium capitalize">
@@ -586,7 +603,7 @@ export default function ConversationsPage() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="text-muted-foreground px-6 py-12 text-center"
                     >
                       No failed conversations found.

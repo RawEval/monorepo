@@ -42,6 +42,8 @@ import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
 import { cn } from '@raweval/utils';
 import { format } from 'date-fns';
+import { FRAUD_SIGNAL_META } from '@/lib/qc-constants';
+import { AlertTriangle, Ban, Fingerprint } from 'lucide-react';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -996,57 +998,84 @@ function FraudTab({
   const signals = currentModel?.qc_fraud_signals ?? [];
   const qcCase = currentModel?.qc_case;
 
+  const fraudScore = qcCase?.fraud_score ?? 0;
+  const fraudScoreColor = fraudScore > 0.5 ? 'text-red-600' : fraudScore > 0.2 ? 'text-yellow-600' : 'text-green-600';
+  const fraudScoreLabel = fraudScore > 0.5 ? 'High Risk' : fraudScore > 0.2 ? 'Warning' : 'Low Risk';
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6">
-      {/* Aggregate fraud score */}
+      {/* Section Header */}
+      <div className="flex items-start gap-3 mb-2">
+        <div className="bg-purple-500/10 text-purple-600 h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+          <Fingerprint className="h-4 w-4" />
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-foreground">Fraud Detection</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            7 heuristic signals that detect abuse without using LLMs. Scores above 0.5 are high risk; above 0.2 are warnings. 20+ repeat marks in 48h triggers automatic FraudBlock.
+          </p>
+        </div>
+      </div>
+
+      {/* Aggregate Summary */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Fraud Detection</CardTitle>
-          <CardDescription>
-            7-signal fraud analysis across ambiguity, adversarial patterns, and
-            marking behavior.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="border-border rounded-lg border p-4">
-              <p className="text-muted-foreground text-xs">Aggregate Fraud Score</p>
-              <p
-                className={cn(
-                  'font-mono text-3xl font-bold',
-                  (qcCase?.fraud_score ?? 0) > 0.5
-                    ? 'text-red-600'
-                    : (qcCase?.fraud_score ?? 0) > 0.2
-                      ? 'text-yellow-600'
-                      : 'text-green-600'
+        <CardContent className="p-0">
+          <div className="grid gap-0 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
+            <div className="p-5 flex flex-col items-center justify-center">
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">Aggregate Fraud Score</p>
+              <div className="flex items-center gap-2">
+                <p className={cn('font-mono text-3xl font-bold', fraudScoreColor)}>
+                  {qcCase?.fraud_score?.toFixed(3) ?? 'N/A'}
+                </p>
+                <Badge variant="outline" className={cn("text-[9px] uppercase font-bold", fraudScoreColor)}>
+                  {fraudScoreLabel}
+                </Badge>
+              </div>
+            </div>
+            <div className="p-5 flex flex-col items-center justify-center">
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">Status</p>
+              <p className="text-lg font-bold">
+                {qcCase?.fraud_status === 'Flagged' ? (
+                  <span className="text-red-600 flex items-center gap-1.5"><AlertTriangle className="h-4 w-4" /> Flagged</span>
+                ) : qcCase?.fraud_status ? (
+                  <span className="text-emerald-600">{qcCase.fraud_status}</span>
+                ) : (
+                  <span className="text-muted-foreground">N/A</span>
                 )}
-              >
-                {qcCase?.fraud_score?.toFixed(3) ?? 'N/A'}
               </p>
             </div>
-            <div className="border-border rounded-lg border p-4">
-              <p className="text-muted-foreground text-xs">Status</p>
-              <p className="mt-1 text-lg font-bold">
-                {qcCase?.fraud_status ?? 'N/A'}
-              </p>
-            </div>
-            <div className="border-border rounded-lg border p-4">
-              <p className="text-muted-foreground text-xs">Signals Detected</p>
-              <p className="mt-1 font-mono text-lg font-bold">
-                {signals.filter((s) => (s.score ?? 0) > 0.2).length} / {signals.length}
+            <div className="p-5 flex flex-col items-center justify-center">
+              <p className="text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-2">Signals Triggered</p>
+              <p className="font-mono text-lg font-bold">
+                <span className={cn(signals.filter((s) => (s.score ?? 0) > 0.2).length > 0 ? 'text-yellow-600' : 'text-emerald-600')}>
+                  {signals.filter((s) => (s.score ?? 0) > 0.2).length}
+                </span>
+                <span className="text-muted-foreground"> / {signals.length || 7}</span>
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* FraudBlock Warning */}
+      {qcCase?.verdict === 'FraudBlock' && (
+        <div className="flex items-start gap-3 p-4 bg-purple-500/10 border border-purple-500/30 rounded-xl">
+          <Ban className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-purple-700">FraudBlock Active</p>
+            <p className="text-xs text-purple-600 mt-1">This conversation has been rejected (terminal). The user's wallet is frozen for 48 hours.</p>
+          </div>
+        </div>
+      )}
+
       {/* Individual signals */}
-      {signals.length > 0 && (
+      {signals.length > 0 ? (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">
               Signal Breakdown ({signals.length})
             </CardTitle>
+            <CardDescription className="text-xs">Click any signal to expand evidence details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {signals.map((signal, i) => (
@@ -1054,9 +1083,33 @@ function FraudTab({
             ))}
           </CardContent>
         </Card>
+      ) : (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Shield className="h-8 w-8 text-emerald-500 mx-auto mb-3" />
+            <p className="text-sm font-medium text-foreground">No Fraud Signals Detected</p>
+            <p className="text-xs text-muted-foreground mt-1">All 7 heuristic fraud checks passed with low risk scores.</p>
+          </CardContent>
+        </Card>
       )}
 
-      {signals.length === 0 && <EmptyState />}
+      {/* Fraud Flags */}
+      {qcCase?.fraud_flags && Object.keys(qcCase.fraud_flags).length > 0 && (
+        <Card>
+          <CardHeader className="py-3 bg-muted/20 border-b border-border">
+            <CardTitle className="text-sm font-bold">Fraud Flags</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(qcCase.fraud_flags).map(([key, val]) => (
+                <Badge key={key} variant="outline" className="text-xs font-mono px-2.5 py-1">
+                  {key}: {String(val)}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1064,49 +1117,72 @@ function FraudTab({
 function FraudSignalBar({
   signal,
 }: {
-  signal: FailedConversationQcDetailModel['qc_fraud_signals'][number];
+  signal: { signal_type: string | null; score: number | null; description: string | null; evidence: Record<string, unknown> | null };
 }) {
   const [expanded, setExpanded] = useState(false);
   const score = signal.score ?? 0;
   const pct = Math.round(score * 100);
-  const color =
-    score > 0.5
-      ? 'bg-red-500 text-red-600'
-      : score > 0.2
-        ? 'bg-yellow-500 text-yellow-600'
-        : 'bg-green-500 text-green-600';
+  const isHigh = score > 0.5;
+  const isWarning = score > 0.2 && !isHigh;
+  const barColor = isHigh ? 'bg-red-500' : isWarning ? 'bg-yellow-500' : 'bg-green-500';
+  const textColor = isHigh ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-green-600';
+  const meta = FRAUD_SIGNAL_META[signal.signal_type || ''] || {
+    label: signal.signal_type || 'Unknown',
+    description: '',
+    riskNote: '',
+  };
 
   return (
     <div
-      className="border-border cursor-pointer rounded-lg border p-3 transition-colors hover:bg-muted/20"
+      className={cn(
+        "border-border cursor-pointer rounded-lg border p-4 transition-colors hover:bg-muted/20",
+        isHigh ? "border-red-500/40 bg-red-500/5" : isWarning ? "border-yellow-500/30 bg-yellow-500/5" : ""
+      )}
       onClick={() => setExpanded((e) => !e)}
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="min-w-[140px] font-mono text-sm font-medium">
-            {signal.signal_type}
-          </span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-sm font-bold">{meta.label}</span>
+            {isHigh && <Badge variant="destructive" className="text-[9px] uppercase">High Risk</Badge>}
+            {isWarning && <Badge variant="outline" className="text-[9px] uppercase text-yellow-700 border-yellow-500/50 bg-yellow-500/10">Warning</Badge>}
+          </div>
+          <p className="text-xs text-muted-foreground">{meta.description || signal.description || ''}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="bg-muted h-2 w-24 overflow-hidden rounded-full">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="bg-muted h-2 w-28 overflow-hidden rounded-full">
             <div
-              className={cn('h-full rounded-full', color.split(' ')[0])}
+              className={cn('h-full rounded-full', barColor)}
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className={cn('w-12 text-right font-mono text-sm font-bold', color.split(' ')[1])}>
+          <span className={cn('w-14 text-right font-mono text-sm font-bold', textColor)}>
             {score.toFixed(2)}
           </span>
         </div>
       </div>
-      {signal.description && (
-        <p className="text-muted-foreground mt-1 text-xs">{signal.description}</p>
+      {signal.description && meta.description && signal.description !== meta.description && (
+        <p className="text-muted-foreground mt-1.5 text-xs">{signal.description}</p>
       )}
-      {expanded && signal.evidence && (
-        <div className="border-border bg-muted/10 mt-2 rounded border p-2">
-          <pre className="text-[10px] whitespace-pre-wrap">
-            {JSON.stringify(signal.evidence, null, 2)}
-          </pre>
+      {isHigh && meta.riskNote && (
+        <p className="text-[11px] text-red-600/80 mt-1.5 flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3 shrink-0" /> {meta.riskNote}
+        </p>
+      )}
+      {expanded && signal.evidence && Object.keys(signal.evidence).length > 0 && (
+        <div className={cn(
+          "mt-3 rounded-lg border p-3 text-xs",
+          isHigh ? "bg-red-500/5 border-red-500/20" : isWarning ? "bg-yellow-500/5 border-yellow-500/20" : "bg-muted/30 border-border/50"
+        )}>
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground block mb-1.5">Evidence</span>
+          <div className="space-y-1">
+            {Object.entries(signal.evidence).map(([key, val]) => (
+              <div key={key} className="flex gap-2">
+                <span className="font-mono text-muted-foreground shrink-0">{key}:</span>
+                <span className="text-foreground/90 break-all">{typeof val === 'object' ? JSON.stringify(val) : String(val)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
