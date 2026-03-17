@@ -9,6 +9,10 @@ import type { NextRequest } from 'next/server';
  * Protected routes:
  * - /workbench - Requires authentication
  * - /interview - Requires authentication
+ * - /onboarding - Requires authentication
+ * - /results - Requires authentication
+ * - /history - Requires authentication
+ * - /profile - Requires authentication
  * 
  * Public routes:
  * - / (landing page)
@@ -20,7 +24,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
   // Protected routes
-  const protectedRoutes = ['/workbench', '/interview'];
+  const protectedRoutes = ['/dashboard', '/workbench', '/interview', '/onboarding', '/results', '/history', '/profile'];
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
   
   // Check if user has a valid token (client-side check via cookie)
@@ -37,7 +41,7 @@ export function middleware(request: NextRequest) {
   
   // Redirect authenticated users away from auth pages
   if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
-    return NextResponse.redirect(new URL('/workbench', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   
   return NextResponse.next();

@@ -1,7 +1,6 @@
 'use client';
 
-import { PenLine, Lightbulb, Code2, GraduationCap, Wand2 } from 'lucide-react';
-import { Card } from '@raweval/ui/card';
+import { PenLine, Lightbulb, Code2, GraduationCap, Sparkles } from 'lucide-react';
 import { cn } from '@raweval/utils';
 
 interface Suggestion {
@@ -15,29 +14,25 @@ const suggestions: Suggestion[] = [
   {
     title: 'Writing',
     prompt: 'Help me write a professional email to a client.',
-    description:
-      'Elevate your writing with tools designed for seamless creation, and sophisticated style refinement.',
+    description: 'Craft emails, essays, reports, and creative content with clarity and style.',
     Icon: PenLine,
   },
   {
     title: 'Research & Analysis',
     prompt: 'Analyze the latest trends in artificial intelligence.',
-    description:
-      'Discover, analyze, interpret, and present information with clarity and impact.',
+    description: 'Discover insights, analyze data, and synthesize information from complex topics.',
     Icon: Lightbulb,
   },
   {
     title: 'Programming',
     prompt: 'Help me debug this JavaScript code.',
-    description:
-      'Develop robust code, debug effectively, test thoroughly, and expand your expertise.',
+    description: 'Write, debug, and optimize code across any language or framework.',
     Icon: Code2,
   },
   {
-    title: 'Learning Skills',
+    title: 'Learning',
     prompt: 'Teach me about quantum computing fundamentals.',
-    description:
-      'Embark on a journey of innovation, exploring new ideas and evolving your existing skills.',
+    description: 'Explore new concepts with clear explanations tailored to your level.',
     Icon: GraduationCap,
   },
 ];
@@ -54,49 +49,44 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'flex min-h-[60vh] flex-col items-center justify-center py-8 sm:min-h-0 sm:py-12',
+        'flex min-h-[60vh] flex-col items-center justify-center py-8 sm:min-h-0 sm:py-16',
         mounted ? 'animate-fade-in-up' : 'opacity-0'
       )}
     >
       {/* Welcome Message */}
-      <div className="mb-6 px-4 text-center sm:mb-8 sm:px-2">
-        <div className="bg-primary/10 mb-3 inline-flex h-12 w-12 items-center justify-center rounded-2xl sm:mb-4 sm:h-14 sm:w-14">
-          <Wand2 className="text-primary h-6 w-6 sm:h-7 sm:w-7" />
+      <div className="mb-8 px-4 text-center sm:mb-10 sm:px-2">
+        <div className="bg-gradient-to-br from-primary/15 to-primary/5 mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl ring-1 ring-primary/10 sm:h-16 sm:w-16">
+          <Sparkles className="text-primary h-7 w-7 sm:h-8 sm:w-8" />
         </div>
-        <p className="text-muted-foreground mb-2 text-xs sm:text-sm">
-          Welcome to RawEval
-        </p>
-        <h1 className="text-foreground text-xl font-bold sm:text-2xl">
-          Ask me anything—I&apos;m here to help!
+        <h1 className="text-foreground mb-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          What can I help with?
         </h1>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Ask anything or pick a suggestion below
+        </p>
       </div>
 
       {/* Suggestion Cards */}
-      <div className="w-full max-w-4xl px-1 sm:px-0">
-        <p className="text-muted-foreground mb-3 text-center text-xs sm:mb-4 sm:text-sm">
-          Explore by ready prompt
-        </p>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+      <div className="w-full max-w-3xl px-2 sm:px-0">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
           {suggestions.map((suggestion, idx) => (
-            <Card
+            <button
               key={idx}
               onClick={() => onSuggestionClick(suggestion.prompt)}
-              className="group border-border bg-card hover:border-primary/50 card-hover cursor-pointer transition-all hover:shadow-md active:scale-[0.98]"
+              className="group border-border bg-card hover:border-primary/40 flex flex-col items-start gap-2 rounded-xl border p-3.5 text-left transition-all duration-200 hover:shadow-md active:scale-[0.98] sm:gap-3 sm:p-4"
             >
-              <div className="flex items-start gap-3 p-3 sm:gap-4 sm:p-4">
-                <div className="bg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10">
-                  <suggestion.Icon className="text-muted-foreground h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-foreground mb-0.5 text-sm font-semibold sm:mb-1 sm:text-base">
-                    {suggestion.title}
-                  </h3>
-                  <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed sm:line-clamp-none sm:text-sm">
-                    {suggestion.description}
-                  </p>
-                </div>
+              <div className="bg-muted group-hover:bg-primary/10 flex h-9 w-9 items-center justify-center rounded-lg transition-colors sm:h-10 sm:w-10">
+                <suggestion.Icon className="text-muted-foreground group-hover:text-primary h-4 w-4 transition-colors sm:h-5 sm:w-5" />
               </div>
-            </Card>
+              <div className="min-w-0">
+                <h3 className="text-foreground mb-0.5 text-sm font-semibold sm:text-base">
+                  {suggestion.title}
+                </h3>
+                <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed sm:text-sm">
+                  {suggestion.description}
+                </p>
+              </div>
+            </button>
           ))}
         </div>
       </div>

@@ -77,26 +77,42 @@ async function handleRequest(
     const token = authHeader?.replace('Bearer ', '');
 
     // Build headers
-    const headers: Record<string, string> = {
-      'Content-Type': request.headers.get('content-type') || 'application/json',
-    };
+    const contentType = request.headers.get('content-type') || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    const headers: Record<string, string> = {};
+
+    // For multipart, do NOT set Content-Type — let fetch set it with the correct boundary
+    if (!isMultipart) {
+      headers['Content-Type'] = contentType || 'application/json';
+    }
 
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
     // Get body for POST/PUT/PATCH
-    let body: string | undefined;
+    let body: BodyInit | undefined;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      const contentType = request.headers.get('content-type') || '';
-      
-      // For form-encoded data, read as text directly
-      if (contentType.includes('application/x-www-form-urlencoded')) {
+      if (isMultipart) {
+        // For multipart/form-data (file uploads), pass the raw body through
+        // We must read it as a blob/arrayBuffer to preserve binary data
+        try {
+          body = await request.arrayBuffer();
+          // Preserve the original Content-Type with boundary
+          headers['Content-Type'] = contentType;
+        } catch (error) {
+          console.error('Failed to read multipart body:', error);
+          return NextResponse.json(
+            { error: 'Failed to read file upload' },
+            { status: 400 }
+          );
+        }
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        // Form-encoded data
         try {
           body = await request.text();
-          // Validate body is not empty
-          if (!body || body.trim().length === 0) {
-            console.error('Form-encoded body is empty');
+          if (!body || (typeof body === 'string' && body.trim().length === 0)) {
             return NextResponse.json(
               { error: 'Request body is empty' },
               { status: 400 }
@@ -110,17 +126,14 @@ async function handleRequest(
           );
         }
       } else {
-        // For JSON or other content types, try JSON first, then text
+        // JSON or other content types
         try {
           const requestBody = await request.json();
           body = JSON.stringify(requestBody);
-        } catch (error) {
-          // If not JSON, try to get as text
+        } catch {
           try {
             body = await request.text();
-          } catch (textError) {
-            // If both fail, log and continue without body
-            console.error('Failed to read request body:', { error, textError });
+          } catch {
             body = undefined;
           }
         }
@@ -147,17 +160,22 @@ async function handleRequest(
         normalizedPath = `/${normalizedPath}`;
     }
 
-    // LLM calls API uses /llm-calls prefix (not /api/v1/llm-calls)
-    // The backend middleware strips /llm-calls prefix internally
+    // Route mapping:
+    // - /llm-calls/* → keep as-is
+    // - /api/v1/* → keep as-is (already prefixed)
+    // - /api/v2/* → keep as-is (V2 endpoints like /api/v2/interview/*)
+    // - /v2/* → prefix with /api (V2 endpoints without /api prefix)
+    // - everything else → prefix with /api/v1
     let targetPath: string;
     if (normalizedPath.startsWith('/llm-calls/') || normalizedPath === '/llm-calls') {
-      // Keep /llm-calls prefix as-is (backend will strip it)
       targetPath = normalizedPath;
-    } else if (normalizedPath.startsWith('/api/v1')) {
-      // Already has /api/v1 prefix
+    } else if (normalizedPath.startsWith('/api/v1') || normalizedPath.startsWith('/api/v2')) {
       targetPath = normalizedPath;
+    } else if (normalizedPath.startsWith('/v2/')) {
+      // V2 endpoints: /v2/interview/* → /api/v2/interview/*
+      targetPath = `/api${normalizedPath}`;
     } else {
-      // Add /api/v1 prefix for regular API calls
+      // Default: /orchestrator/start → /api/v1/orchestrator/start
       targetPath = `/api/v1${normalizedPath}`;
     }
     
@@ -167,15 +185,10 @@ async function handleRequest(
     if (process.env.NODE_ENV === 'development') {
       console.log('Proxy request:', {
         method,
-        path,
-        normalizedPath,
-        targetPath,
         targetUrl,
         hasBody: !!body,
-        bodyLength: body?.length,
-        bodyContent: body, // Log full body for debugging
         contentType: headers['Content-Type'],
-        allHeaders: Object.keys(headers),
+        isMultipart,
         hasToken: !!token,
       });
     }
@@ -184,7 +197,10 @@ async function handleRequest(
     try {
       // Add timeout to fetch
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      // LLM-backed endpoints (orchestrator, interview) need longer timeouts
+      const isLongRunning = targetUrl.includes('/orchestrator/') || targetUrl.includes('/interview/');
+      const timeoutMs = isLongRunning ? 120000 : 30000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       // Build fetch headers - don't set Content-Length manually, let fetch handle it
       const fetchHeaders: Record<string, string> = { ...headers };
@@ -241,10 +257,10 @@ async function handleRequest(
       );
     }
 
-    const contentType = response.headers.get('content-type');
+    const responseContentType = response.headers.get('content-type');
     let data: unknown;
 
-    if (contentType?.includes('application/json')) {
+    if (responseContentType?.includes('application/json')) {
       data = await response.json();
     } else {
       data = await response.text();

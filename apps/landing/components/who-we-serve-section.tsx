@@ -9,12 +9,7 @@ export function WhoWeServeSection() {
         }}
       >
         {/* Eyebrow */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'block', width: '20px', height: '1px', background: 'var(--color-signal)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', color: 'var(--color-signal)' }}>
-            Who We Serve
-          </span>
-        </div>
+        <div className="eyebrow"><span className="eyebrow-text">Who We Serve</span></div>
 
         <h2
           style={{
@@ -23,7 +18,7 @@ export function WhoWeServeSection() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-primary)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-12)',
           }}
         >
@@ -48,7 +43,7 @@ export function WhoWeServeSection() {
                 display: 'inline-block',
                 alignSelf: 'flex-start',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
+                fontSize: 'var(--text-xs)',
                 letterSpacing: 'var(--tracking-wide)',
                 textTransform: 'uppercase',
                 padding: '4px 10px',
@@ -61,7 +56,7 @@ export function WhoWeServeSection() {
             </span>
 
             <div>
-              <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-medium)' as unknown as number, color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+              <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
                 Head of Data / ML Infra
               </h3>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
@@ -104,7 +99,7 @@ export function WhoWeServeSection() {
                 display: 'inline-block',
                 alignSelf: 'flex-start',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
+                fontSize: 'var(--text-xs)',
                 letterSpacing: 'var(--tracking-wide)',
                 textTransform: 'uppercase',
                 padding: '4px 10px',
@@ -117,7 +112,7 @@ export function WhoWeServeSection() {
             </span>
 
             <div>
-              <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-medium)' as unknown as number, color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
+              <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-lg)', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 'var(--space-1)' }}>
                 Enterprise AI / LLM Platform Lead
               </h3>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>

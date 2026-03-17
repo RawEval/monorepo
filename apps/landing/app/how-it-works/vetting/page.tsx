@@ -23,12 +23,12 @@ const vettingSteps = [
 
 export default function VettingPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--space-12))' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'var(--space-12)' }}>
 
       <div style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', display: 'flex', gap: 'var(--space-1)', overflowX: 'auto' as const }}>
           {howItWorksNav.map((n) => (
-            <Link key={n.href} href={n.href} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: 'var(--tracking-wide)', padding: '12px 16px', textDecoration: 'none', color: n.href === '/how-it-works/vetting' ? 'var(--color-signal)' : 'var(--color-text-muted)', borderBottom: n.href === '/how-it-works/vetting' ? '2px solid var(--color-signal)' : '2px solid transparent', whiteSpace: 'nowrap' as const }}>{n.label}</Link>
+            <Link key={n.href} href={n.href} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 16px', textDecoration: 'none', color: n.href === '/how-it-works/vetting' ? 'var(--color-signal)' : 'var(--color-text-muted)', borderBottom: n.href === '/how-it-works/vetting' ? '2px solid var(--color-signal)' : '2px solid transparent', whiteSpace: 'nowrap' as const }}>{n.label}</Link>
           ))}
         </div>
       </div>
@@ -62,6 +62,6 @@ export default function VettingPage() {
         </div>
       </div>
 
-    </main>
+    </div>
   );
 }

@@ -1,51 +1,59 @@
 /* =============================================
    RawEval Design Tokens — Single Source of Truth
-   All apps MUST import this file. No local overrides.
+   Dark-first design system for developer infrastructure
    ============================================= */
 
 :root {
   /* === BACKGROUNDS === */
-  --color-bg-base:       #f5f2ec;
-  --color-bg-surface:    #ede9e0;
-  --color-bg-muted:      #e4dfd3;
-  --color-bg-inverse:    #0d0d0d;
+  --color-bg-base:       #0A0A0B;
+  --color-bg-surface:    #141415;
+  --color-bg-muted:      #1C1C1E;
+  --color-bg-elevated:   #232326;
+  --color-bg-inverse:    #FAFAFA;
+  --color-bg-subtle:     #0F0F10;
+  --color-bg-overlay:    rgba(0, 0, 0, 0.7);
 
   /* === TEXT === */
-  --color-text-primary:  #0d0d0d;
-  --color-text-secondary:#3a3a3a;
-  --color-text-muted:    #6b6b6b;
-  --color-text-faint:    #9a9a9a;
-  --color-text-inverse:  #f5f2ec;
-  --color-text-inverse-muted: rgba(245, 242, 236, 0.55);
-  --color-text-inverse-faint: rgba(245, 242, 236, 0.35);
+  --color-text-primary:  #FAFAFA;
+  --color-text-secondary:#A1A1AA;
+  --color-text-muted:    #71717A;
+  --color-text-faint:    #52525B;
+  --color-text-inverse:  #0A0A0B;
+  --color-text-inverse-muted: rgba(10, 10, 11, 0.6);
+  --color-text-inverse-faint: rgba(10, 10, 11, 0.4);
 
   /* === BRAND / SIGNAL === */
-  --color-signal:        #d4440c;
-  --color-signal-hover:  #bf3a09;
-  --color-signal-subtle: rgba(212, 68, 12, 0.08);
-  --color-signal-border: rgba(212, 68, 12, 0.25);
-  --color-signal-light:  #ff6b35;
+  --color-signal:        #FF6B35;
+  --color-signal-hover:  #FF8A5C;
+  --color-signal-active: #E55A2B;
+  --color-signal-subtle: rgba(255, 107, 53, 0.1);
+  --color-signal-border: rgba(255, 107, 53, 0.3);
+  --color-signal-glow:   rgba(255, 107, 53, 0.15);
+  --color-signal-light:  #FF6B35;
 
   /* === SEMANTIC === */
-  --color-success:       #2d7a4e;
-  --color-success-subtle:rgba(45, 122, 78, 0.08);
-  --color-success-border:rgba(45, 122, 78, 0.2);
+  --color-success:       #22C55E;
+  --color-success-subtle:rgba(34, 197, 94, 0.1);
+  --color-success-border:rgba(34, 197, 94, 0.3);
 
-  --color-info:          #185fa5;
-  --color-info-subtle:   rgba(24, 95, 165, 0.08);
-  --color-info-border:   rgba(24, 95, 165, 0.2);
+  --color-info:          #3B82F6;
+  --color-info-subtle:   rgba(59, 130, 246, 0.1);
+  --color-info-border:   rgba(59, 130, 246, 0.3);
 
-  --color-warning:       #8a6a00;
-  --color-warning-subtle:rgba(138, 106, 0, 0.08);
+  --color-warning:       #EAB308;
+  --color-warning-subtle:rgba(234, 179, 8, 0.1);
+  --color-warning-border:rgba(234, 179, 8, 0.3);
 
-  --color-error:         #c0392b;
-  --color-error-subtle:  rgba(192, 57, 43, 0.08);
+  --color-error:         #EF4444;
+  --color-error-subtle:  rgba(239, 68, 68, 0.1);
+  --color-error-border:  rgba(239, 68, 68, 0.3);
 
   /* === BORDERS === */
-  --color-border:        rgba(13, 13, 13, 0.1);
-  --color-border-strong: rgba(13, 13, 13, 0.18);
-  --color-border-inverse:rgba(245, 242, 236, 0.1);
-  --color-border-inverse-strong: rgba(245, 242, 236, 0.2);
+  --color-border:        #27272A;
+  --color-border-strong: #3F3F46;
+  --color-border-subtle: #1E1E21;
+  --color-border-inverse:rgba(250, 250, 250, 0.12);
+  --color-border-inverse-strong: rgba(250, 250, 250, 0.22);
 
   /* === FONT FAMILIES === */
   --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
@@ -53,7 +61,7 @@
   --font-mono:    'DM Mono', 'Fira Code', 'Consolas', monospace;
 
   /* === FONT SIZES === */
-  --text-xs:   11px;
+  --text-xs:   12px;
   --text-sm:   13px;
   --text-base: 15px;
   --text-md:   17px;
@@ -103,13 +111,23 @@
   --max-narrow:  420px;
 
   /* === BORDER RADIUS === */
-  --radius-sm:  3px;
-  --radius-md:  6px;
-  --radius-lg:  8px;
-  --radius-xl:  12px;
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
   --radius-full:9999px;
 
   /* === SHADOWS === */
-  --shadow-sm: 0 1px 4px rgba(13, 13, 13, 0.06);
-  --shadow-md: 0 2px 12px rgba(13, 13, 13, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px var(--color-signal-glow);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--color-border);
+
+  /* === GRADIENTS === */
+  --gradient-hero: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(255, 107, 53, 0.08), transparent);
+  --gradient-card: linear-gradient(135deg, #141415, #1C1C1E);
+
+  /* === NAVBAR === */
+  --nav-height: 56px;
 }

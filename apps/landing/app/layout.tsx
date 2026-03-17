@@ -23,27 +23,62 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.raweval.com'),
   title: {
-    default: 'RawEval | Human-Verified AI Evaluation Infrastructure',
+    default: 'RawEval — Turn AI Failures into Training Data',
     template: '%s | RawEval',
   },
   description:
-    'The end-to-end pipeline that catches failed AI interactions, puts them in front of verified domain experts, and delivers audit-ready training data to frontier labs.',
-  keywords: ['AI evaluation', 'RLHF', 'training data', 'EU AI Act', 'annotation infrastructure', 'human feedback', 'model alignment'],
+    'AI evaluation infrastructure that captures failed AI responses, routes them to 2,400+ verified domain experts, and delivers audit-ready RLHF data.',
+  keywords: [
+    'AI evaluation',
+    'RLHF',
+    'training data',
+    'AI quality',
+    'domain experts',
+    'AI infrastructure',
+    'LLM evaluation',
+    'EU AI Act',
+    'human feedback',
+  ],
+  authors: [{ name: 'RawEval' }],
+  creator: 'RawEval',
   openGraph: {
     type: 'website',
+    locale: 'en_US',
+    url: 'https://www.raweval.com',
     siteName: 'RawEval',
-    title: 'RawEval | Human-Verified AI Evaluation Infrastructure',
-    description: 'Catch AI failures. Route to verified experts. Get training-ready data back.',
-    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'RawEval' }],
+    title: 'RawEval — Turn AI Failures into Training Data',
+    description:
+      'AI evaluation infrastructure. Capture. Verify. Deliver.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'RawEval — AI Evaluation Infrastructure',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
-    title: 'RawEval | Human-Verified AI Evaluation Infrastructure',
-    description: 'Catch AI failures. Route to verified experts. Get training-ready data back.',
-    images: ['/logo.png'],
+    card: 'summary_large_image',
+    title: 'RawEval — Turn AI Failures into Training Data',
+    description:
+      'AI evaluation infrastructure. Capture. Verify. Deliver.',
+    images: ['/og-image.png'],
+    creator: '@raweval',
   },
-  metadataBase: new URL('https://www.raweval.com'),
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large' as const,
+      'max-snippet': -1,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -60,9 +95,11 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${dmMono.variable} ${instrumentSerif.variable} antialiased`}
-        style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}
+        className={`${dmMono.variable} ${instrumentSerif.variable}`}
       >
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
         <Script id="facebook-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
@@ -71,6 +108,7 @@ export default function RootLayout({
             if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
             n.queue=[];t=b.createElement(e);t.async=!0;
             t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '906259072138243');
             fbq('init', '1860126784625257');
@@ -93,8 +131,33 @@ export default function RootLayout({
             alt=""
           />
         </noscript>
+
+        {/* JSON-LD structured data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SoftwareApplication',
+              name: 'RawEval',
+              applicationCategory: 'DeveloperApplication',
+              description:
+                'AI evaluation infrastructure that captures failed AI responses, routes them to verified domain experts, and delivers audit-ready RLHF data.',
+              url: 'https://www.raweval.com',
+              operatingSystem: 'Web',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+            }),
+          }}
+        />
+
         <Navbar />
-        {children}
+        <main id="main-content">
+          {children}
+        </main>
         <Footer />
         <Suspense fallback={null}>
           <StaffToolbar />

@@ -11,14 +11,14 @@ interface LegalLayoutProps {
 
 export function LegalLayout({ children, title, lastUpdated, toc }: LegalLayoutProps) {
   return (
-    <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'calc(56px + var(--section-y)) var(--section-x) var(--section-y)' }}>
+    <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }} className="lg-row-layout">
         <style>{`@media (min-width: 1024px) { .lg-row-layout { flex-direction: row !important; } }`}</style>
 
         {/* Sidebar */}
         <aside style={{ flexShrink: 0, width: 200 }}>
           <div style={{ position: 'sticky', top: 80 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>Legal</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>Legal</div>
             <nav style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', marginBottom: 'var(--space-8)' }}>
               {[
                 { label: 'Terms of Service', href: '/legal/terms' },
@@ -43,15 +43,14 @@ export function LegalLayout({ children, title, lastUpdated, toc }: LegalLayoutPr
               ))}
             </nav>
 
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>On this page</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>On this page</div>
             <nav style={{ borderLeft: '1px solid var(--color-border)', paddingLeft: 'var(--space-4)', display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
               {toc.map((item) => (
                 <a
                   key={item.id}
                   href={`#${item.id}`}
-                  style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-muted)', textDecoration: 'none', padding: '3px 0' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-signal)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                  className="footer-link"
+                  style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', textDecoration: 'none', padding: '3px 0' }}
                 >
                   {item.title}
                 </a>
@@ -64,7 +63,7 @@ export function LegalLayout({ children, title, lastUpdated, toc }: LegalLayoutPr
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: 'var(--space-8)', marginBottom: 'var(--space-10)' }}>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-primary)', fontWeight: 400, lineHeight: 'var(--leading-tight)', margin: '0 0 var(--space-3)' }}>{title}</h1>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wide)' }}>Last updated: {lastUpdated}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wide)' }}>Last updated: {lastUpdated}</div>
           </div>
           <div
             style={{

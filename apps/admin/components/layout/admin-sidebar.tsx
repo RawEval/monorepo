@@ -22,6 +22,8 @@ import {
   Globe,
   TrendingUp,
   Gavel,
+  Briefcase,
+  Mic,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
@@ -56,6 +58,13 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'Payments', href: '/payments', icon: Coins },
       { title: 'Model Analytics', href: '/model-analytics', icon: TrendingUp },
       { title: 'Audit Logs', href: '/audit', icon: History },
+    ],
+  },
+  {
+    label: 'Interviews',
+    items: [
+      { title: 'Workbench Jobs', href: '/workbench-jobs', icon: Briefcase },
+      { title: 'Interviews', href: '/interviews', icon: Mic },
     ],
   },
   {

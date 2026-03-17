@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
 import {
@@ -18,7 +18,21 @@ import { isApiError, UnauthorizedError } from '@/lib/errors';
 import Image from 'next/image';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-base)]">
+        <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-t-transparent" style={{ borderColor: 'var(--color-border-strong)', borderTopColor: 'transparent' }} />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/chat';
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -80,8 +94,8 @@ export default function LoginPage() {
         localStorage.setItem('rememberMe', 'true');
       }
 
-      // Redirect to chat
-      router.push('/chat');
+      // Redirect to intended page (or /chat by default)
+      router.push(redirectTo);
     } catch (err) {
       if (isApiError(err)) {
         if (err instanceof UnauthorizedError) {
@@ -99,7 +113,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 px-4 py-8 sm:py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-base)] px-4 py-8 sm:py-12">
       {/* Background pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"

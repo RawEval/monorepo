@@ -1,4 +1,5 @@
 @import '@raweval/config/theme';
+@import 'katex/dist/katex.min.css';
 @source '../../../packages/ui/src';
 
 /* =============================================
@@ -18,10 +19,10 @@
   --color-text-primary:  #0d0d0d;
   --color-text-secondary:#3a3a3a;
   --color-text-muted:    #6b6b6b;
-  --color-text-faint:    #9a9a9a;
+  --color-text-faint:    #767676;
   --color-text-inverse:  #f5f2ec;
-  --color-text-inverse-muted: rgba(245, 242, 236, 0.55);
-  --color-text-inverse-faint: rgba(245, 242, 236, 0.35);
+  --color-text-inverse-muted: rgba(245, 242, 236, 0.6);
+  --color-text-inverse-faint: rgba(245, 242, 236, 0.5);
 
   /* === BRAND / SIGNAL === */
   --color-signal:        #d4440c;
@@ -45,8 +46,8 @@
   /* === BORDERS === */
   --color-border:               rgba(13, 13, 13, 0.1);
   --color-border-strong:        rgba(13, 13, 13, 0.18);
-  --color-border-inverse:       rgba(245, 242, 236, 0.1);
-  --color-border-inverse-strong:rgba(245, 242, 236, 0.2);
+  --color-border-inverse:       rgba(245, 242, 236, 0.12);
+  --color-border-inverse-strong:rgba(245, 242, 236, 0.22);
 
   /* === FONT FAMILIES (wired to Next.js loaded fonts) === */
   --font-display: var(--font-instrument-serif), Georgia, 'Times New Roman', serif;
@@ -54,7 +55,7 @@
   --font-body:    system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* === FONT SIZES === */
-  --text-xs:   11px;
+  --text-xs:   12px;
   --text-sm:   13px;
   --text-base: 15px;
   --text-md:   17px;
@@ -111,6 +112,39 @@
   /* === SHADOWS === */
   --shadow-sm: 0 1px 4px rgba(13, 13, 13, 0.06);
   --shadow-md: 0 2px 12px rgba(13, 13, 13, 0.08);
+
+  /* =============================================
+     Tailwind / shadcn semantic overrides
+     Maps the default blue/slate theme to RawEval
+     brand tokens so bg-primary, text-primary, etc.
+     resolve to burnt orange / warm parchment.
+     ============================================= */
+  --background: #f5f2ec;
+  --foreground: #0d0d0d;
+  --card: #f5f2ec;
+  --card-foreground: #0d0d0d;
+  --popover: #f5f2ec;
+  --popover-foreground: #0d0d0d;
+  --primary: #d4440c;
+  --primary-foreground: #f5f2ec;
+  --secondary: #ede9e0;
+  --secondary-foreground: #0d0d0d;
+  --muted: #ede9e0;
+  --muted-foreground: #6b6b6b;
+  --accent: rgba(212, 68, 12, 0.08);
+  --accent-foreground: #d4440c;
+  --destructive: #c0392b;
+  --border: rgba(13, 13, 13, 0.1);
+  --input: rgba(13, 13, 13, 0.1);
+  --ring: #d4440c;
+  --sidebar: #f5f2ec;
+  --sidebar-foreground: #0d0d0d;
+  --sidebar-primary: #d4440c;
+  --sidebar-primary-foreground: #f5f2ec;
+  --sidebar-accent: #ede9e0;
+  --sidebar-accent-foreground: #0d0d0d;
+  --sidebar-border: rgba(13, 13, 13, 0.1);
+  --sidebar-ring: #d4440c;
 }
 
 /* =======================================
@@ -129,11 +163,12 @@ body {
   background: var(--color-bg-inverse);
   color: var(--color-text-inverse);
   align-self: flex-end;
-  border-radius: 10px 10px 2px 10px;
-  padding: 10px 14px;
-  font-size: var(--text-sm);
+  border-radius: 20px 20px 4px 20px;
+  padding: 10px 16px;
+  font-size: var(--text-base);
   max-width: 80%;
   font-family: var(--font-body);
+  line-height: 1.6;
 }
 
 .msg-ai {
@@ -206,16 +241,18 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.streaming-prose > :last-child::after {
+.streaming-prose > :last-child::after,
+.streaming-prose > :last-child > :last-child::after {
   content: '';
   display: inline-block;
   width: 2px;
-  height: 1.05em;
+  height: 1.1em;
   background-color: var(--color-text-primary);
   margin-left: 2px;
   vertical-align: text-bottom;
   border-radius: 1px;
-  animation: cursor-blink 1s steps(2) infinite;
+  animation: cursor-blink 0.8s steps(2) infinite;
+  opacity: 0.8;
 }
 
 @keyframes cursor-blink {
@@ -288,9 +325,77 @@ a:hover { color: var(--color-signal-hover); }
 @media (prefers-reduced-motion: reduce) {
   .chat-message-enter, .thinking-dot,
   .streaming-prose > :last-child::after,
+  .streaming-prose > :last-child > :last-child::after,
   html, .hover-lift, .animate-fade-in-up {
     animation: none !important;
     scroll-behavior: auto;
     transition: none;
   }
+}
+
+/* === USER RICH CONTENT (markdown in dark bubble) === */
+
+.user-rich-content {
+  color: rgba(245, 242, 236, 0.9);
+}
+.user-rich-content a { color: var(--color-signal-light); }
+.user-rich-content a:hover { color: #ff8c5a; }
+.user-rich-content strong { color: rgba(245, 242, 236, 0.95); }
+.user-rich-content em { color: rgba(245, 242, 236, 0.8); }
+
+/* === KATEX / MATH OVERRIDES === */
+
+.katex-display {
+  margin: 12px 0 !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 0;
+}
+.katex {
+  font-size: 1.05em !important;
+}
+.msg-user .katex { color: rgba(245, 242, 236, 0.9); }
+
+/* === TASK LIST (GFM checkboxes) === */
+
+.prose input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+.prose .task-list-item {
+  list-style: none;
+  margin-left: -1.25rem;
+}
+
+/* === SELECTION === */
+::selection {
+  background: rgba(212, 68, 12, 0.15);
+  color: var(--color-text-primary);
+}
+
+/* === FOCUS VISIBLE === */
+*:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+textarea:focus-visible, input:focus-visible {
+  outline: none;
+}
+
+/* === SMOOTH SCROLLBAR FOR CHAT === */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+.overflow-y-auto::-webkit-scrollbar { width: 6px; }
+.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
 }

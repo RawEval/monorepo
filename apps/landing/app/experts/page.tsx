@@ -28,22 +28,22 @@ const steps = [
 
 export default function ExpertsPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)' }}>
 
       {/* Hero */}
-      <section style={{ background: 'var(--color-bg-inverse)', paddingTop: 'calc(56px + var(--section-y))', paddingBottom: 'var(--section-y)' }}>
+      <section style={{ background: 'var(--color-bg-base)', paddingTop: 'var(--section-y)', paddingBottom: 'var(--section-y)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)' }}>
           <div style={{ maxWidth: 680 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal-light)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-5)' }}>Expert Network</div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-inverse)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-6)' }}>
+            <div className="mono-label" style={{ color: 'var(--color-signal)', marginBottom: 'var(--space-5)' }}>Expert Network</div>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-4xl)', color: 'var(--color-text-primary)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-6)' }}>
               Your expertise has a market. We built the marketplace.
             </h1>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-inverse-muted)', lineHeight: 'var(--leading-relaxed)', margin: '0 0 var(--space-8)' }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-md)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)', margin: '0 0 var(--space-8)' }}>
               RawEval connects AI labs with verified domain experts. If you have deep knowledge in medicine, law, code, finance, or any specialized field — you can earn by evaluating AI models in your area.
             </p>
             <Link
-              href="https://experts.raweval.com/apply"
-              style={{ display: 'inline-block', background: 'var(--color-signal)', color: 'var(--color-text-inverse)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 28px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}
+              href="https://work.raweval.com/apply"
+              className="btn-primary"
             >
               Apply to join →
             </Link>
@@ -54,7 +54,7 @@ export default function ExpertsPage() {
       {/* Why Join */}
       <section style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-10)' }}>Why join</div>
+          <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-10)' }}>Why join</div>
           <div className="grid-cols-2-lg">
             {whyJoin.map((w) => (
               <div key={w.label} style={{ paddingTop: 'var(--space-5)', borderTop: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column' as const, gap: 'var(--space-3)' }}>
@@ -69,7 +69,7 @@ export default function ExpertsPage() {
       {/* How it works */}
       <section style={{ background: 'var(--color-bg-surface)', borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-10)' }}>How it works</div>
+          <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-10)' }}>How it works</div>
           <div className="grid-cols-2-lg">
             {steps.map((s) => (
               <div key={s.step} style={{ display: 'flex', gap: 'var(--space-5)', alignItems: 'flex-start' }}>
@@ -87,16 +87,16 @@ export default function ExpertsPage() {
       {/* Tier System */}
       <section style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-10)' }}>Tier system</div>
+          <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-10)' }}>Tier system</div>
           <div className="grid-cols-3-md">
             {tiers.map((t) => (
               <div key={t.name} style={{ padding: 'var(--space-6)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg-surface)' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>{t.name}</div>
+                <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-2)' }}>{t.name}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-lg)', color: 'var(--color-signal)', marginBottom: 'var(--space-5)' }}>{t.rate}</div>
                 <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 'var(--space-2)' }}>
                   {t.requirements.map((r) => (
                     <div key={r} style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start' }}>
-                      <span style={{ color: 'var(--color-success)', fontFamily: 'var(--font-mono)', fontSize: '12px', flexShrink: 0, marginTop: '2px' }}>✓</span>
+                      <span style={{ color: 'var(--color-success)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', flexShrink: 0, marginTop: '2px' }}>✓</span>
                       <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>{r}</span>
                     </div>
                   ))}
@@ -110,18 +110,18 @@ export default function ExpertsPage() {
       {/* CTA */}
       <section style={{ background: 'var(--color-signal)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)', textAlign: 'center' as const }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-inverse)', fontWeight: 400, lineHeight: 'var(--leading-tight)', margin: '0 0 var(--space-5)' }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: '#fff', fontWeight: 400, lineHeight: 'var(--leading-tight)', margin: '0 0 var(--space-5)' }}>
             Join 2,400 verified experts earning on their schedule.
           </h2>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'rgba(245, 242, 236, 0.7)', maxWidth: 440, margin: '0 auto var(--space-8)' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'rgba(255, 255, 255, 0.7)', maxWidth: 440, margin: '0 auto var(--space-8)' }}>
             Applications reviewed within 5 business days. Domain skills assessment included.
           </p>
-          <Link href="https://experts.raweval.com/apply" style={{ display: 'inline-block', background: 'var(--color-text-inverse)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 28px', borderRadius: 'var(--radius-sm)', textDecoration: 'none' }}>
+          <Link href="https://work.raweval.com/apply" style={{ display: 'inline-block', background: '#fff', color: 'var(--color-signal)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 28px', borderRadius: 'var(--radius-md)', textDecoration: 'none' }}>
             Apply now →
           </Link>
         </div>
       </section>
 
-    </main>
+    </div>
   );
 }

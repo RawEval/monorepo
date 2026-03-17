@@ -78,7 +78,7 @@ const PAYMENT_STATUS_CONFIG: Record<
   completed: {
     label: 'Paid',
     icon: CheckCircle2,
-    color: 'bg-green-500/10 text-green-600 border-green-500/20',
+    color: 'bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]',
   },
   approved: {
     label: 'QA Approved',
@@ -440,8 +440,8 @@ export function PayoutsPage() {
       label: 'Total Earned',
       value: formatCurrency(earnings?.total_earned ?? 0, currency),
       icon: DollarSign,
-      iconBg: 'bg-green-500/10',
-      iconColor: 'text-green-600',
+      iconBg: 'bg-[var(--color-success-subtle)]',
+      iconColor: 'text-[var(--color-success)]',
     },
     {
       label: 'Pending Earnings',
@@ -645,7 +645,7 @@ export function PayoutsPage() {
                     className={cn(
                       'rounded-lg px-3 py-2 text-xs font-medium',
                       withdrawStatus.startsWith('✓')
-                        ? 'bg-green-500/10 text-green-600'
+                        ? 'bg-[var(--color-success-subtle)] text-[var(--color-success)]'
                         : 'bg-destructive/10 text-destructive'
                     )}
                   >
@@ -718,7 +718,7 @@ export function PayoutsPage() {
                             {account.is_verified && (
                               <Badge
                                 variant="outline"
-                                className="shrink-0 gap-1 border-green-500/30 text-xs text-green-600"
+                                className="shrink-0 gap-1 border-[var(--color-success-border)] text-xs text-[var(--color-success)]"
                               >
                                 <CheckCircle2 className="h-3 w-3" />
                                 Verified
@@ -881,8 +881,8 @@ export function PayoutsPage() {
                           {/* Status-specific info banners */}
                           {payment.status === 'completed' &&
                             payment.provider_payment_id && (
-                              <div className="mt-3 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2">
-                                <p className="text-xs font-medium text-green-600">
+                              <div className="mt-3 rounded-lg border border-[var(--color-success-border)] bg-[var(--color-success-subtle)] px-3 py-2">
+                                <p className="text-xs font-medium text-[var(--color-success)]">
                                   ✓ Payment received via Razorpay
                                 </p>
                                 <p className="text-muted-foreground mt-0.5 font-mono text-xs">

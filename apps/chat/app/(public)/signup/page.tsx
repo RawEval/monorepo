@@ -148,7 +148,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 px-4 py-8 sm:py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-base)] px-4 py-8 sm:py-12">
       {/* Background pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"

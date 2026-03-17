@@ -21,12 +21,7 @@ import { useProjectsStore } from '@/stores/projects-store';
 import { cn } from '@raweval/utils';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/auth-service';
-import {
-  clearToken,
-  getStoredToken,
-  getStoredRefreshToken,
-  storeToken,
-} from '@/lib/auth';
+import { clearToken, getStoredToken, getStoredRefreshToken } from '@/lib/auth';
 import type { UserResponse } from '@raweval/types';
 
 const PAGE_TITLES: Record<string, string> = {
@@ -53,67 +48,28 @@ export function Header() {
   const pageTitle = PAGE_TITLES[pathname];
 
   useEffect(() => {
+    // Auth gating is handled by middleware + AuthGuard.
+    // Header only needs to load the user profile for display.
     const loadUser = async () => {
-      let token = getStoredToken();
-
+      const token = getStoredToken();
       if (!token) {
-        const refreshToken = getStoredRefreshToken();
-        if (refreshToken) {
-          try {
-            const tokenResponse = await authService.refreshToken(refreshToken);
-            storeToken(
-              tokenResponse.access_token,
-              tokenResponse.expires_in,
-              tokenResponse.refresh_token
-            );
-            token = tokenResponse.access_token;
-          } catch (error) {
-            console.error('Failed to refresh token:', error);
-            clearToken();
-            router.push('/login');
-            return;
-          }
-        }
-      }
-
-      if (!token) {
-        router.push('/login');
+        setLoading(false);
         return;
       }
 
       try {
         const userData = await authService.getCurrentUser();
         setUser(userData);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-
-        const refreshToken = getStoredRefreshToken();
-        if (refreshToken) {
-          try {
-            const tokenResponse = await authService.refreshToken(refreshToken);
-            storeToken(
-              tokenResponse.access_token,
-              tokenResponse.expires_in,
-              tokenResponse.refresh_token
-            );
-            const userDataRetry = await authService.getCurrentUser();
-            setUser(userDataRetry);
-            return;
-          } catch {
-            clearToken();
-            router.push('/login');
-          }
-        } else {
-          clearToken();
-          router.push('/login');
-        }
+      } catch {
+        // If getCurrentUser fails, AuthGuard will handle the redirect.
+        // Header just shows a fallback state.
       } finally {
         setLoading(false);
       }
     };
 
     loadUser();
-  }, [router]);
+  }, []);
 
   const chatTitle =
     isChatPage && currentProject

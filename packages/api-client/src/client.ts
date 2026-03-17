@@ -343,33 +343,25 @@ export class ApiClient {
 /**
  * Default API client instance
  *
- * Note: Token retrieval is handled via interceptor system.
- * The getAuthToken is set to use @raweval/auth package's getStoredToken.
- * This is done at runtime to avoid circular dependencies.
+ * Token retrieval uses js-cookie to read the access token cookie,
+ * matching how @raweval/auth's storeToken() stores it.
  */
 export const apiClient = new ApiClient({
   getAuthToken: () => {
-    // Use dynamic import to avoid circular dependencies
-    // This will be called at runtime when requests are made
     try {
-      // Try to import auth package dynamically
-      // In practice, the auth interceptor will handle this
-      // This is a fallback for when interceptor isn't used
-      if (typeof window !== 'undefined' && window.localStorage) {
-        const token = window.localStorage.getItem('raweval_access_token');
-        if (token) {
-          // Check expiry
-          const expiry = window.localStorage.getItem('raweval_token_expiry');
-          if (expiry) {
-            const expiryTime = parseInt(expiry, 10);
-            if (Date.now() < expiryTime) {
-              return token;
-            }
+      if (typeof document !== 'undefined') {
+        // Read from cookies — matching @raweval/auth's storeToken which uses js-cookie
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name, ...valueParts] = cookie.trim().split('=');
+          if (name === 'raweval_access_token') {
+            const value = valueParts.join('=');
+            return decodeURIComponent(value) || null;
           }
         }
       }
     } catch {
-      // Ignore errors
+      // Ignore errors in SSR or when cookies aren't accessible
     }
     return null;
   },

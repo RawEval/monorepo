@@ -28,7 +28,7 @@ export function ChatHeader() {
           <Button variant="ghost" size="icon" className="h-9 w-9">
             <Bot className="h-4 w-4" />
           </Button>
-          <div className="absolute right-0 top-0 h-2 w-2 rounded-full bg-green-500" />
+          <div className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--color-success)]" />
         </div>
       </div>
     </header>

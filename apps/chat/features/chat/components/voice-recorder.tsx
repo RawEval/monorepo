@@ -111,7 +111,7 @@ export function VoiceRecorder({
           <Mic className="h-4 w-4" />
         </Button>
         {micError && (
-          <div className="text-destructive absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-white/95 px-2.5 py-1 text-[11px] font-medium shadow-lg backdrop-blur-sm dark:bg-black/90">
+          <div className="text-destructive absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[var(--color-bg-base)]/95 px-2.5 py-1 text-[11px] font-medium shadow-lg backdrop-blur-sm">
             {micError}
           </div>
         )}

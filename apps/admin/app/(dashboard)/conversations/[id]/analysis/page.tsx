@@ -29,6 +29,7 @@ import {
   type FailedConversationQcDetailResponse,
   type FailedConversationQcDetailModel,
   type FailedConversationQcDetailShared,
+  type QcRubricCriterion,
 } from '@/services/admin/conversations-service';
 import { queryKeys } from '@/lib/react-query/query-keys';
 import {
@@ -267,8 +268,8 @@ export default function ChatAnalysisPage() {
         {/* Subheader info */}
         {shared && (
           <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-            {shared.user_email && <span>{shared.user_email}</span>}
-            {shared.user_full_name && <span>{shared.user_full_name}</span>}
+            {shared.user?.email && <span>{shared.user.email}</span>}
+            {shared.user?.full_name && <span>{shared.user.full_name}</span>}
             {currentModel?.model && (
               <Badge variant="outline" className="text-[10px]">
                 {currentModel.model}
@@ -588,7 +589,7 @@ function RubricTab({
   currentModel: FailedConversationQcDetailModel | null;
 }) {
   const rubric = currentModel?.qc_rubric;
-  const criteria = rubric?.criteria ?? [];
+  const criteria: QcRubricCriterion[] = rubric?.criteria ?? [];
 
   if (!rubric) return <EmptyState />;
 
@@ -657,7 +658,7 @@ function RubricTab({
 function CriterionRow({
   criterion: c,
 }: {
-  criterion: FailedConversationQcDetailModel['qc_rubric'] extends { criteria: (infer T)[] } | null ? T : never;
+  criterion: QcRubricCriterion;
 }) {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -904,7 +905,8 @@ function JudgeEvaluationCard({
   judge,
   index,
 }: {
-  judge: FailedConversationQcDetailShared['judge_evaluations'][number];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  judge: any;
   index: number;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -1272,7 +1274,7 @@ function HolisticTab({
                     <CheckCircle2 className="h-3 w-3" /> Key Strengths
                   </p>
                   <ul className="space-y-1">
-                    {holistic.key_strengths.map((s, i) => (
+                    {holistic.key_strengths.map((s: string, i: number) => (
                       <li key={i} className="text-xs">
                         {s}
                       </li>
@@ -1286,7 +1288,7 @@ function HolisticTab({
                     <XCircle className="h-3 w-3" /> Key Weaknesses
                   </p>
                   <ul className="space-y-1">
-                    {holistic.key_weaknesses.map((w, i) => (
+                    {holistic.key_weaknesses.map((w: string, i: number) => (
                       <li key={i} className="text-xs">
                         {w}
                       </li>

@@ -43,12 +43,12 @@ const TX_TYPE_LABELS: Record<string, string> = {
 
 const TX_STATUS_COLORS: Record<string, string> = {
   completed:
-    'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
+    'bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]',
   pending:
-    'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
-  failed: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
+    'bg-[var(--color-warning-subtle)] text-[var(--color-warning)] border-[var(--color-warning-subtle)]',
+  failed: 'bg-[var(--color-error-subtle)] text-[var(--color-error)] border-[var(--color-error-subtle)]',
   cancelled:
-    'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20',
+    'bg-muted text-muted-foreground border-border',
 };
 
 // ---------------------------------------------------------------------------
@@ -214,8 +214,8 @@ export function WalletPage() {
                         <div
                           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                             isCredit
-                              ? 'bg-green-500/10 text-green-600'
-                              : 'bg-red-500/10 text-red-600'
+                              ? 'bg-[var(--color-success-subtle)] text-[var(--color-success)]'
+                              : 'bg-[var(--color-error-subtle)] text-[var(--color-error)]'
                           }`}
                         >
                           {isCredit ? (
@@ -243,7 +243,7 @@ export function WalletPage() {
                         </Badge>
                         <span
                           className={`text-sm font-semibold tabular-nums ${
-                            isCredit ? 'text-green-600' : 'text-red-600'
+                            isCredit ? 'text-[var(--color-success)]' : 'text-[var(--color-error)]'
                           }`}
                         >
                           {isCredit ? '+' : '−'}

@@ -31,14 +31,8 @@ export function PlatformCapture() {
       >
         {/* Platform Tag */}
         <span
+          className="platform-tag"
           style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: 'var(--tracking-wide)',
-            textTransform: 'uppercase',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
             background: 'var(--color-signal-subtle)',
             color: 'var(--color-signal)',
             marginBottom: 'var(--space-4)',
@@ -54,7 +48,7 @@ export function PlatformCapture() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-primary)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-4)',
           }}
         >
@@ -79,17 +73,8 @@ export function PlatformCapture() {
 
         {/* URL Chip */}
         <span
-          style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: 'var(--tracking-wide)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--color-bg-muted)',
-            color: 'var(--color-text-muted)',
-            marginBottom: 'var(--space-8)',
-          }}
+          className="url-chip"
+          style={{ marginBottom: 'var(--space-8)' }}
         >
           chat.raweval.com
         </span>
@@ -106,19 +91,19 @@ export function PlatformCapture() {
           {features.map((feature) => (
             <div
               key={feature.title}
+              className="hover-border"
               style={{
                 background: 'var(--color-bg-base)',
                 border: '1px solid var(--color-border)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-6)',
-                transition: 'border-color 0.15s ease',
               }}
             >
               <h4
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 'var(--text-base)',
-                  fontWeight: 'var(--weight-medium)' as unknown as number,
+                  fontWeight: 500,
                   color: 'var(--color-text-primary)',
                   marginBottom: 'var(--space-2)',
                 }}
@@ -166,7 +151,7 @@ export function PlatformCapture() {
             <span
               style={{
                 fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
+                fontSize: 'var(--text-xs)',
                 color: 'var(--color-text-faint)',
                 marginLeft: 'var(--space-2)',
               }}
@@ -232,7 +217,7 @@ export function PlatformCapture() {
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: 'var(--tracking-wide)',
                   padding: '6px 14px',
                   background: 'var(--color-signal)',
@@ -250,7 +235,7 @@ export function PlatformCapture() {
               <div
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: 'var(--tracking-wider)',
                   textTransform: 'uppercase',
                   color: 'var(--color-text-muted)',
@@ -276,7 +261,7 @@ export function PlatformCapture() {
                   <span
                     style={{
                       fontFamily: 'var(--font-mono)',
-                      fontSize: '10px',
+                      fontSize: 'var(--text-xs)',
                       fontWeight: 500,
                       color: row.status === 'pass' ? 'var(--color-success)' : 'var(--color-error)',
                     }}
@@ -286,7 +271,7 @@ export function PlatformCapture() {
                   <span style={{ color: 'var(--color-text-secondary)', flex: 1, minWidth: '140px' }}>
                     {row.claim}
                   </span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)' }}>
                     {row.result}
                   </span>
                 </div>
@@ -295,7 +280,7 @@ export function PlatformCapture() {
               <div
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   color: 'var(--color-text-faint)',
                   marginTop: 'var(--space-3)',
                 }}

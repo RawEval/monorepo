@@ -29,12 +29,7 @@ export function DeliverySection() {
         }}
       >
         {/* Eyebrow */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'block', width: '20px', height: '1px', background: 'rgba(245,242,236,0.35)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', color: 'rgba(245,242,236,0.35)' }}>
-            Delivery
-          </span>
-        </div>
+        <div className="eyebrow-inverse"><span className="eyebrow-text">Delivery</span></div>
 
         <h2
           style={{
@@ -43,7 +38,7 @@ export function DeliverySection() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-inverse)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-4)',
           }}
         >

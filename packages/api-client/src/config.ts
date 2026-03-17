@@ -2,6 +2,9 @@
  * API Client Configuration
  *
  * Centralized configuration for API client
+ *
+ * Browser requests go through the Next.js API proxy (/api/proxy/...)
+ * to avoid CORS issues. Server-side requests go directly to the backend.
  */
 
 export interface ApiConfig {
@@ -17,23 +20,27 @@ export interface ApiConfig {
 /**
  * Get API configuration from environment variables
  *
- * Both browser and server use direct API URLs.
- * The backend has CORS configured (allow_origins=["*"]), so no proxy is needed.
+ * In browser: routes through /api/proxy to avoid CORS
+ * On server: calls backend directly
  */
 export function getApiConfig(): ApiConfig {
   const isBrowser = typeof window !== 'undefined';
 
-  // Base URL for general API calls (same for browser and server)
-  const baseUrl =
+  // Backend URL (used server-side or by the proxy)
+  const backendUrl =
     process.env.NEXT_PUBLIC_API_URL ||
     process.env.API_URL ||
-    'http://raweval-alb-1123950706.ap-northeast-1.elb.amazonaws.com';
+    'https://api.raweval.com';
+
+  // In browser, use the Next.js proxy to avoid CORS
+  // The proxy at /api/proxy/[...path] forwards to the backend
+  const baseUrl = isBrowser ? '' : backendUrl;
 
   // Base URL for LLM calls
   const llmCallsBaseUrl =
     process.env.NEXT_PUBLIC_LLM_CALLS_API_URL ||
     process.env.LLM_CALLS_API_URL ||
-    baseUrl; // Default to main API URL if not specified
+    backendUrl;
 
   const apiVersion =
     process.env.NEXT_PUBLIC_API_VERSION || process.env.API_VERSION || 'v1';
@@ -54,21 +61,21 @@ export function getApiConfig(): ApiConfig {
 
   // Debug log in development to verify config loading
   if (process.env.NODE_ENV === 'development' && isBrowser) {
-    // Only log once to avoid noise
     if (!(window as any).__raweval_config_logged) {
       console.log('API Client Config:', {
         isBrowser,
         baseUrl,
-        llmCallsBaseUrl,
+        backendUrl,
         apiVersion,
+        mode: isBrowser ? 'proxy' : 'direct',
       });
       (window as any).__raweval_config_logged = true;
     }
   }
 
   return {
-    baseUrl: baseUrl.replace(/\/$/, ''), // Remove trailing slash
-    llmCallsBaseUrl: llmCallsBaseUrl.replace(/\/$/, ''), // Remove trailing slash
+    baseUrl: baseUrl.replace(/\/$/, ''),
+    llmCallsBaseUrl: llmCallsBaseUrl.replace(/\/$/, ''),
     apiVersion,
     timeout,
     retries,
@@ -79,15 +86,32 @@ export function getApiConfig(): ApiConfig {
 /**
  * Get full API URL for main API calls
  *
- * Prepends /api/{version} to the path and combines with baseUrl.
+ * In browser: returns /api/proxy/{path} (relative URL through proxy)
+ * On server: returns {backendUrl}/api/{version}/{path}
  */
 export function getApiUrl(path: string, config?: ApiConfig): string {
   const apiConfig = config || getApiConfig();
+  const isBrowser = typeof window !== 'undefined';
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
-  const versionedPath = cleanPath.startsWith(`/api/${apiConfig.apiVersion}`)
-    ? cleanPath
-    : `/api/${apiConfig.apiVersion}${cleanPath}`;
+  if (isBrowser) {
+    // Route through Next.js proxy — the proxy adds /api/v1 prefix
+    return `/api/proxy${cleanPath}`;
+  }
+
+  // Server-side: direct to backend with version prefix
+  // V2 paths (/v2/*) get /api prefix, V1 paths get /api/v1 prefix
+  let versionedPath: string;
+  if (cleanPath.startsWith(`/api/`)) {
+    // Already has /api prefix (e.g., /api/v1/... or /api/v2/...)
+    versionedPath = cleanPath;
+  } else if (cleanPath.startsWith('/v2/')) {
+    // V2 endpoints: /v2/interview/* → /api/v2/interview/*
+    versionedPath = `/api${cleanPath}`;
+  } else {
+    // Default V1: /orchestrator/* → /api/v1/orchestrator/*
+    versionedPath = `/api/${apiConfig.apiVersion}${cleanPath}`;
+  }
 
   return `${apiConfig.baseUrl}${versionedPath}`;
 }
@@ -97,9 +121,18 @@ export function getApiUrl(path: string, config?: ApiConfig): string {
  */
 export function getLlmCallsApiUrl(path: string, config?: ApiConfig): string {
   const apiConfig = config || getApiConfig();
+  const isBrowser = typeof window !== 'undefined';
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
-  // LLM calls API uses /llm-calls prefix
+  if (isBrowser) {
+    // Route through proxy with llm-calls prefix
+    const llmPath = cleanPath.startsWith('/llm-calls')
+      ? cleanPath
+      : `/llm-calls${cleanPath}`;
+    return `/api/proxy${llmPath}`;
+  }
+
+  // Server-side: direct
   const llmPath = cleanPath.startsWith('/llm-calls')
     ? cleanPath
     : `/llm-calls${cleanPath}`;

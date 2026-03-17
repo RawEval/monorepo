@@ -15,7 +15,7 @@ export function Connector({ label }: { label: string }) {
       <span
         style={{
           fontFamily: 'var(--font-mono)',
-          fontSize: '10px',
+          fontSize: 'var(--text-xs)',
           letterSpacing: 'var(--tracking-wide)',
           textTransform: 'uppercase',
           color: 'var(--color-text-faint)',

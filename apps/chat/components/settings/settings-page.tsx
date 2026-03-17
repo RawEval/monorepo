@@ -296,7 +296,7 @@ export function SettingsPage() {
           </div>
         )}
         {successMsg && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-green-400">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-[var(--color-success-border)] bg-[var(--color-success-subtle)] px-4 py-3 text-sm text-[var(--color-success)]">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             {successMsg}
           </div>
@@ -406,7 +406,7 @@ export function SettingsPage() {
                     )}
                   </Button>
                   {saveSuccess && (
-                    <p className="text-sm text-green-600">
+                    <p className="text-sm text-[var(--color-success)]">
                       Changes saved successfully
                     </p>
                   )}
@@ -590,11 +590,11 @@ export function SettingsPage() {
                           </span>
                           {/* Dynamic Plan Type Badge */}
                           {sub.plan.plan_type === 'ultimate' ? (
-                            <span className="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-purple-700/10 ring-inset">
+                            <span className="inline-flex items-center rounded-md bg-[var(--color-info-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-info)] ring-1 ring-[var(--color-info-border)] ring-inset">
                               All Access
                             </span>
                           ) : sub.plan.plan_type === 'premium_model' ? (
-                            <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-700/10 ring-inset">
+                            <span className="inline-flex items-center rounded-md bg-[var(--color-success-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-success)] ring-1 ring-[var(--color-success-border)] ring-inset">
                               {sub.plan.model_display_name || 'Premium Model'}
                             </span>
                           ) : null}
@@ -602,9 +602,9 @@ export function SettingsPage() {
                             variant="outline"
                             className={
                               sub.status === 'active'
-                                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
+                                ? 'border-[var(--color-success-border)] bg-[var(--color-success-subtle)] text-[var(--color-success)]'
                                 : sub.status === 'cancelled'
-                                  ? 'border-red-500/20 bg-red-500/10 text-red-700'
+                                  ? 'border-[var(--color-error-subtle)] bg-[var(--color-error-subtle)] text-[var(--color-error)]'
                                   : ''
                             }
                           >
@@ -768,8 +768,8 @@ export function SettingsPage() {
                             variant="outline"
                             className={
                               key.is_active
-                                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
-                                : 'border-red-500/20 bg-red-500/10 text-red-700'
+                                ? 'border-[var(--color-success-border)] bg-[var(--color-success-subtle)] text-[var(--color-success)]'
+                                : 'border-[var(--color-error-subtle)] bg-[var(--color-error-subtle)] text-[var(--color-error)]'
                             }
                           >
                             {key.is_active ? 'Active' : 'Revoked'}
@@ -793,7 +793,7 @@ export function SettingsPage() {
                           title="Copy key"
                         >
                           {copiedKeyId === key.id ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                            <CheckCircle2 className="h-3.5 w-3.5 text-[var(--color-success)]" />
                           ) : (
                             <Copy className="text-muted-foreground h-3.5 w-3.5" />
                           )}

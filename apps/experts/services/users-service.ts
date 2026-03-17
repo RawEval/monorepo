@@ -71,11 +71,15 @@ export class UsersService extends ApiService {
   }
 
   /**
-   * Get user metadata
+   * Get user metadata.
+   * NOTE: /users/me/metadata has a backend routing bug (FastAPI matches {user_id}
+   * before /me). Workaround: fetch /users/me first to get ID, then /users/{id}/metadata.
    */
   async getMetadata(): Promise<UserMetadata> {
+    const me = await this.client.get<UserResponse>('/users/me');
+    const user = this.handleResponse(me);
     const response = await this.client.get<UserMetadata>(
-      '/users/me/metadata',
+      `/users/${user.id}/metadata`,
     );
     return this.handleResponse(response);
   }
@@ -85,7 +89,7 @@ export class UsersService extends ApiService {
    */
   async updateMetadata(metadata: UserMetadata): Promise<UserMetadata> {
     const response = await this.client.put<UserMetadata>(
-      '/users/me/metadata',
+      '/users/me/profile',
       metadata,
     );
     return this.handleResponse(response);

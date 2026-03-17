@@ -43,12 +43,7 @@ export function WhyNowSection() {
         }}
       >
         {/* Eyebrow */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-4)' }}>
-          <span style={{ display: 'block', width: '20px', height: '1px', background: 'var(--color-signal)', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', color: 'var(--color-signal)' }}>
-            Why Now
-          </span>
-        </div>
+        <div className="eyebrow"><span className="eyebrow-text">Why Now</span></div>
 
         <h2
           style={{
@@ -57,7 +52,7 @@ export function WhyNowSection() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-primary)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-12)',
           }}
         >
@@ -93,7 +88,7 @@ export function WhyNowSection() {
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 'var(--text-md)',
-                  fontWeight: 'var(--weight-medium)' as unknown as number,
+                  fontWeight: 500,
                   color: 'var(--color-text-primary)',
                   lineHeight: 'var(--leading-snug)',
                 }}
@@ -116,7 +111,7 @@ export function WhyNowSection() {
                   display: 'inline-block',
                   alignSelf: 'flex-start',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
                   padding: '4px 10px',

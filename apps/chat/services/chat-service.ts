@@ -13,6 +13,12 @@ import type {
   SessionDetail,
   SessionUpdateRequest,
   Provider,
+  MarkSessionFailedRequest,
+  MarkSessionFailedResponse,
+  MarkMessageFailedRequest,
+  MarkMessageFailedResponse,
+  DomainListResponse,
+  ConversationDomainsResponse,
 } from '@raweval/types';
 import { getStoredToken } from '@/lib/auth';
 
@@ -150,11 +156,11 @@ class ChatService {
   /** Mark a session as failed */
   async markSessionFailed(
     sessionId: number,
-    failureProbability = 1.0
-  ): Promise<ChatSessionSummary> {
-    return api.post<ChatSessionSummary>(
+    request: MarkSessionFailedRequest = {}
+  ): Promise<MarkSessionFailedResponse> {
+    return api.post<MarkSessionFailedResponse>(
       `/chat/sessions/${sessionId}/mark-failed`,
-      { failure_probability: failureProbability }
+      request
     );
   }
 
@@ -162,11 +168,11 @@ class ChatService {
   async markMessageFailed(
     sessionId: number,
     messageId: number,
-    failureProbability = 1.0
-  ): Promise<Record<string, unknown>> {
-    return api.post<Record<string, unknown>>(
+    request: MarkMessageFailedRequest = {}
+  ): Promise<MarkMessageFailedResponse> {
+    return api.post<MarkMessageFailedResponse>(
       `/chat/sessions/${sessionId}/messages/${messageId}/mark-failed`,
-      { failure_probability: failureProbability }
+      request
     );
   }
 
@@ -449,6 +455,20 @@ class ChatService {
   /** Get available providers */
   async getProviders(): Promise<any> {
     return api.get<any>('/chat/providers');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Domains
+  // ---------------------------------------------------------------------------
+
+  /** Get all available domains with subdomains */
+  async getDomains(): Promise<DomainListResponse> {
+    return api.get<DomainListResponse>('/chat/failure/domains');
+  }
+
+  /** Get auto-detected domains for a session */
+  async getSessionDomains(sessionId: number): Promise<ConversationDomainsResponse> {
+    return api.get<ConversationDomainsResponse>(`/chat/sessions/${sessionId}/domains`);
   }
 
   // ---------------------------------------------------------------------------

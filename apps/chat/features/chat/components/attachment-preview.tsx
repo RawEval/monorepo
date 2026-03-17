@@ -69,9 +69,9 @@ export function AttachmentPreview({
               <div className="flex max-w-[85%] items-start gap-2">
                 <div className="bg-muted/50 mt-0.5 shrink-0 rounded p-1">
                   {attachment.name.endsWith('.pdf') ? (
-                    <File className="h-4 w-4 text-red-500" />
+                    <File className="h-4 w-4 text-[var(--color-error)]" />
                   ) : (
-                    <FileText className="h-4 w-4 text-blue-500" />
+                    <FileText className="h-4 w-4 text-[var(--color-signal)]" />
                   )}
                 </div>
                 <div className="flex min-w-0 flex-col">

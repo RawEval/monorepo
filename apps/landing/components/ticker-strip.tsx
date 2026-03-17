@@ -11,6 +11,7 @@ const tickerItems = [
 export function TickerStrip() {
   return (
     <div
+      aria-hidden="true"
       style={{
         width: '100%',
         background: 'var(--color-bg-inverse)',
@@ -24,15 +25,15 @@ export function TickerStrip() {
             key={i}
             style={{
               fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
+              fontSize: 'var(--text-xs)',
               letterSpacing: 'var(--tracking-wider)',
               textTransform: 'uppercase',
-              color: 'rgba(245, 242, 236, 0.4)',
+              color: 'var(--color-text-inverse-faint)',
               padding: '0 40px',
             }}
           >
             {item.text}
-            <span style={{ color: 'var(--color-signal-light)', fontWeight: 'var(--weight-medium)' as unknown as number }}>
+            <span style={{ color: 'var(--color-signal-light)', fontWeight: 500 }}>
               {item.highlight}
             </span>
             {item.suffix || ''}

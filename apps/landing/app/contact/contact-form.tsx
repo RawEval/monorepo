@@ -2,64 +2,169 @@
 
 import { useState } from 'react';
 
-const inputStyle = {
-  width: '100%',
-  padding: '10px 14px',
-  fontFamily: 'var(--font-body)',
-  fontSize: 'var(--text-sm)',
-  color: 'var(--color-text-primary)',
-  background: 'var(--color-bg-base)',
+const inputStyle: React.CSSProperties = {
+  background: 'var(--color-bg-surface)',
   border: '1px solid var(--color-border)',
-  borderRadius: 'var(--radius-md)',
+  borderRadius: 'var(--radius-sm)',
+  color: 'var(--color-text-primary)',
+  fontFamily: 'var(--font-body)',
+  fontSize: 'var(--text-base)',
+  padding: '12px 16px',
+  width: '100%',
   outline: 'none',
   boxSizing: 'border-box' as const,
 };
 
+const inquiryTypes = [
+  { value: 'sales', label: 'Sales — I want evaluation data for my team' },
+  { value: 'expert', label: 'Expert — I want to join the network' },
+  { value: 'investor', label: 'Investor — I\'m interested in the company' },
+  { value: 'partnership', label: 'Partnership — I want to integrate or collaborate' },
+  { value: 'press', label: 'Press — Media inquiry' },
+  { value: 'other', label: 'Other' },
+];
+
 export function ContactForm() {
-  const [sent, setSent] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    inquiryType: '',
+    company: '',
+    message: '',
+  });
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitted(true);
+  }
+
+  if (submitted) {
+    return (
+      <div style={{
+        padding: 'var(--space-10)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        background: 'var(--color-bg-surface)',
+        textAlign: 'center',
+      }}>
+        <div style={{
+          width: 48, height: 48,
+          borderRadius: 'var(--radius-full)',
+          background: 'var(--color-success-subtle)',
+          border: '1px solid var(--color-success-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto var(--space-4)',
+        }}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M6 10l3 3 5-6" stroke="var(--color-success)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <div style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-md)',
+          color: 'var(--color-text-primary)',
+          fontWeight: 500,
+          marginBottom: 'var(--space-2)',
+        }}>
+          Message sent
+        </div>
+        <p style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--color-text-muted)',
+          lineHeight: 'var(--leading-relaxed)',
+          margin: 0,
+        }}>
+          We&apos;ll get back to you within 24–48 hours depending on inquiry type. Check your email for a confirmation.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-6)' }}>Send a message</div>
-      {sent ? (
-        <div style={{ padding: 'var(--space-8)', background: 'var(--color-success-subtle)', border: '1px solid var(--color-success-border)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-success)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-3)' }}>Message sent</div>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', margin: 0 }}>We&apos;ll get back to you within one business day.</p>
-        </div>
-      ) : (
-        <form
-          onSubmit={(e) => { e.preventDefault(); setSent(true); }}
-          style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
-            <div>
-              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-2)' }}>Name</label>
-              <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name" style={inputStyle} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-2)' }}>Email</label>
-              <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@company.com" style={inputStyle} />
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-2)' }}>Subject</label>
-            <input required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} placeholder="What's this about?" style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: 'block', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-2)' }}>Message</label>
-            <textarea required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="Tell us more..." style={{ ...inputStyle, resize: 'vertical' as const }} />
-          </div>
-          <button
-            type="submit"
-            style={{ background: 'var(--color-signal)', color: 'var(--color-text-inverse)', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 24px', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', alignSelf: 'flex-start' as const, transition: 'background 0.15s ease' }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-signal-hover)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--color-signal)')}
-          >
-            Send message →
-          </button>
-        </form>
-      )}
-    </div>
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        padding: 'var(--space-8)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-lg)',
+        background: 'var(--color-bg-base)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--space-4)',
+      }}
+    >
+      <div className="mono-label" style={{ color: 'var(--color-text-faint)', fontSize: '10px', marginBottom: 'var(--space-1)' }}>
+        Send us a message
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+        <input
+          type="text"
+          placeholder="Your name"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+          style={inputStyle}
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          required
+          value={formData.email}
+          onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+          style={inputStyle}
+        />
+      </div>
+
+      <input
+        type="text"
+        placeholder="Company / organization (optional)"
+        value={formData.company}
+        onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
+        style={inputStyle}
+      />
+
+      <select
+        required
+        value={formData.inquiryType}
+        onChange={(e) => setFormData((prev) => ({ ...prev, inquiryType: e.target.value }))}
+        style={{
+          ...inputStyle,
+          appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%236b6b6b' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 14px center',
+          paddingRight: '36px',
+          color: formData.inquiryType ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+        }}
+      >
+        <option value="" disabled>What is this about?</option>
+        {inquiryTypes.map((t) => (
+          <option key={t.value} value={t.value}>{t.label}</option>
+        ))}
+      </select>
+
+      <textarea
+        placeholder="Your message"
+        required
+        rows={4}
+        value={formData.message}
+        onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
+        style={{
+          ...inputStyle,
+          resize: 'vertical',
+          minHeight: '100px',
+          fontFamily: 'var(--font-body)',
+        }}
+      />
+
+      <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start' }}>
+        Send message →
+      </button>
+    </form>
   );
 }

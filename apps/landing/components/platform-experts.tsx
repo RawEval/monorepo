@@ -48,14 +48,8 @@ export function PlatformExperts() {
           <div>
             {/* Platform Tag */}
             <span
+              className="platform-tag"
               style={{
-                display: 'inline-block',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                letterSpacing: 'var(--tracking-wide)',
-                textTransform: 'uppercase',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
                 background: 'var(--color-info-subtle)',
                 color: 'var(--color-info)',
                 marginBottom: 'var(--space-4)',
@@ -71,7 +65,7 @@ export function PlatformExperts() {
                 lineHeight: 'var(--leading-tight)',
                 letterSpacing: 'var(--tracking-tight)',
                 color: 'var(--color-text-primary)',
-                fontWeight: 'var(--weight-normal)' as unknown as number,
+                fontWeight: 400,
                 marginBottom: 'var(--space-4)',
               }}
             >
@@ -95,19 +89,8 @@ export function PlatformExperts() {
             </p>
 
             {/* URL Chip */}
-            <span
-              style={{
-                display: 'inline-block',
-                fontFamily: 'var(--font-mono)',
-                fontSize: '10px',
-                letterSpacing: 'var(--tracking-wide)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--color-bg-muted)',
-                color: 'var(--color-text-muted)',
-              }}
-            >
-              experts.raweval.com
+            <span className="url-chip">
+              work.raweval.com
             </span>
           </div>
 
@@ -126,7 +109,7 @@ export function PlatformExperts() {
                 <span
                   style={{
                     fontFamily: 'var(--font-mono)',
-                    fontSize: '10px',
+                    fontSize: 'var(--text-xs)',
                     color: 'var(--color-text-faint)',
                     width: '28px',
                     flexShrink: 0,
@@ -140,7 +123,7 @@ export function PlatformExperts() {
                     style={{
                       fontFamily: 'var(--font-body)',
                       fontSize: 'var(--text-base)',
-                      fontWeight: 'var(--weight-medium)' as unknown as number,
+                      fontWeight: 500,
                       color: 'var(--color-text-primary)',
                       marginBottom: 'var(--space-2)',
                     }}
@@ -159,14 +142,8 @@ export function PlatformExperts() {
                     {step.body}
                   </p>
                   <span
+                    className="platform-tag"
                     style={{
-                      display: 'inline-block',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '10px',
-                      letterSpacing: 'var(--tracking-wide)',
-                      textTransform: 'uppercase',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-sm)',
                       background: step.tagBg,
                       color: step.tagColor,
                     }}

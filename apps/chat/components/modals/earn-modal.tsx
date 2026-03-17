@@ -153,7 +153,7 @@ export function EarnModal({ open, onOpenChange }: EarnModalProps) {
                     QA Approved
                   </Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <Badge className="gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+                  <Badge className="gap-1 bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]">
                     <DollarSign className="h-3 w-3" />
                     Paid
                   </Badge>

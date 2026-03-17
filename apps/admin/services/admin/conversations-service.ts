@@ -727,19 +727,37 @@ export interface FailedConversationQcDetailModel {
   qc_judges?: QcJudgeOutput[];
   qc_fraud_signals?: QcFraudSignal[];
   qc_intent_objects?: QcIntentObject[] | null;
-  qc_rubric?: any;
+  qc_rubric?: {
+    criteria_count?: number | null;
+    criteria: QcRubricCriterion[];
+    process_score?: number | null;
+    fp_score?: number | null;
+    d_global?: number | null;
+    total_weight?: number | null;
+  } | null;
   qc_rubric_criteria?: QcRubricCriterion[];
   verdict_tables?: {
     failed_prompt: VerdictFailedPrompt | null;
     false_positive: VerdictFalsePositive | null;
     needs_human_review: VerdictNeedsHumanReview | null;
   } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   semantic_matches?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   holistic_evaluation?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  qc_holistic_evaluation?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  qc_semantic_matches?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   qc_status_history?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verdict_failed_prompt?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verdict_false_positive?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   verdict_needs_human_review?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   analysis_rubric?: any;
 }
 
@@ -770,6 +788,22 @@ export interface FailedConversationQcDetailShared {
   } | null;
   // Retaining some old fields for compatibility if needed
   workflow_name?: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  judge_evaluations?: any[];
+  judge_majority_verdict?: {
+    majority_verdict?: string | null;
+    judge_1_verdict?: string | null;
+    judge_2_verdict?: string | null;
+    judge_3_verdict?: string | null;
+    mean_failure_score?: number | null;
+    mean_defensibility_score?: number | null;
+    verdict_confidence?: number | null;
+    entropy_boosted?: boolean | null;
+  } | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  failure_attribution?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  semantic_entropy_results?: any[];
 }
 
 export interface FailedConversationQcDetailResponse {

@@ -2,58 +2,57 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware for authentication and tenant routing
- * 
- * This runs on every request before the page renders.
- * 
- * Use cases:
- * - Authentication checks
- * - Workspace/tenant routing ([workspaceSlug])
- * - Redirects based on auth state
- * - Setting headers
+ * Edge Middleware — Auth gate
+ *
+ * Checks for the access token cookie server-side BEFORE the page renders.
+ * This eliminates the flash of authenticated UI for unauthenticated users.
+ *
+ * We can only read cookies here (not verify JWTs, since that needs a secret).
+ * The client-side AuthGuard handles token validation/refresh as a fallback.
  */
 
-export function middleware(_request: NextRequest) {
-  // TODO: Implement actual authentication check
-  // const { pathname } = _request.nextUrl;
-  // Public routes that don't require authentication:
-  // const publicRoutes = ['/login', '/signup', '/forgot-password'];
-  // const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
-  // For now, allow all routes but you can add auth logic here:
-  // 
-  // const session = await getSession(request);
-  // const isAuthenticated = !!session;
-  //
-  // // Redirect unauthenticated users trying to access protected routes
-  // if (!isAuthenticated && !isPublicRoute) {
-  //   const loginUrl = new URL('/login', request.url);
-  //   loginUrl.searchParams.set('redirect', pathname);
-  //   return NextResponse.redirect(loginUrl);
-  // }
-  //
-  // // Redirect authenticated users away from auth pages
-  // if (isAuthenticated && isPublicRoute) {
-  //   return NextResponse.redirect(new URL('/chat', request.url));
-  // }
+const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password'];
 
-  // TODO: Implement workspace/tenant routing
-  // if (pathname.startsWith('/[workspaceSlug]')) {
-  //   const workspaceSlug = pathname.split('/')[1];
-  //   // Validate workspace access
-  // }
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Skip static files, API routes, and Next.js internals
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname === '/favicon.ico'
+  ) {
+    return NextResponse.next();
+  }
+
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  const token = request.cookies.get('raweval_access_token')?.value;
+
+  // Unauthenticated user trying to access a protected route → redirect to login
+  if (!token && !isPublicRoute) {
+    const loginUrl = new URL('/login', request.url);
+    // Preserve the intended destination so we can redirect back after login
+    if (pathname !== '/' && pathname !== '/chat') {
+      loginUrl.searchParams.set('redirect', pathname);
+    }
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Authenticated user on a public auth page → redirect to chat
+  if (token && isPublicRoute) {
+    return NextResponse.redirect(new URL('/chat', request.url));
+  }
 
   return NextResponse.next();
 }
 
-// Configure which routes this middleware runs on
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
+     * Match all request paths except:
+     * - api routes
+     * - _next/static, _next/image
+     * - favicon.ico
      */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],

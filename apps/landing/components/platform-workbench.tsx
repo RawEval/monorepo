@@ -38,14 +38,8 @@ export function PlatformWorkbench() {
       >
         {/* Platform Tag */}
         <span
+          className="platform-tag"
           style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: 'var(--tracking-wide)',
-            textTransform: 'uppercase',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-sm)',
             background: 'var(--color-success-subtle)',
             color: 'var(--color-success)',
             marginBottom: 'var(--space-4)',
@@ -61,7 +55,7 @@ export function PlatformWorkbench() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-primary)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-4)',
           }}
         >
@@ -85,19 +79,10 @@ export function PlatformWorkbench() {
         </p>
 
         <span
-          style={{
-            display: 'inline-block',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: 'var(--tracking-wide)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-full)',
-            background: 'var(--color-bg-muted)',
-            color: 'var(--color-text-muted)',
-            marginBottom: 'var(--space-8)',
-          }}
+          className="mono-label"
+          style={{ marginBottom: 'var(--space-8)' }}
         >
-          workbench.raweval.com
+          Workbench
         </span>
 
         {/* Feature List */}
@@ -115,7 +100,7 @@ export function PlatformWorkbench() {
                 padding: 'var(--space-6)',
               }}
             >
-              <h4 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 'var(--weight-medium)' as unknown as number, color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
+              <h4 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', fontWeight: 500, color: 'var(--color-text-primary)', marginBottom: 'var(--space-2)' }}>
                 {f.title}
               </h4>
               <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', lineHeight: 'var(--leading-relaxed)', color: 'var(--color-text-secondary)' }}>
@@ -140,7 +125,7 @@ export function PlatformWorkbench() {
             <span style={{ width: '8px', height: '8px', borderRadius: 'var(--radius-full)', background: '#e74c3c' }} />
             <span style={{ width: '8px', height: '8px', borderRadius: 'var(--radius-full)', background: '#f39c12' }} />
             <span style={{ width: '8px', height: '8px', borderRadius: 'var(--radius-full)', background: '#27ae60' }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-faint)', marginLeft: 'var(--space-2)' }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-faint)', marginLeft: 'var(--space-2)' }}>
               workbench.raweval.com — Expert #T1-047 · Geography Domain
             </span>
           </div>
@@ -154,7 +139,7 @@ export function PlatformWorkbench() {
                 marginBottom: 'var(--space-6)',
               }}
             >
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase', color: 'var(--color-signal)', display: 'block', marginBottom: 'var(--space-2)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', textTransform: 'uppercase', color: 'var(--color-signal)', display: 'block', marginBottom: 'var(--space-2)' }}>
                 Failed prompt · Flagged by user
               </span>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', lineHeight: 'var(--leading-relaxed)' }}>
@@ -172,7 +157,7 @@ export function PlatformWorkbench() {
                   <div style={{ flex: 2, height: '4px', background: 'var(--color-bg-muted)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${row.pct}%`, background: getBarColor(row.pct), borderRadius: 'var(--radius-full)', transition: 'width 0.3s ease' }} />
                   </div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-muted)', width: '50px', textAlign: 'right' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', width: '50px', textAlign: 'right' }}>
                     {row.score} / 10
                   </span>
                 </div>
@@ -196,7 +181,7 @@ export function PlatformWorkbench() {
             >
               <span style={{ color: 'var(--color-error)' }}>Before: 1.5/10</span>
               <span style={{ color: 'var(--color-text-faint)' }}>→</span>
-              <span style={{ fontWeight: 'var(--weight-medium)' as unknown as number, color: 'var(--color-success)' }}>After correction → 9.8/10</span>
+              <span style={{ fontWeight: 500, color: 'var(--color-success)' }}>After correction → 9.8/10</span>
               <span style={{ color: 'var(--color-text-faint)' }}>·</span>
               <span style={{ color: 'var(--color-success)' }}>+8.3 point improvement · sample approved for delivery</span>
             </div>

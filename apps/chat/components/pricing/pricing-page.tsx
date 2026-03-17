@@ -292,7 +292,7 @@ export function PricingPage() {
           <div
             className={`mb-8 rounded-xl border px-4 py-3 text-sm font-medium ${
               statusMsg.type === 'success'
-                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
+                ? 'border-[var(--color-success-border)] bg-[var(--color-success-subtle)] text-[var(--color-success)]'
                 : 'border-destructive/20 bg-destructive/10 text-destructive'
             }`}
           >
@@ -347,15 +347,15 @@ export function PricingPage() {
                       {plan.plan_name}
                       {/* Show Plan Type explicitly */}
                       {plan.plan_type === 'ultimate' ? (
-                        <span className="ml-2 inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-purple-700/10 ring-inset">
+                        <span className="ml-2 inline-flex items-center rounded-md bg-[var(--color-info-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-info)] ring-1 ring-[var(--color-info-border)] ring-inset">
                           All Access
                         </span>
                       ) : plan.plan_type === 'premium_model' ? (
-                        <span className="ml-2 inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-700/10 ring-inset">
+                        <span className="ml-2 inline-flex items-center rounded-md bg-[var(--color-success-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-success)] ring-1 ring-[var(--color-success-border)] ring-inset">
                           {plan.model_display_name || 'Premium Model'}
                         </span>
                       ) : plan.badge_text ? (
-                        <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
+                        <span className="ml-2 inline-flex items-center rounded-md bg-[var(--color-signal-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-signal)] ring-1 ring-[var(--color-signal-border)] ring-inset">
                           {plan.badge_text}
                         </span>
                       ) : null}

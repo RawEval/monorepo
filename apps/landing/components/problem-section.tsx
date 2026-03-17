@@ -33,35 +33,7 @@ export function ProblemSection() {
         }}
       >
         {/* Eyebrow */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          <span
-            style={{
-              display: 'block',
-              width: '20px',
-              height: '1px',
-              background: 'rgba(245, 242, 236, 0.35)',
-              flexShrink: 0,
-            }}
-          />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: 'var(--tracking-wider)',
-              textTransform: 'uppercase',
-              color: 'rgba(245, 242, 236, 0.35)',
-            }}
-          >
-            The Problem
-          </span>
-        </div>
+        <div className="eyebrow-inverse"><span className="eyebrow-text">The Problem</span></div>
 
         {/* H2 */}
         <h2
@@ -71,7 +43,7 @@ export function ProblemSection() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-inverse)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-4)',
           }}
         >
@@ -120,7 +92,7 @@ export function ProblemSection() {
               <span
                 style={{
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: 'var(--tracking-wider)',
                   textTransform: 'uppercase',
                   color: 'var(--color-text-inverse-faint)',
@@ -134,7 +106,7 @@ export function ProblemSection() {
                 style={{
                   fontFamily: 'var(--font-body)',
                   fontSize: 'var(--text-md)',
-                  fontWeight: 'var(--weight-medium)' as unknown as number,
+                  fontWeight: 500,
                   lineHeight: 'var(--leading-snug)',
                   color: 'var(--color-text-inverse)',
                 }}
@@ -161,7 +133,7 @@ export function ProblemSection() {
                   display: 'inline-block',
                   alignSelf: 'flex-start',
                   fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
+                  fontSize: 'var(--text-xs)',
                   letterSpacing: 'var(--tracking-wide)',
                   textTransform: 'uppercase',
                   padding: '4px 10px',

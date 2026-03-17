@@ -164,3 +164,5 @@ export * from './subscriptions-api';
 export * from './files-api';
 export * from './search-api';
 export * from './experts-api';
+export * from './qc-api';
+export * from './domains-api';

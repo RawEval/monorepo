@@ -1,38 +1,48 @@
 import type { Metadata } from 'next';
-import { Geist, JetBrains_Mono } from 'next/font/google';
+import { DM_Mono, Instrument_Serif } from 'next/font/google';
 import { Suspense } from 'react';
+import { Providers } from '@/lib/react-query/provider';
 import { StaffToolbar } from '../components/staff-toolbar';
 import './globals.css';
 
-const geist = Geist({
-  variable: '--font-geist-sans',
+const dmMono = DM_Mono({
+  variable: '--font-dm-mono',
   subsets: ['latin'],
+  weight: ['400', '500'],
+  display: 'swap',
 });
 
-const jetbrains = JetBrains_Mono({
-  variable: '--font-jetbrains',
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-instrument-serif',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'RawEval Experts | Secure Workbench',
+  title: 'RawEval Experts | Interview & Evaluation Platform',
   description:
-    'Secure expert workbench for AI evaluation and annotation. Earn $2-15 per prompt with biometric verification and real-time monitoring.',
+    'Expert interview and evaluation platform with real-time AI-driven assessments. Secure workbench for domain experts.',
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className={`${geist.variable} ${jetbrains.variable}`}>
-        {children}
-        <Suspense fallback={null}>
-          <StaffToolbar />
-        </Suspense>
+      <body
+        className={`${dmMono.variable} ${instrumentSerif.variable} antialiased`}
+        style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}
+      >
+        <Providers>
+          {children}
+          <Suspense fallback={null}>
+            <StaffToolbar />
+          </Suspense>
+        </Providers>
       </body>
     </html>
   );

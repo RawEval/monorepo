@@ -22,12 +22,12 @@ const formats = [
 
 export default function DeliveryPage() {
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'calc(56px + var(--space-12))' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'var(--space-12)' }}>
 
       <div style={{ borderBottom: '1px solid var(--color-border)' }}>
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: '0 var(--section-x)', display: 'flex', gap: 'var(--space-1)', overflowX: 'auto' as const }}>
           {howItWorksNav.map((n) => (
-            <Link key={n.href} href={n.href} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: 'var(--tracking-wide)', padding: '12px 16px', textDecoration: 'none', color: n.href === '/how-it-works/delivery' ? 'var(--color-signal)' : 'var(--color-text-muted)', borderBottom: n.href === '/how-it-works/delivery' ? '2px solid var(--color-signal)' : '2px solid transparent', whiteSpace: 'nowrap' as const }}>{n.label}</Link>
+            <Link key={n.href} href={n.href} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', letterSpacing: 'var(--tracking-wide)', padding: '12px 16px', textDecoration: 'none', color: n.href === '/how-it-works/delivery' ? 'var(--color-signal)' : 'var(--color-text-muted)', borderBottom: n.href === '/how-it-works/delivery' ? '2px solid var(--color-signal)' : '2px solid transparent', whiteSpace: 'nowrap' as const }}>{n.label}</Link>
           ))}
         </div>
       </div>
@@ -51,7 +51,7 @@ export default function DeliveryPage() {
               <div key={f.label} style={{ padding: 'var(--space-6)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', background: 'var(--color-bg-surface)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
                   <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 500, margin: 0 }}>{f.label}</h3>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', background: 'var(--color-signal-subtle)', border: '1px solid var(--color-signal-border)', padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>{f.tag}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', background: 'var(--color-signal-subtle)', border: '1px solid var(--color-signal-border)', padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>{f.tag}</span>
                 </div>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>{f.desc}</p>
               </div>
@@ -60,11 +60,11 @@ export default function DeliveryPage() {
         </div>
 
         {/* Delivery methods */}
-        <div style={{ padding: 'var(--space-6)', background: 'var(--color-bg-inverse)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-12)' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-inverse-muted)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>Delivery methods</div>
+        <div style={{ padding: 'var(--space-6)', background: 'var(--color-bg-surface)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-12)' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wider)', textTransform: 'uppercase', marginBottom: 'var(--space-4)' }}>Delivery methods</div>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 'var(--space-3)' }}>
             {['REST API', 'Webhook push', 'S3 / GCS export', 'Hugging Face dataset', 'CSV / JSONL download'].map((m) => (
-              <span key={m} style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-text-inverse-muted)', letterSpacing: 'var(--tracking-wide)', padding: '5px 12px', border: '1px solid var(--color-border-inverse)', borderRadius: 'var(--radius-full)' }}>{m}</span>
+              <span key={m} style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', padding: '5px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-full)' }}>{m}</span>
             ))}
           </div>
         </div>
@@ -75,6 +75,6 @@ export default function DeliveryPage() {
         </div>
       </div>
 
-    </main>
+    </div>
   );
 }

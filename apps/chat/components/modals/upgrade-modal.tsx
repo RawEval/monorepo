@@ -223,7 +223,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
           <div
             className={`mb-6 rounded-xl border px-4 py-3 text-sm font-medium ${
               statusMsg.type === 'success'
-                ? 'border-green-500/20 bg-green-500/10 text-green-700 dark:text-green-400'
+                ? 'border-[var(--color-success-border)] bg-[var(--color-success-subtle)] text-[var(--color-success)]'
                 : 'border-destructive/20 bg-destructive/10 text-destructive'
             }`}
           >
@@ -276,7 +276,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
                       <CardTitle className="text-2xl font-bold">
                         {plan.plan_name}
                         {plan.badge_text && (
-                          <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-700/10 ring-inset">
+                          <span className="ml-2 inline-flex items-center rounded-md bg-[var(--color-signal-subtle)] px-2 py-1 text-xs font-medium text-[var(--color-signal)] ring-1 ring-[var(--color-signal-border)] ring-inset">
                             {plan.badge_text}
                           </span>
                         )}

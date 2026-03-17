@@ -17,27 +17,7 @@ export function PipelineHeader() {
         }}
       >
         {/* Eyebrow */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            marginBottom: 'var(--space-4)',
-          }}
-        >
-          <span style={{ display: 'block', width: '20px', height: '1px', background: 'var(--color-signal)', flexShrink: 0 }} />
-          <span
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '10px',
-              letterSpacing: 'var(--tracking-wider)',
-              textTransform: 'uppercase',
-              color: 'var(--color-signal)',
-            }}
-          >
-            The Full Pipeline
-          </span>
-        </div>
+        <div className="eyebrow"><span className="eyebrow-text">The Full Pipeline</span></div>
 
         <h2
           style={{
@@ -46,7 +26,7 @@ export function PipelineHeader() {
             lineHeight: 'var(--leading-tight)',
             letterSpacing: 'var(--tracking-tight)',
             color: 'var(--color-text-primary)',
-            fontWeight: 'var(--weight-normal)' as unknown as number,
+            fontWeight: 400,
             marginBottom: 'var(--space-4)',
           }}
         >

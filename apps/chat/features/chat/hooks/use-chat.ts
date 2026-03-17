@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { chatService } from '@/services/chat-service';
 import { chatKeys } from '@/lib/react-query/query-keys';
 import { useRouter } from 'next/navigation';
+import type { MarkMessageFailedRequest } from '@raweval/types';
 
 export function useChat(pathId?: string) {
   const openUpgradeModal = useUiStore((s) => s.openUpgradeModal);
@@ -278,7 +279,7 @@ export function useChat(pathId?: string) {
   // Mark As Wrong — uses /api/v1/chat/sessions/{session_id}/messages/{message_id}/mark-failed
   // -------------------------------------------------------------------------
   const markAsWrong = useCallback(
-    async (messageId: string) => {
+    async (messageId: string, request?: MarkMessageFailedRequest) => {
       const messageIndex = messages.findIndex((m) => m.id === messageId);
       const message = messages[messageIndex];
 
@@ -295,19 +296,64 @@ export function useChat(pathId?: string) {
           );
         }
 
-        // The UI might use complex IDs like '123-0' if the backend ID wasn't directly mapped,
-        // but if `message.id` is the real numeric ID from the backend, we use it directly.
-        // We'll attempt to extract a numeric message ID.
-        let numericMessageId: number;
-        if (messageId.includes('-')) {
-          const parts = messageId.split('-');
-          numericMessageId = parseInt(parts[1] || '0', 10);
-        } else {
-          numericMessageId = parseInt(messageId, 10);
+        // Extract a numeric message ID.
+        // IDs can be:
+        //   "456"           → backend numeric ID (use directly)
+        //   "333-2"         → fallback format backendSessionId-index (need to look up from session data)
+        //   "temp_123_abc"  → temp streaming ID (not yet confirmed by backend)
+        let numericMessageId: number | undefined;
+
+        // First try: parse the ID directly as a number
+        const directParse = parseInt(messageId, 10);
+        if (!isNaN(directParse) && String(directParse) === messageId) {
+          numericMessageId = directParse;
+        }
+
+        // Second try: if it's a fallback "sessionId-index" format, look up the real ID
+        // from the session data returned by React Query
+        if (numericMessageId === undefined && sessionData?.messages) {
+          // Find the message in backend data by matching content or index
+          const localMsg = messages[messageIndex];
+          if (localMsg) {
+            // Try to find by matching content in backend messages
+            const backendMsg = sessionData.messages.find(
+              (m: any) =>
+                m.role === 'assistant' &&
+                m.content &&
+                localMsg.content &&
+                m.content.slice(0, 100) === localMsg.content.slice(0, 100)
+            );
+            if (backendMsg?.id) {
+              numericMessageId = typeof backendMsg.id === 'number'
+                ? backendMsg.id
+                : parseInt(String(backendMsg.id), 10);
+            }
+          }
+        }
+
+        // Third try: for "sessionId-index" format, use the index to find the nth assistant message
+        if (numericMessageId === undefined && messageId.includes('-') && sessionData?.messages) {
+          const idx = parseInt(messageId.split('-')[1] || '', 10);
+          if (!isNaN(idx) && sessionData.messages[idx]?.id) {
+            numericMessageId = typeof sessionData.messages[idx].id === 'number'
+              ? sessionData.messages[idx].id
+              : parseInt(String(sessionData.messages[idx].id), 10);
+          }
+        }
+
+        if (!numericMessageId || isNaN(numericMessageId)) {
+          setError('Error: Could not resolve message ID. Please reload and try again.');
+          setTimeout(() => setError(null), 5000);
+          setMarkingWrong((prev) => {
+            const next = new Set(prev);
+            next.delete(messageId);
+            return next;
+          });
+          return;
         }
 
         markMessageFailedMutation.mutate(
-          { sessionId: backendSessionId, messageId: numericMessageId },
+          { sessionId: backendSessionId, messageId: numericMessageId, request },
           {
             onSuccess: () => {
               setError(
@@ -315,7 +361,7 @@ export function useChat(pathId?: string) {
               );
               setTimeout(() => setError(null), 6000);
             },
-            onError: (err: any) => {
+            onError: (err: unknown) => {
               const msg = isApiError(err)
                 ? err.message || 'Failed to mark message as wrong.'
                 : 'An unexpected error occurred. Please try again.';
@@ -331,7 +377,7 @@ export function useChat(pathId?: string) {
             },
           }
         );
-      } catch (err) {
+      } catch {
         // synchronous errors before mutation
         setMarkingWrong((prev) => {
           const next = new Set(prev);
@@ -340,7 +386,7 @@ export function useChat(pathId?: string) {
         });
       }
     },
-    [messages, backendSessionId, markingWrong]
+    [messages, backendSessionId, markingWrong, markMessageFailedMutation, sessionData]
   );
 
   const approveMessage = useCallback((_messageId: string) => {
