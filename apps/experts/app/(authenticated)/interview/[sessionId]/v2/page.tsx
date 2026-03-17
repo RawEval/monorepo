@@ -55,6 +55,8 @@ export default function InterviewV2Page({
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [showEvaluation, setShowEvaluation] = useState<string | null>(null);
+  const [manualAnswer, setManualAnswer] = useState('');
+  const [useTextInput, setUseTextInput] = useState(false);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -412,11 +414,74 @@ export default function InterviewV2Page({
     sendBargeIn();
   };
 
+  const handleRepeatQuestion = () => {
+    if (!currentQuestion) return;
+    // Re-speak the current question
+    lastSpokenQuestionRef.current = null; // Reset so it can be spoken again
+    speakText(currentQuestion.question_text);
+  };
+
   const handleForceSubmit = () => {
+    // If user typed a manual answer, use REST submission
+    if (useTextInput && manualAnswer.trim()) {
+      handleSubmitManualAnswer();
+      return;
+    }
     if (isConnected) {
       sendForceSubmit();
     } else {
       handleSubmitViaREST();
+    }
+  };
+
+  const handleSubmitManualAnswer = async () => {
+    if (!currentQuestion || isSubmittingAnswer || !manualAnswer.trim()) return;
+    setIsSubmittingAnswer(true);
+    try {
+      const { orchestratorService } = await import('@/services/orchestrator-service');
+      const v1SessionId = useInterviewStore.getState().sessionId;
+      if (!v1SessionId) throw new Error('No session ID');
+
+      const result = await orchestratorService.submitAnswer(v1SessionId, currentQuestion.transcript_id, manualAnswer.trim());
+
+      setTranscript((prev) => [
+        ...prev,
+        { id: crypto.randomUUID(), role: 'user', text: manualAnswer.trim(), timestamp: new Date() },
+      ]);
+      setManualAnswer('');
+
+      if (result.evaluation) {
+        setTranscript((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(), role: 'system',
+            text: `Score: ${result.evaluation.score}/100`,
+            timestamp: new Date(), evaluation: result.evaluation, score: result.evaluation.score,
+          },
+        ]);
+      }
+
+      if (result.next_question) {
+        const store = useInterviewStore.getState();
+        store.setCurrentQuestion(result.next_question);
+        if (result.progress) store.updateProgress(result.progress);
+        setTranscript((prev) => [
+          ...prev,
+          { id: crypto.randomUUID(), role: 'interviewer', text: result.next_question!.question_text, timestamp: new Date() },
+        ]);
+        if (interviewStartedRef.current) {
+          lastSpokenQuestionRef.current = result.next_question.question_id;
+          setTimeout(() => speakText(result.next_question!.question_text), 300);
+        }
+      } else {
+        useInterviewStore.getState().setPhase('complete');
+      }
+
+      useInterviewStore.getState().clearTranscripts();
+    } catch (err) {
+      useInterviewStore.getState().setError(err instanceof Error ? err.message : 'Failed to submit');
+    } finally {
+      setIsSubmittingAnswer(false);
     }
   };
 
@@ -487,7 +552,7 @@ export default function InterviewV2Page({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  const hasTranscript = finalTranscript.trim().length > 0 || interimTranscript.trim().length > 0;
+  const hasTranscript = finalTranscript.trim().length > 0 || interimTranscript.trim().length > 0 || manualAnswer.trim().length > 0;
   const questionsAnswered = progress?.questions_answered ?? 0;
   const totalPlanned = progress?.total_planned ?? 0;
   const canComplete = questionsAnswered >= Math.max(3, Math.floor(totalPlanned * 0.6));
@@ -593,15 +658,52 @@ export default function InterviewV2Page({
             )}
           </div>
 
+          {/* Text input area (for typing answers) */}
+          {useTextInput && interviewStarted && (
+            <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
+              <textarea
+                value={manualAnswer}
+                onChange={(e) => setManualAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && manualAnswer.trim()) {
+                    e.preventDefault();
+                    handleForceSubmit();
+                  }
+                }}
+                style={{
+                  width: '100%', minHeight: 80, maxHeight: 140, resize: 'vertical',
+                  background: 'rgba(245,242,236,0.06)', border: '1px solid var(--color-border-inverse)',
+                  borderRadius: 'var(--radius-md)', padding: '12px 14px',
+                  fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)',
+                  color: 'var(--color-text-inverse)', lineHeight: 'var(--leading-normal)',
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--color-text-inverse-faint)' }}>
+                  {manualAnswer.length} chars &middot; Ctrl+Enter to submit
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Controls */}
           <div style={S.controlsBar}>
             <Button variant={isMicOn ? 'default' : 'destructive'} size="sm" onClick={handleToggleMic} className="iv2-control-btn">{isMicOn ? 'Mic On' : 'Mic Off'}</Button>
             <Button variant={isCameraOn ? 'default' : 'destructive'} size="sm" onClick={handleToggleCamera} className="iv2-control-btn">{isCameraOn ? 'Cam On' : 'Cam Off'}</Button>
-            <Button variant="outline" size="sm" onClick={handleBargeIn} disabled={phase !== 'ai_speaking'} className="iv2-control-btn">Interrupt</Button>
-            <Button variant="default" size="sm" onClick={handleForceSubmit} disabled={!hasTranscript || isSubmittingAnswer} className="iv2-control-btn iv2-submit-btn">
+            <Button variant="outline" size="sm" onClick={handleRepeatQuestion} disabled={!currentQuestion || phase === 'ai_speaking'} className="iv2-control-btn">Repeat</Button>
+            <Button variant="outline" size="sm" onClick={handleBargeIn} disabled={phase !== 'ai_speaking'} className="iv2-control-btn">Skip Speech</Button>
+            <Button variant="outline" size="sm" onClick={() => setUseTextInput(!useTextInput)} className="iv2-control-btn" style={useTextInput ? { borderColor: 'var(--color-info)', color: 'var(--color-info)' } : {}}>
+              {useTextInput ? 'Voice Mode' : 'Type Answer'}
+            </Button>
+            <Button
+              variant="default" size="sm" onClick={handleForceSubmit}
+              disabled={useTextInput ? !manualAnswer.trim() || isSubmittingAnswer : !hasTranscript || isSubmittingAnswer}
+              className="iv2-control-btn iv2-submit-btn"
+            >
               {isSubmittingAnswer ? 'Submitting...' : 'Submit Answer'}
             </Button>
-            {canComplete && <Button variant="outline" size="sm" onClick={handleComplete} className="iv2-control-btn iv2-complete-btn">Complete Interview</Button>}
+            {canComplete && <Button variant="outline" size="sm" onClick={handleComplete} className="iv2-control-btn iv2-complete-btn">End Interview</Button>}
           </div>
         </div>
 

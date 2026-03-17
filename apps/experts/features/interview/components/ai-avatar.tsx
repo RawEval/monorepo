@@ -10,440 +10,199 @@ interface AIAvatarProps {
   className?: string;
 }
 
+/**
+ * Professional AI interviewer avatar.
+ * Head-and-shoulders silhouette with animated speaking indicators.
+ */
 export function AIAvatar({ phase, isSpeaking, className }: AIAvatarProps) {
   const stateClass = useMemo(() => {
     switch (phase) {
-      case 'ai_speaking':
-        return 'ai-avatar--speaking';
+      case 'ai_speaking': return 'ava--speaking';
       case 'listening':
-      case 'user_speaking':
-        return 'ai-avatar--listening';
+      case 'user_speaking': return 'ava--listening';
       case 'processing':
       case 'evaluating':
-      case 'countdown':
-        return 'ai-avatar--processing';
-      case 'complete':
-        return 'ai-avatar--complete';
-      default:
-        return 'ai-avatar--idle';
+      case 'countdown': return 'ava--processing';
+      case 'complete': return 'ava--complete';
+      default: return 'ava--idle';
     }
   }, [phase]);
 
   const phaseLabel = useMemo(() => {
     switch (phase) {
-      case 'ai_speaking':
-        return 'Speaking';
-      case 'listening':
-        return 'Listening';
-      case 'user_speaking':
-        return 'Listening';
-      case 'processing':
-        return 'Processing';
-      case 'evaluating':
-        return 'Evaluating';
-      case 'countdown':
-        return 'Submitting soon';
-      case 'complete':
-        return 'Complete';
-      case 'connected':
-        return 'Ready';
-      default:
-        return 'Waiting';
+      case 'ai_speaking': return 'Speaking';
+      case 'listening': return 'Listening';
+      case 'user_speaking': return 'Listening to you';
+      case 'processing': return 'Processing';
+      case 'evaluating': return 'Evaluating';
+      case 'countdown': return 'Auto-submitting';
+      case 'complete': return 'Interview Complete';
+      case 'connected': return 'Ready';
+      default: return 'Connecting';
     }
   }, [phase]);
 
   return (
-    <div className={cn('ai-avatar-root', className)}>
-      <style>{avatarStyles}</style>
-      <div className={cn('ai-avatar-container', stateClass)}>
-        {/* Outer pulse rings */}
-        <div className="ai-avatar-ring ai-avatar-ring--outer" />
-        <div className="ai-avatar-ring ai-avatar-ring--middle" />
-        <div className="ai-avatar-ring ai-avatar-ring--inner" />
+    <div className={cn('ava-root', className)}>
+      <style>{css}</style>
 
-        {/* Waveform bars (visible during speaking) */}
-        <div className="ai-avatar-waveform">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="ai-avatar-waveform-bar"
-              style={{ animationDelay: `${i * 0.12}s` }}
-            />
+      <div className={cn('ava-container', stateClass)}>
+        {/* Ambient rings */}
+        <div className="ava-ring ava-ring--1" />
+        <div className="ava-ring ava-ring--2" />
+
+        {/* Soundwave bars (speaking) */}
+        <div className="ava-wave">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <div key={i} className="ava-wave-bar" style={{ animationDelay: `${i * 0.08}s` }} />
           ))}
         </div>
 
-        {/* Core avatar shape */}
-        <svg
-          viewBox="0 0 200 200"
-          className="ai-avatar-svg"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+        {/* Avatar illustration */}
+        <svg viewBox="0 0 240 240" className="ava-svg" xmlns="http://www.w3.org/2000/svg">
           {/* Background circle */}
-          <circle
-            cx="100"
-            cy="100"
-            r="80"
-            className="ai-avatar-bg-circle"
+          <circle cx="120" cy="120" r="110" className="ava-bg" />
+
+          {/* Shoulders */}
+          <path
+            d="M40 210 C40 175 75 155 120 155 C165 155 200 175 200 210"
+            className="ava-body"
           />
 
-          {/* Head shape - geometric octagon-ish */}
+          {/* Neck */}
+          <rect x="105" y="140" width="30" height="22" rx="6" className="ava-body" />
+
+          {/* Head */}
+          <ellipse cx="120" cy="105" rx="42" ry="50" className="ava-head" />
+
+          {/* Hair / top styling */}
           <path
-            d="M100 30 L140 50 L155 90 L150 130 L130 155 L100 165 L70 155 L50 130 L45 90 L60 50 Z"
-            className="ai-avatar-head"
+            d="M78 95 Q78 58 120 55 Q162 58 162 95"
+            className="ava-hair"
           />
 
           {/* Left eye */}
-          <ellipse
-            cx="78"
-            cy="88"
-            rx="8"
-            ry={isSpeaking || phase === 'ai_speaking' ? '9' : '8'}
-            className="ai-avatar-eye"
-          />
+          <g className="ava-eye-group">
+            <ellipse cx="104" cy="105" rx="5" ry={isSpeaking ? '5.5' : '5'} className="ava-eye" />
+            <ellipse cx="105" cy="103.5" rx="2" ry="2" className="ava-eye-light" />
+          </g>
 
           {/* Right eye */}
-          <ellipse
-            cx="122"
-            cy="88"
-            rx="8"
-            ry={isSpeaking || phase === 'ai_speaking' ? '9' : '8'}
-            className="ai-avatar-eye"
-          />
+          <g className="ava-eye-group">
+            <ellipse cx="136" cy="105" rx="5" ry={isSpeaking ? '5.5' : '5'} className="ava-eye" />
+            <ellipse cx="137" cy="103.5" rx="2" ry="2" className="ava-eye-light" />
+          </g>
 
-          {/* Mouth - morphs based on state */}
+          {/* Eyebrows */}
+          <path d="M95 93 Q104 89 113 92" className="ava-brow" />
+          <path d="M127 92 Q136 89 145 93" className="ava-brow" />
+
+          {/* Nose hint */}
+          <path d="M118 112 L120 118 L122 112" className="ava-nose" />
+
+          {/* Mouth */}
           {phase === 'ai_speaking' ? (
-            <ellipse
-              cx="100"
-              cy="125"
-              rx="12"
-              ry="8"
-              className="ai-avatar-mouth ai-avatar-mouth--speaking"
-            />
+            <ellipse cx="120" cy="128" rx="10" ry="6" className="ava-mouth ava-mouth--open" />
+          ) : phase === 'complete' ? (
+            <path d="M108 125 Q120 135 132 125" className="ava-mouth ava-mouth--smile" />
           ) : (
-            <path
-              d="M85 122 Q100 132 115 122"
-              className="ai-avatar-mouth ai-avatar-mouth--closed"
-            />
+            <path d="M110 128 Q120 132 130 128" className="ava-mouth ava-mouth--rest" />
           )}
 
-          {/* Processing spinner overlay */}
+          {/* Glasses / professional detail */}
+          <circle cx="104" cy="105" r="12" className="ava-glasses" />
+          <circle cx="136" cy="105" r="12" className="ava-glasses" />
+          <line x1="116" y1="105" x2="124" y2="105" className="ava-glasses-bridge" />
+
+          {/* Processing spinner */}
           {(phase === 'processing' || phase === 'evaluating') && (
-            <circle
-              cx="100"
-              cy="100"
-              r="75"
-              className="ai-avatar-spinner"
-            />
+            <circle cx="120" cy="120" r="105" className="ava-spinner" />
           )}
         </svg>
 
-        {/* Glow effect */}
-        <div className="ai-avatar-glow" />
+        {/* Glow */}
+        <div className="ava-glow" />
       </div>
 
-      {/* Phase label */}
-      <div className="ai-avatar-label">
-        <span className="ai-avatar-label-dot" />
+      {/* Label */}
+      <div className="ava-label">
+        <span className="ava-label-dot" />
         {phaseLabel}
       </div>
     </div>
   );
 }
 
-const avatarStyles = `
-  .ai-avatar-root {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    width: 100%;
-  }
+const css = `
+  .ava-root { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); width: 100%; }
+  .ava-container { position: relative; width: min(260px, 100%); aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
 
-  .ai-avatar-container {
-    position: relative;
-    width: min(280px, 100%);
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  /* Rings */
+  .ava-ring { position: absolute; border-radius: 50%; border: 1.5px solid transparent; pointer-events: none; transition: all 0.6s ease; }
+  .ava-ring--1 { inset: 0; border-color: rgba(212,68,12,0.06); }
+  .ava-ring--2 { inset: 8%; border-color: rgba(212,68,12,0.08); }
+  .ava--speaking .ava-ring--1 { border-color: var(--color-signal); opacity: 0.35; animation: avaRing 1.8s ease-in-out infinite; }
+  .ava--speaking .ava-ring--2 { border-color: var(--color-signal); opacity: 0.5; animation: avaRing 1.8s ease-in-out 0.3s infinite; }
+  .ava--listening .ava-ring--2 { border-color: var(--color-success); opacity: 0.25; animation: avaBreathe 3s ease-in-out infinite; }
+  .ava--processing .ava-ring--2 { border-color: transparent; border-top-color: var(--color-signal); border-right-color: var(--color-signal); opacity: 0.6; animation: avaSpin 1s linear infinite; }
+  .ava--complete .ava-ring--2 { border-color: var(--color-success); opacity: 0.4; }
 
-  /* ---- Rings ---- */
-  .ai-avatar-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 1.5px solid transparent;
-    pointer-events: none;
-    transition: all 0.6s ease;
-  }
+  /* SVG */
+  .ava-svg { width: 60%; height: 60%; z-index: 2; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.25)); }
+  .ava-bg { fill: #1a1a1a; stroke: rgba(245,242,236,0.06); stroke-width: 1; }
+  .ava--complete .ava-bg { fill: #1a3a2a; }
+  .ava-body { fill: rgba(212,68,12,0.15); stroke: rgba(212,68,12,0.25); stroke-width: 1; }
+  .ava--speaking .ava-body { fill: rgba(212,68,12,0.25); stroke: rgba(212,68,12,0.4); }
+  .ava--complete .ava-body { fill: rgba(45,122,78,0.2); stroke: rgba(45,122,78,0.3); }
+  .ava-head { fill: rgba(245,242,236,0.12); stroke: rgba(245,242,236,0.2); stroke-width: 1; transition: all 0.3s; }
+  .ava--speaking .ava-head { fill: rgba(245,242,236,0.16); stroke: rgba(212,68,12,0.3); }
+  .ava-hair { fill: none; stroke: rgba(245,242,236,0.15); stroke-width: 3; stroke-linecap: round; }
+  .ava-eye { fill: var(--color-text-inverse); transition: all 0.2s; }
+  .ava--speaking .ava-eye { fill: var(--color-signal-light); }
+  .ava-eye-light { fill: rgba(255,255,255,0.4); }
+  .ava-eye-group { animation: avaBlink 4s ease-in-out infinite; }
+  .ava--speaking .ava-eye-group { animation: avaBlink 3s ease-in-out infinite; }
+  .ava-brow { fill: none; stroke: rgba(245,242,236,0.25); stroke-width: 1.5; stroke-linecap: round; }
+  .ava-nose { fill: none; stroke: rgba(245,242,236,0.1); stroke-width: 1; stroke-linecap: round; }
+  .ava-glasses { fill: none; stroke: rgba(245,242,236,0.18); stroke-width: 1.2; }
+  .ava--speaking .ava-glasses { stroke: rgba(212,68,12,0.3); }
+  .ava-glasses-bridge { stroke: rgba(245,242,236,0.15); stroke-width: 1.2; }
+  .ava-mouth--open { fill: var(--color-signal); animation: avaMouth 0.35s ease-in-out infinite alternate; }
+  .ava-mouth--rest { fill: none; stroke: rgba(245,242,236,0.3); stroke-width: 1.5; stroke-linecap: round; }
+  .ava-mouth--smile { fill: none; stroke: var(--color-success); stroke-width: 2; stroke-linecap: round; }
+  .ava-spinner { fill: none; stroke: var(--color-signal); stroke-width: 2; stroke-dasharray: 200 460; stroke-linecap: round; animation: avaSpin 1.2s linear infinite; transform-origin: center; }
 
-  .ai-avatar-ring--outer {
-    inset: 0;
-    border-color: rgba(212, 68, 12, 0.06);
-  }
-  .ai-avatar-ring--middle {
-    inset: 12%;
-    border-color: rgba(212, 68, 12, 0.08);
-  }
-  .ai-avatar-ring--inner {
-    inset: 22%;
-    border-color: rgba(212, 68, 12, 0.1);
-  }
+  /* Soundwave */
+  .ava-wave { position: absolute; bottom: 14%; left: 50%; transform: translateX(-50%); display: flex; gap: 3px; align-items: flex-end; height: 36px; z-index: 3; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+  .ava--speaking .ava-wave { opacity: 1; }
+  .ava-wave-bar { width: 3px; background: var(--color-signal); border-radius: 2px; height: 6px; animation: avaWave 0.5s ease-in-out infinite alternate; }
 
-  /* Speaking: animated rings */
-  .ai-avatar--speaking .ai-avatar-ring--outer {
-    border-color: var(--color-signal);
-    opacity: 0.4;
-    animation: avatarPulseOuter 1.5s ease-in-out infinite;
-  }
-  .ai-avatar--speaking .ai-avatar-ring--middle {
-    border-color: var(--color-signal);
-    opacity: 0.5;
-    animation: avatarPulseMiddle 1.5s ease-in-out 0.2s infinite;
-  }
-  .ai-avatar--speaking .ai-avatar-ring--inner {
-    border-color: var(--color-signal);
-    opacity: 0.6;
-    animation: avatarPulseInner 1.5s ease-in-out 0.4s infinite;
-  }
+  /* Glow */
+  .ava-glow { position: absolute; inset: 20%; border-radius: 50%; background: radial-gradient(circle, rgba(212,68,12,0.08) 0%, transparent 70%); z-index: 0; opacity: 0; transition: opacity 0.5s; }
+  .ava--speaking .ava-glow { opacity: 1; animation: avaGlow 2s ease-in-out infinite; }
+  .ava--complete .ava-glow { background: radial-gradient(circle, rgba(45,122,78,0.1) 0%, transparent 70%); opacity: 0.7; }
 
-  /* Listening: subtle rings */
-  .ai-avatar--listening .ai-avatar-ring--inner {
-    border-color: var(--color-success);
-    opacity: 0.3;
-    animation: avatarBreathe 3s ease-in-out infinite;
-  }
+  /* Label */
+  .ava-label { display: flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-text-inverse-muted); letter-spacing: var(--tracking-wide); text-transform: uppercase; }
+  .ava-label-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-inverse-faint); transition: all 0.3s; }
+  .ava--speaking .ava-label-dot { background: var(--color-signal); box-shadow: 0 0 8px rgba(212,68,12,0.5); animation: avaDotPulse 1s infinite; }
+  .ava--listening .ava-label-dot { background: var(--color-success); box-shadow: 0 0 6px rgba(45,122,78,0.4); }
+  .ava--processing .ava-label-dot { background: var(--color-signal); animation: avaDotPulse 0.6s infinite; }
+  .ava--complete .ava-label-dot { background: var(--color-success); }
 
-  /* Processing: spinning ring */
-  .ai-avatar--processing .ai-avatar-ring--middle {
-    border-color: transparent;
-    border-top-color: var(--color-signal);
-    border-right-color: var(--color-signal);
-    opacity: 0.7;
-    animation: avatarSpin 1s linear infinite;
-  }
+  /* Keyframes */
+  @keyframes avaRing { 0%,100% { transform: scale(1); opacity: 0.3; } 50% { transform: scale(1.04); opacity: 0.5; } }
+  @keyframes avaBreathe { 0%,100% { transform: scale(1); opacity: 0.2; } 50% { transform: scale(1.02); opacity: 0.3; } }
+  @keyframes avaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes avaBlink { 0%,92%,100% { transform: scaleY(1); } 96% { transform: scaleY(0.1); } }
+  @keyframes avaMouth { 0% { ry: 4; } 100% { ry: 8; } }
+  @keyframes avaWave { 0% { height: 5px; } 100% { height: 30px; } }
+  @keyframes avaGlow { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+  @keyframes avaDotPulse { 0%,100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-  /* Idle: breathing */
-  .ai-avatar--idle .ai-avatar-ring--inner {
-    border-color: rgba(212, 68, 12, 0.12);
-    animation: avatarBreathe 4s ease-in-out infinite;
-  }
-
-  /* Complete: all green */
-  .ai-avatar--complete .ai-avatar-ring--inner {
-    border-color: var(--color-success);
-    opacity: 0.5;
-  }
-
-  /* ---- SVG ---- */
-  .ai-avatar-svg {
-    width: 55%;
-    height: 55%;
-    z-index: 2;
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15));
-  }
-
-  .ai-avatar-bg-circle {
-    fill: var(--color-bg-inverse);
-    transition: fill 0.3s ease;
-  }
-
-  .ai-avatar--complete .ai-avatar-bg-circle {
-    fill: var(--color-success);
-  }
-
-  .ai-avatar-head {
-    fill: rgba(245, 242, 236, 0.08);
-    stroke: rgba(245, 242, 236, 0.2);
-    stroke-width: 1;
-    transition: all 0.3s ease;
-  }
-
-  .ai-avatar--speaking .ai-avatar-head {
-    fill: rgba(212, 68, 12, 0.12);
-    stroke: rgba(212, 68, 12, 0.35);
-  }
-
-  .ai-avatar-eye {
-    fill: var(--color-text-inverse);
-    transition: all 0.2s ease;
-  }
-
-  .ai-avatar--speaking .ai-avatar-eye {
-    fill: var(--color-signal-light);
-    animation: avatarBlink 3s ease-in-out infinite;
-  }
-
-  .ai-avatar--idle .ai-avatar-eye,
-  .ai-avatar--listening .ai-avatar-eye {
-    animation: avatarBlink 4.5s ease-in-out infinite;
-  }
-
-  /* Mouth */
-  .ai-avatar-mouth--speaking {
-    fill: var(--color-signal);
-    animation: avatarMouthSpeak 0.4s ease-in-out infinite alternate;
-  }
-
-  .ai-avatar-mouth--closed {
-    fill: none;
-    stroke: var(--color-text-inverse);
-    stroke-width: 2;
-    stroke-linecap: round;
-  }
-
-  .ai-avatar--complete .ai-avatar-mouth--closed {
-    stroke: #fff;
-  }
-
-  /* Spinner */
-  .ai-avatar-spinner {
-    fill: none;
-    stroke: var(--color-signal);
-    stroke-width: 2;
-    stroke-dasharray: 160 320;
-    stroke-linecap: round;
-    animation: avatarSpin 1.2s linear infinite;
-    transform-origin: center;
-  }
-
-  /* ---- Waveform ---- */
-  .ai-avatar-waveform {
-    position: absolute;
-    bottom: 18%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 4px;
-    align-items: flex-end;
-    height: 32px;
-    z-index: 3;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-  }
-
-  .ai-avatar--speaking .ai-avatar-waveform {
-    opacity: 1;
-  }
-
-  .ai-avatar-waveform-bar {
-    width: 3px;
-    background: var(--color-signal);
-    border-radius: 2px;
-    height: 8px;
-    animation: avatarWave 0.6s ease-in-out infinite alternate;
-  }
-
-  /* ---- Glow ---- */
-  .ai-avatar-glow {
-    position: absolute;
-    inset: 25%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(212, 68, 12, 0.06) 0%, transparent 70%);
-    z-index: 0;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-
-  .ai-avatar--speaking .ai-avatar-glow {
-    opacity: 1;
-    animation: avatarGlowPulse 2s ease-in-out infinite;
-  }
-
-  .ai-avatar--complete .ai-avatar-glow {
-    background: radial-gradient(circle, rgba(45, 122, 78, 0.1) 0%, transparent 70%);
-    opacity: 0.8;
-  }
-
-  /* ---- Label ---- */
-  .ai-avatar-label {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-muted);
-    letter-spacing: var(--tracking-wide);
-    text-transform: uppercase;
-  }
-
-  .ai-avatar-label-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--color-text-muted);
-    transition: background 0.3s ease;
-  }
-
-  .ai-avatar--speaking .ai-avatar-label-dot {
-    background: var(--color-signal);
-    box-shadow: 0 0 6px rgba(212, 68, 12, 0.4);
-    animation: avatarDotPulse 1s ease-in-out infinite;
-  }
-
-  .ai-avatar--listening .ai-avatar-label-dot {
-    background: var(--color-success);
-    box-shadow: 0 0 6px rgba(45, 122, 78, 0.4);
-  }
-
-  .ai-avatar--processing .ai-avatar-label-dot {
-    background: var(--color-signal);
-    animation: avatarDotPulse 0.8s ease-in-out infinite;
-  }
-
-  .ai-avatar--complete .ai-avatar-label-dot {
-    background: var(--color-success);
-  }
-
-  /* ---- Keyframes ---- */
-  @keyframes avatarPulseOuter {
-    0%, 100% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.05); opacity: 0.5; }
-  }
-
-  @keyframes avatarPulseMiddle {
-    0%, 100% { transform: scale(1); opacity: 0.4; }
-    50% { transform: scale(1.04); opacity: 0.6; }
-  }
-
-  @keyframes avatarPulseInner {
-    0%, 100% { transform: scale(1); opacity: 0.5; }
-    50% { transform: scale(1.03); opacity: 0.7; }
-  }
-
-  @keyframes avatarBreathe {
-    0%, 100% { transform: scale(1); opacity: 0.2; }
-    50% { transform: scale(1.02); opacity: 0.35; }
-  }
-
-  @keyframes avatarSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  @keyframes avatarBlink {
-    0%, 90%, 100% { transform: scaleY(1); }
-    95% { transform: scaleY(0.1); }
-  }
-
-  @keyframes avatarMouthSpeak {
-    0% { ry: 5; }
-    100% { ry: 10; }
-  }
-
-  @keyframes avatarWave {
-    0% { height: 6px; }
-    100% { height: 28px; }
-  }
-
-  @keyframes avatarGlowPulse {
-    0%, 100% { opacity: 0.6; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.05); }
-  }
-
-  @keyframes avatarDotPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .ava-ring, .ava-wave-bar, .ava-glow, .ava-eye-group, .ava-mouth--open, .ava-label-dot, .ava-spinner {
+      animation: none !important;
+    }
   }
 `;
