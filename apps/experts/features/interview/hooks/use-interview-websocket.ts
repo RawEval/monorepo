@@ -20,8 +20,12 @@ interface UseInterviewWebSocketReturn {
   sendMessage: (message: WSClientMessage) => void;
   sendAudioChunk: (data: string, energy?: number) => void;
   sendVideoFrame: (data: string) => void;
-  sendBargeIn: (speechDurationMs?: number) => void;
+  sendBargeIn: (energy: number, ttsProgress: number, speechDurationMs: number) => void;
   sendForceSubmit: () => void;
+  sendTtsComplete: () => void;
+  sendAvatarReady: (voiceId?: string) => void;
+  sendStart: () => void;
+  sendTabVisibility: (hidden: boolean) => void;
   disconnect: () => void;
 }
 
@@ -134,6 +138,13 @@ export function useInterviewWebSocket({
         }
         break;
       }
+
+      case 'tts_start':
+      case 'tts_audio':
+      case 'tts_end':
+      case 'avatar_ready_ack':
+        // Forwarded to page handler via onMessage — no store update needed
+        break;
 
       case 'barge_in_ack':
       case 'cancel_tts':
@@ -283,12 +294,39 @@ export function useInterviewWebSocket({
   );
 
   const sendBargeIn = useCallback(
-    (speechDurationMs?: number) => sendMessage({ type: 'barge_in', speech_duration_ms: speechDurationMs }),
+    (energy: number, ttsProgress: number, speechDurationMs: number) =>
+      sendMessage({ type: 'barge_in', energy, tts_progress: ttsProgress, speech_duration_ms: speechDurationMs }),
     [sendMessage],
   );
 
   const sendForceSubmit = useCallback(
     () => sendMessage({ type: 'force_submit' }),
+    [sendMessage],
+  );
+
+  const sendTtsComplete = useCallback(
+    () => sendMessage({ type: 'tts_complete' }),
+    [sendMessage],
+  );
+
+  const sendAvatarReady = useCallback(
+    (voiceId?: string) => {
+      const msg: Record<string, unknown> = { type: 'avatar_ready' };
+      if (voiceId) msg.voice_id = voiceId;
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify(msg));
+      }
+    },
+    [],
+  );
+
+  const sendStart = useCallback(
+    () => sendMessage({ type: 'start' }),
+    [sendMessage],
+  );
+
+  const sendTabVisibility = useCallback(
+    (hidden: boolean) => sendMessage({ type: 'tab_visibility', hidden }),
     [sendMessage],
   );
 
@@ -311,6 +349,10 @@ export function useInterviewWebSocket({
     sendVideoFrame,
     sendBargeIn,
     sendForceSubmit,
+    sendTtsComplete,
+    sendAvatarReady,
+    sendStart,
+    sendTabVisibility,
     disconnect,
   };
 }

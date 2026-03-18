@@ -6,7 +6,7 @@ export default function ExpertsPortalEntry() {
     <div style={{ minHeight: '100vh', background: 'var(--color-bg-inverse)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'var(--section-x)' }}>
       <div style={{ textAlign: 'center', maxWidth: 480 }}>
         <div style={{ marginBottom: 'var(--space-8)' }}>
-          <Image src="/logo.png" alt="RawEval" width={120} height={35} style={{ objectFit: 'contain', margin: '0 auto', filter: 'brightness(0) invert(1)' }} />
+          <Image src="/logo.png" alt="RawEval" width={120} height={35} style={{ objectFit: 'contain', margin: '0 auto', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
         </div>
         <div className="mono-label" style={{ color: 'var(--color-signal-light)', marginBottom: 'var(--space-5)' }}>Expert Portal</div>
         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-3xl)', color: 'var(--color-text-inverse)', lineHeight: 'var(--leading-tight)', fontWeight: 400, margin: '0 0 var(--space-5)' }}>

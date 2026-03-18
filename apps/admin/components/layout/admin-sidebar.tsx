@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@raweval/utils';
 import {
@@ -92,12 +93,18 @@ export function AdminSidebar() {
     >
       <div className="border-border flex h-16 items-center border-b px-4">
         <Link href="/" className="flex items-center gap-2 overflow-hidden">
-          <div className="bg-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-            <span className="text-primary-foreground text-lg font-bold">R</span>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="RawEval"
+            width={sidebarOpen ? 96 : 32}
+            height={sidebarOpen ? 28 : 32}
+            className="shrink-0 object-contain"
+            style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }}
+            priority
+          />
           {sidebarOpen && (
-            <span className="text-foreground text-lg font-bold tracking-tight whitespace-nowrap">
-              RawEval <span className="text-primary">Admin</span>
+            <span className="text-muted-foreground text-xs font-medium whitespace-nowrap">
+              Admin
             </span>
           )}
         </Link>

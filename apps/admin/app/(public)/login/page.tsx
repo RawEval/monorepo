@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@raweval/ui/button';
 import {
   Card,
@@ -78,17 +79,22 @@ function LoginForm() {
       {/* Logo area */}
       <div
         className={`mb-8 flex flex-col items-center gap-3 ${mounted ? 'animate-fade-in' : 'opacity-0'}`}
+        style={{ transition: 'opacity 0.5s ease, transform 0.5s ease' }}
       >
-        <div className="bg-primary flex h-12 w-12 items-center justify-center rounded-xl">
-          <span className="text-primary-foreground text-lg font-bold">R</span>
-        </div>
+        <Image
+          src="/logo.png"
+          alt="RawEval"
+          width={128}
+          height={128}
+          style={{
+            objectFit: 'contain',
+            filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)',
+          }}
+        />
         <div className="flex items-center gap-2">
-          <span className="text-foreground text-xl font-semibold">
-            RawEval Admin
-          </span>
           <Badge variant="destructive" className="gap-1 text-xs">
             <Shield className="h-3 w-3" />
-            Internal
+            Admin
           </Badge>
         </div>
       </div>

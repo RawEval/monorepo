@@ -3,6 +3,7 @@
 import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@raweval/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@raweval/ui/card';
 import { ArrowRight, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -92,7 +93,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 px-4 py-8 sm:py-12">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-base)] px-4 py-8 sm:py-12">
       {/* Background pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -107,12 +108,7 @@ function LoginForm() {
           className={`mb-8 flex justify-center ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
         >
           <Link href="/" className="flex items-center gap-2">
-            <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-lg">
-              <span className="text-base font-bold text-white">R</span>
-            </div>
-            <span className="text-foreground text-xl font-semibold">
-              RawEval
-            </span>
+            <Image src="/logo.png" alt="RawEval" width={128} height={128} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
           </Link>
         </div>
 
@@ -242,7 +238,7 @@ function LoginForm() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="border-border absolute inset-0 flex items-center border-t" />
-              <div className="bg-card text-muted-foreground relative px-2 text-xs">
+              <div className="bg-card text-muted-foreground relative px-2 text-center text-xs">
                 OR
               </div>
             </div>

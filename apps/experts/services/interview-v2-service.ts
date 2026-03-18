@@ -12,6 +12,10 @@ import type {
   SubmitAnswerResponse,
   CompleteV2InterviewResponse,
   CheatEventsResponse,
+  V2StatusResponse,
+  V2TranscriptResponse,
+  AvatarPreset,
+  AvatarConfig,
 } from '@/features/interview/types';
 
 export class InterviewV2Service extends ApiService {
@@ -57,6 +61,34 @@ export class InterviewV2Service extends ApiService {
       risk_level: string;
       message: string;
     }>(`/v2/interview/${v2SessionId}/integrity`);
+    return this.handleResponse(response);
+  }
+
+  async getStatus(v2SessionId: number): Promise<V2StatusResponse> {
+    const response = await this.client.get<V2StatusResponse>(
+      `/v2/interview/${v2SessionId}/status`,
+    );
+    return this.handleResponse(response);
+  }
+
+  async getTranscript(v2SessionId: number): Promise<V2TranscriptResponse> {
+    const response = await this.client.get<V2TranscriptResponse>(
+      `/v2/interview/${v2SessionId}/transcript`,
+    );
+    return this.handleResponse(response);
+  }
+
+  async getAvatarPresets(): Promise<{ presets: AvatarPreset[] }> {
+    const response = await this.client.get<{ presets: AvatarPreset[] }>(
+      '/v2/interview/avatar/presets',
+    );
+    return this.handleResponse(response);
+  }
+
+  async getAvatarConfig(presetId: string): Promise<AvatarConfig> {
+    const response = await this.client.get<AvatarConfig>(
+      `/v2/interview/avatar/config?preset_id=${presetId}`,
+    );
     return this.handleResponse(response);
   }
 }

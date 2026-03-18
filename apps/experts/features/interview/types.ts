@@ -14,6 +14,7 @@ export interface StartInterviewRequest {
   difficulty?: 'easy' | 'medium' | 'hard' | 'expert';
   total_time_minutes?: number;
   min_questions?: number;
+  job_id?: number;
 }
 
 export interface PlanSummary {
@@ -198,6 +199,10 @@ export interface StartV2InterviewRequest extends StartInterviewRequest {
   noise_suppression?: boolean;
   cheat_detection?: boolean;
   mode?: 'video' | 'audio_only' | 'text_fallback';
+  avatar_enabled?: boolean;
+  avatar_preset?: string;
+  tts_provider?: 'elevenlabs' | 'openai';
+  job_id?: number;
 }
 
 export interface V2PipelineInfo {
@@ -219,6 +224,9 @@ export interface StartV2InterviewResponse {
   auto_submit_seconds: number | null;
   latency_ms: number;
   pipeline_info: V2PipelineInfo | null;
+  avatar_enabled?: boolean;
+  avatar_preset?: string;
+  tts_provider?: string;
 }
 
 export interface V2Grade {
@@ -283,8 +291,12 @@ export type WSClientMessageType =
   | 'tts_complete'
   | 'barge_in'
   | 'force_submit'
+  | 'avatar_ready'
+  | 'client_transcript'
+  | 'speech_activity'
   | 'tab_visibility'
-  | 'heartbeat';
+  | 'heartbeat'
+  | 'get_debug';
 
 export interface WSClientMessage {
   type: WSClientMessageType;
@@ -304,11 +316,16 @@ export type WSServerMessageType =
   | 'auto_submit_countdown'
   | 'barge_in_ack'
   | 'cancel_tts'
+  | 'tts_start'
+  | 'tts_audio'
+  | 'tts_end'
+  | 'avatar_ready_ack'
   | 'state_update'
   | 'speech_state'
   | 'cheating_alert'
   | 'detection_result'
   | 'heartbeat_ack'
+  | 'debug_update'
   | 'error';
 
 export interface WSServerMessage {
@@ -317,8 +334,11 @@ export interface WSServerMessage {
   speak?: boolean;
   question_number?: number;
   pipeline?: string;
+  tts_server?: boolean;
+  tts_fallback?: boolean;
   text?: string;
   is_final?: boolean;
+  is_last?: boolean;
   confidence?: number;
   start_time?: number;
   end_time?: number;
@@ -350,6 +370,18 @@ export interface WSServerMessage {
   silence_duration?: number;
   phase?: string;
   user_energy?: number;
+  // TTS fields
+  question_id?: string;
+  estimated_duration_ms?: number;
+  actual_duration_ms?: number;
+  chunk_index?: number;
+  cache_hit?: boolean;
+  fallback_to_client_tts?: boolean;
+  word_timestamps?: unknown;
+  // Avatar fields
+  tts_enabled?: boolean;
+  voice_id?: string;
+  error?: string;
 }
 
 // Expert/Onboarding types
@@ -466,6 +498,114 @@ export interface SessionListResponse {
 export interface CostEstimate {
   estimated_cost_usd: number;
   breakdown: Record<string, number>;
+}
+
+// Avatar types
+export interface AvatarPreset {
+  preset_id: string;
+  name: string;
+  description: string;
+  voice_name: string;
+  thumbnail_url: string;
+}
+
+export interface AvatarConfig {
+  preset_id: string;
+  name: string;
+  vrm_model_url: string;
+  voice_id: string;
+  voice_name: string;
+  lip_sync_config: {
+    morph_targets: string[];
+    smoothing: number;
+    frequency_bands: number;
+    amplitude_threshold: number;
+    update_rate_hz: number;
+  };
+  preload_assets: string[];
+}
+
+// V2 Status types
+export interface V2ConversationAnalytics {
+  barge_in_count: number;
+  repeat_request_count: number;
+  interruption_events: Array<{
+    type: string;
+    timestamp: number;
+    energy: number;
+    tts_progress: number;
+    content_heard_pct: number;
+    speech_duration_ms: number;
+    question_id: string;
+    count: number;
+  }>;
+}
+
+export interface V2TTSAnalytics {
+  tts_provider: string | null;
+  avatar_enabled: boolean;
+  avatar_preset: string | null;
+  tts_voice_id: string | null;
+  tts_total_duration_ms: number | null;
+  tts_total_chunks: number;
+  tts_cache_hit_count: number;
+  tts_failure_count: number;
+}
+
+export interface V2StatusResponse {
+  v2_session_id: number;
+  v1_session_id: number;
+  v2: {
+    transcript_segments: number;
+    current_question_id: string | null;
+    session_duration_seconds: number;
+    cheat_events: {
+      total: number;
+      critical: number;
+      by_type: Record<string, number>;
+    };
+    stt_stats: {
+      total_segments: number;
+      final_segments: number;
+    };
+    conversation_analytics: V2ConversationAnalytics | null;
+    tts_analytics: V2TTSAnalytics | null;
+  };
+}
+
+export interface V2TranscriptSegment {
+  id: number;
+  text: string;
+  start_time: number;
+  end_time: number;
+  confidence: number | null;
+  is_final: boolean;
+  speaker: 'AI' | 'User';
+  event_type: string | null;
+  question_id: string;
+  segment_index: number;
+}
+
+export interface V2TranscriptResponse {
+  v2_session_id: number;
+  total_segments: number;
+  segments: V2TranscriptSegment[];
+}
+
+// Session creation
+export interface CreateSessionRequest {
+  job_id?: number;
+  ai_avatar_interview?: boolean;
+  avatar_type?: string;
+  title?: string;
+}
+
+export interface CreateSessionResponse {
+  session_id: number;
+  user_id: number;
+  title: string;
+  status: string;
+  created_at: string;
 }
 
 // Interview phase states

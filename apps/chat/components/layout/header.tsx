@@ -109,6 +109,7 @@ export function Header() {
               src="/logo.png"
               alt="RawEval"
               className="h-6 w-auto shrink-0 object-contain sm:h-7"
+              style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }}
             />
             {/* Page title for non-chat pages */}
             {!isChatPage && pageTitle && (

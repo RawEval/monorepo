@@ -35,7 +35,7 @@ export function Footer() {
         <div className="flex flex-col gap-10 md:flex-row md:gap-16">
           <div style={{ minWidth: 200, maxWidth: 260 }}>
             <Link href="https://raweval.com" style={{ display: 'inline-flex', marginBottom: 'var(--space-4)' }}>
-              <Image src="/logo.png" alt="RawEval" width={90} height={26} style={{ objectFit: 'contain' }} />
+              <Image src="/logo.png" alt="RawEval" width={90} height={26} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
             </Link>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)' }}>
               Expert portal for AI evaluation infrastructure. Review and verify AI responses in your domain of expertise.

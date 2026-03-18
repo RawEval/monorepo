@@ -12,12 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@raweval/ui/select';
-import { Loader2, Play, Monitor, MessageSquareText, Briefcase, FileText, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, Play, Monitor, MessageSquareText, Briefcase, FileText, ArrowLeft, AlertTriangle, DollarSign, User2 } from 'lucide-react';
 import { apiClient } from '@raweval/api-client';
 import { orchestratorService } from '@/services/orchestrator-service';
+import { sessionService } from '@/services/session-service';
 import { interviewV2Service } from '@/services/interview-v2-service';
 import { useInterviewStore } from '@/stores/interview-store';
-import type { StartInterviewRequest, StartV2InterviewRequest } from '@/features/interview/types';
+import type { StartInterviewRequest, AvatarPreset } from '@/features/interview/types';
 
 type InterviewMode = 'text' | 'video';
 
@@ -44,7 +45,7 @@ function InterviewSetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdParam = searchParams.get('job_id');
-  const { setSession, setCurrentQuestion, updateProgress, setPhase, setWsUrl } = useInterviewStore();
+  const { setSession, setCurrentQuestion, updateProgress, setPhase } = useInterviewStore();
 
   // Form state
   const [interviewType, setInterviewType] = useState('full_stack');
@@ -58,10 +59,33 @@ function InterviewSetupContent() {
   const [sttProvider, setSttProvider] = useState('whisper');
   const [noiseSuppression, setNoiseSuppression] = useState(true);
   const [cheatDetection, setCheatDetection] = useState(true);
+  const [avatarEnabled, setAvatarEnabled] = useState(false);
+  const [avatarPreset, setAvatarPreset] = useState<string | null>(null);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Cost estimate
+  const { data: costEstimate } = useQuery({
+    queryKey: ['cost-estimate', interviewType, duration, minQuestions],
+    queryFn: () => sessionService.getCostEstimate({
+      interview_type: interviewType,
+      total_time_minutes: duration,
+      min_questions: minQuestions,
+    }),
+    staleTime: 30000,
+  });
+
+  // Avatar presets
+  const { data: avatarPresetsData } = useQuery({
+    queryKey: ['avatar-presets'],
+    queryFn: () => interviewV2Service.getAvatarPresets(),
+    enabled: mode === 'video',
+    staleTime: 300000,
+  });
+
+  const avatarPresets: AvatarPreset[] = avatarPresetsData?.presets ?? [];
 
   // Fetch user metadata (resume text)
   // NOTE: /users/me/metadata has a backend routing bug, so fetch user ID first
@@ -113,41 +137,22 @@ function InterviewSetupContent() {
 
     try {
       if (mode === 'video') {
-        // V2 video interview
-        const v2Request: StartV2InterviewRequest = {
-          resume_text: finalResume,
-          job_description: finalJD,
-          interview_type: interviewType as StartV2InterviewRequest['interview_type'],
-          seniority: seniority as StartV2InterviewRequest['seniority'],
-          difficulty: difficulty as StartV2InterviewRequest['difficulty'],
-          total_time_minutes: duration,
-          min_questions: minQuestions,
-          stt_provider: sttProvider as StartV2InterviewRequest['stt_provider'],
-          noise_suppression: noiseSuppression,
-          cheat_detection: cheatDetection,
-          mode: 'video',
-        };
+        // Conversational AI interview (spoken)
+        const { conversationalService } = await import('@/services/conversational-service');
 
-        const v2Response = await interviewV2Service.startInterview(v2Request);
+        const role = job?.title || `${seniority} ${interviewType.replace('_', ' ')} engineer`;
+        const domain = job?.domain_name || interviewType;
 
-        setSession(v2Response.v1_session_id, v2Response.v2_session_id);
+        const convResponse = await conversationalService.initialize({
+          role,
+          domain,
+          job_id: job?.id,
+        });
+
+        setSession(convResponse.session_id);
         setPhase('connected');
-        setWsUrl(v2Response.ws_url);
 
-        if (v2Response.first_question) {
-          setCurrentQuestion(v2Response.first_question);
-        }
-
-        if (v2Response.plan_summary) {
-          updateProgress({
-            questions_asked: v2Response.first_question ? 1 : 0,
-            questions_answered: 0,
-            total_planned: v2Response.plan_summary.total_planned_questions,
-            is_complete: false,
-          });
-        }
-
-        router.push(`/interview/${v2Response.v1_session_id}/v2`);
+        router.push(`/interview/${convResponse.session_id}/v2`);
       } else {
         // V1 text interview via orchestrator
         const request: StartInterviewRequest = {
@@ -387,9 +392,84 @@ function InterviewSetupContent() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Avatar Preset Picker */}
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="mono-label" style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>AI Avatar</Label>
+                      <button
+                        type="button"
+                        onClick={() => { setAvatarEnabled(!avatarEnabled); if (avatarEnabled) setAvatarPreset(null); }}
+                        disabled={isSubmitting}
+                        className="flex items-center justify-center"
+                        style={{
+                          height: '28px', padding: '0 10px', borderRadius: 'var(--radius-sm)', fontSize: '11px', fontWeight: 500,
+                          border: avatarEnabled ? '1px solid var(--color-success-border)' : '1px solid var(--color-border)',
+                          background: avatarEnabled ? 'var(--color-success-subtle)' : 'var(--color-bg-surface)',
+                          color: avatarEnabled ? 'var(--color-success)' : 'var(--color-text-muted)', cursor: 'pointer',
+                        }}
+                      >
+                        {avatarEnabled ? 'Enabled' : 'Disabled'}
+                      </button>
+                    </div>
+                    {avatarEnabled && avatarPresets.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2">
+                        {avatarPresets.map((preset) => (
+                          <button
+                            key={preset.preset_id}
+                            type="button"
+                            onClick={() => setAvatarPreset(preset.preset_id)}
+                            disabled={isSubmitting}
+                            style={{
+                              padding: '10px 8px',
+                              borderRadius: 'var(--radius-md)',
+                              border: avatarPreset === preset.preset_id ? '2px solid var(--color-signal)' : '1px solid var(--color-border)',
+                              background: avatarPreset === preset.preset_id ? 'var(--color-signal-subtle)' : 'var(--color-bg-surface)',
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                            }}
+                          >
+                            <User2
+                              className="mx-auto size-6"
+                              style={{ color: avatarPreset === preset.preset_id ? 'var(--color-signal)' : 'var(--color-text-muted)' }}
+                            />
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 500, color: 'var(--color-text-primary)', marginTop: '4px' }}>
+                              {preset.name}
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '2px', lineHeight: '1.3' }}>
+                              {preset.description}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {avatarEnabled && avatarPresets.length === 0 && (
+                      <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                        Loading avatar presets...
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Cost Estimate */}
+            {costEstimate && (
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-base)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+              }}>
+                <DollarSign style={{ width: 14, height: 14, color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                  Estimated cost: <strong style={{ color: 'var(--color-text-primary)' }}>${costEstimate.estimated_cost_usd.toFixed(2)}</strong>
+                </span>
+              </div>
+            )}
 
             {/* Error */}
             {error && (

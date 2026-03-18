@@ -19,7 +19,7 @@ export function Navbar() {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-            <Image src="/logo.png" alt="RawEval" width={90} height={26} style={{ objectFit: 'contain' }} priority />
+            <Image src="/logo.png" alt="RawEval" width={90} height={26} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} priority />
           </Link>
           <span style={{ width: 1, height: 20, background: 'var(--color-border)' }} />
           <span className="mono-label" style={{ color: 'var(--color-text-faint)', fontSize: '10px' }}>Expert Portal</span>

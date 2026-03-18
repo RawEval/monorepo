@@ -6,7 +6,13 @@
  */
 
 import { ApiService } from './api-service';
-import type { SessionListResponse, SessionListItem, CostEstimate } from '@/features/interview/types';
+import type {
+  SessionListResponse,
+  SessionListItem,
+  CostEstimate,
+  CreateSessionRequest,
+  CreateSessionResponse,
+} from '@/features/interview/types';
 
 export class SessionService extends ApiService {
   async listSessions(params?: {
@@ -28,6 +34,14 @@ export class SessionService extends ApiService {
   async getSession(sessionId: number): Promise<SessionListItem & { transcripts?: unknown[] }> {
     const response = await this.client.get<SessionListItem & { transcripts?: unknown[] }>(
       `/workbench/interviews/sessions/${sessionId}`,
+    );
+    return this.handleResponse(response);
+  }
+
+  async createSession(data: CreateSessionRequest): Promise<CreateSessionResponse> {
+    const response = await this.client.post<CreateSessionResponse>(
+      '/workbench/interviews/sessions',
+      data,
     );
     return this.handleResponse(response);
   }

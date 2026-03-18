@@ -301,23 +301,39 @@ export default function JobsPage() {
                 </div>
 
                 {/* CTA */}
-                <Link
-                  href={`/interview/setup?job_id=${job.id}`}
-                  className="btn-primary mt-5"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    width: '100%',
-                    padding: '12px 20px',
-                    fontSize: 'var(--text-sm)',
-                    textDecoration: 'none',
-                  }}
-                >
-                  Start Interview
-                  <ArrowRight className="size-4" />
-                </Link>
+                <div className="mt-5 flex gap-2">
+                  <Link
+                    href={`/jobs/${job.id}`}
+                    className="btn-secondary flex-1"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px 16px',
+                      fontSize: 'var(--text-sm)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    View Details
+                  </Link>
+                  <Link
+                    href={`/interview/setup?job_id=${job.id}`}
+                    className="btn-primary flex-1"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '12px 16px',
+                      fontSize: 'var(--text-sm)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    Start Interview
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </div>
               </div>
             ))}
           </div>
