@@ -222,11 +222,28 @@ export interface CreateApiKeyRequest {
 // ---------------------------------------------------------------------------
 
 export interface WalletBalanceResponse {
+  wallet_id?: number;
   user_id: number;
   available: number;
+  available_balance?: number;
   pending: number;
+  pending_balance?: number;
   locked: number;
+  locked_balance?: number;
+  total_balance?: number;
   currency: string;
+  status?: string;
+  total_earned?: number;
+  total_spent?: number;
+  total_withdrawn?: number;
+  total_deposited?: number;
+  total_fees_paid?: number;
+  total_failed_prompt_payouts?: number;
+  total_subscription_payments?: number;
+  frozen_at?: string | null;
+  frozen_until?: string | null;
+  freeze_reason?: string | null;
+  is_frozen?: boolean;
   last_transaction_at?: string;
   created_at: string;
 }
@@ -262,7 +279,9 @@ export type WalletTransactionType =
   | 'transfer_out'
   | 'fee'
   | 'refund'
-  | 'payout';
+  | 'payout'
+  | 'failed_prompt_payout'
+  | 'subscription_purchase';
 
 export type WalletTransactionStatus =
   | 'pending'
@@ -272,14 +291,26 @@ export type WalletTransactionStatus =
 
 export interface WalletTransactionResponse {
   id: number;
+  transaction_id?: string;
   user_id: number;
   transaction_type: WalletTransactionType;
+  direction?: 'inflow' | 'outflow' | 'internal';
   amount: number;
   currency: string;
+  net_amount?: number;
+  balance_before?: number;
+  balance_after?: number;
   status: WalletTransactionStatus;
+  reason?: string;
   description?: string;
   reference_id?: string;
-  balance_after?: number;
+  related_failed_prompt_id?: number | null;
+  related_conversation_id?: number | null;
+  transaction_fee?: number;
+  tax_amount?: number;
+  initiated_at?: string;
+  completed_at?: string | null;
+  failed_at?: string | null;
   metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;

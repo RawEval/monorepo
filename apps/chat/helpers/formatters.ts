@@ -4,12 +4,13 @@
  * Contains centralized formatting functions for currency, dates, prices, etc.
  */
 
-export function formatCurrency(amount: number, currency = 'INR'): string {
-  return new Intl.NumberFormat('en-IN', {
+export function formatCurrency(amount: number, currency = 'USD'): string {
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 2,
-  }).format(amount / 100); // amounts in paise
+  }).format(amount);
 }
 
 export function formatDate(iso: string): string {

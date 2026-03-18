@@ -1,97 +1,79 @@
 /**
  * QC Service
  *
- * QC pipeline results, appeals, and disputes via /api/v1/chat/qc/*.
+ * QC pipeline results via /api/v1/chat/failure/* endpoints.
+ * Maps to the real backend API at api.raweval.com.
  */
 
 import { api } from '@/lib/api';
-import type {
-  PaginatedFailedPromptsWithQC,
-  QCSummaryResponse,
-  CreateAppealRequest,
-  AppealCreateResponse,
-  AppealListResponse,
-  MarkQCWrongRequest,
-  QCDisputeResponse,
-  FailedPromptPayoutListResponse,
-} from '@raweval/types';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Any = any;
 
 class QCService {
-  /** List failed prompts with QC info */
-  async getFailedPrompts(params?: {
-    status?: string;
-    qc_status?: string;
-    verdict?: string;
-    domain?: string;
+  /**
+   * List failed conversations for the current user.
+   * Uses GET /chat/sessions with failed_only=true.
+   */
+  async getFailedSessions(params?: {
     page?: number;
     page_size?: number;
-  }): Promise<PaginatedFailedPromptsWithQC> {
+  }): Promise<Any> {
     const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, value.toString());
-        }
-      });
-    }
-    const query = searchParams.toString();
-    return api.get<PaginatedFailedPromptsWithQC>(
-      `/chat/qc/failed-prompts${query ? `?${query}` : ''}`
-    );
+    searchParams.append('failed_only', 'true');
+    if (params?.page) searchParams.append('page', params.page.toString());
+    if (params?.page_size) searchParams.append('page_size', params.page_size.toString());
+    return api.get(`/chat/sessions?${searchParams.toString()}`);
   }
 
-  /** Get full QC summary for a conversation */
-  async getSummary(conversationId: number, failedModel?: string): Promise<QCSummaryResponse> {
-    const query = failedModel ? `?failed_model=${encodeURIComponent(failedModel)}` : '';
-    return api.get<QCSummaryResponse>(`/chat/qc/summary/${conversationId}${query}`);
+  /**
+   * Get full QC analysis for a conversation.
+   * Uses GET /chat/failure/analysis/{conversation_id}
+   */
+  async getAnalysis(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/analysis/${conversationId}${query}`);
   }
 
-  /** Create an appeal for a FalsePositive verdict */
-  async createAppeal(request: CreateAppealRequest): Promise<AppealCreateResponse> {
-    return api.post<AppealCreateResponse>('/chat/qc/appeals', request);
+  /**
+   * Get QC status and history for a conversation.
+   * Uses GET /chat/failure/status/{conversation_id}
+   */
+  async getStatus(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/status/${conversationId}${query}`);
   }
 
-  /** List user's appeals */
-  async getAppeals(params?: {
-    status?: string;
-    page?: number;
-    page_size?: number;
-  }): Promise<AppealListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, value.toString());
-        }
-      });
-    }
-    const query = searchParams.toString();
-    return api.get<AppealListResponse>(`/chat/qc/appeals${query ? `?${query}` : ''}`);
+  /**
+   * Get entropy (Layer 1) details.
+   */
+  async getEntropy(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/analysis/${conversationId}/entropy${query}`);
   }
 
-  /** Dispute a QC verdict */
-  async dispute(request: MarkQCWrongRequest): Promise<QCDisputeResponse> {
-    return api.post<QCDisputeResponse>('/chat/qc/dispute', request);
+  /**
+   * Get judge evaluations (Layer 2+3).
+   */
+  async getJudges(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/analysis/${conversationId}/judges${query}`);
   }
 
-  /** Get failed prompt payouts */
-  async getFailedPromptPayouts(params?: {
-    status?: string;
-    page?: number;
-    page_size?: number;
-  }): Promise<FailedPromptPayoutListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          searchParams.append(key, value.toString());
-        }
-      });
-    }
-    const query = searchParams.toString();
-    return api.get<FailedPromptPayoutListResponse>(
-      `/chat/payments/failed-prompt-payouts${query ? `?${query}` : ''}`
-    );
+  /**
+   * Get root-cause attribution.
+   */
+  async getAttribution(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/analysis/${conversationId}/attribution${query}`);
+  }
+
+  /**
+   * Get rubric for a failed conversation.
+   */
+  async getRubric(conversationId: number, model?: string): Promise<Any> {
+    const query = model ? `?model=${encodeURIComponent(model)}` : '';
+    return api.get(`/chat/failure/analysis/${conversationId}/rubric${query}`);
   }
 }
 

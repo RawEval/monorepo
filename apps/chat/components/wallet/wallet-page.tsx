@@ -15,6 +15,8 @@ import {
   Lock,
   ChevronDown,
   DollarSign,
+  ShieldAlert,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
@@ -39,6 +41,8 @@ const TX_TYPE_LABELS: Record<string, string> = {
   fee: 'Fee',
   refund: 'Refund',
   payout: 'Payout',
+  failed_prompt_payout: 'Failed Prompt Payout',
+  subscription_purchase: 'Subscription',
 };
 
 const TX_STATUS_COLORS: Record<string, string> = {
@@ -62,11 +66,13 @@ export function WalletPage() {
   const {
     data: balance,
     isLoading: isBalanceLoading,
+    error: balanceError,
     refetch: refetchBalance,
-  } = useWalletBalance(1); // passing a dummy or real userId if available
+  } = useWalletBalance(1);
   const {
     data: allTransactions,
     isLoading: isTxLoading,
+    error: txError,
     refetch: refetchTx,
   } = useWalletTransactions();
 
@@ -77,7 +83,11 @@ export function WalletPage() {
     refetchTx();
   }, [refetchBalance, refetchTx]);
 
-  const transactions = allTransactions || [];
+  // API may return an array directly or a paginated wrapper { items: [...] }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw = allTransactions as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const transactions: any[] = Array.isArray(raw) ? raw : Array.isArray(raw?.items) ? raw.items : [];
   const loading = isBalanceLoading || isTxLoading;
 
   // ---------------------------------------------------------------------------
@@ -96,10 +106,24 @@ export function WalletPage() {
   }
 
   const displayedTxs = showAllTx ? transactions : transactions.slice(0, 10);
+  const hasError = balanceError || txError;
 
   return (
     <div className="bg-background flex h-full flex-col overflow-y-auto">
       <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+        {/* Error banner */}
+        {hasError && (
+          <div className="mb-4 rounded-lg border border-[var(--color-error)]/20 bg-[var(--color-error-subtle)] p-3">
+            <div className="flex items-center gap-2 text-sm text-[var(--color-error)]">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{(balanceError as Error)?.message || (txError as Error)?.message || 'Failed to load wallet data.'}</span>
+              <Button variant="ghost" size="sm" onClick={handleRefresh} className="ml-auto gap-1 text-xs">
+                <RefreshCw className="h-3 w-3" /> Retry
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-6 space-y-4 sm:mb-8">
           <Button
@@ -130,6 +154,44 @@ export function WalletPage() {
             </Button>
           </div>
         </div>
+
+        {/* Wallet Freeze Warning */}
+        {balance?.is_frozen && (
+          <div className="mb-6 rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error-subtle)] p-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="h-5 w-5 shrink-0 text-[var(--color-error)]" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-[var(--color-error)]">
+                  Wallet Frozen
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-error)]/80">
+                  {balance.freeze_reason || 'Your wallet has been temporarily frozen.'}
+                </p>
+                {balance.frozen_until && (
+                  <p className="mt-1.5 text-xs font-medium text-[var(--color-error)]">
+                    Unfreezes: {formatDate(balance.frozen_until)}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  Deposits are still allowed. Withdrawals and transfers are blocked until the freeze expires.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Earned Stats */}
+        {(balance?.total_earned != null && balance.total_earned > 0) && (
+          <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-[var(--color-text-muted)]" style={{ fontFamily: 'var(--font-mono)' }}>
+            <span className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3" />
+              Total earned: {formatCurrency(balance.total_earned, balance.currency)}
+            </span>
+            {balance.total_failed_prompt_payouts != null && (
+              <span>{balance.total_failed_prompt_payouts} payout{balance.total_failed_prompt_payouts !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+        )}
 
         {/* Balance Cards */}
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -191,9 +253,20 @@ export function WalletPage() {
             {transactions.length === 0 ? (
               <div className="py-12 text-center">
                 <DollarSign className="text-muted-foreground/30 mx-auto mb-3 h-12 w-12" />
-                <p className="text-muted-foreground text-sm">
+                <p className="text-foreground mb-1 text-sm font-medium">
                   No transactions yet
                 </p>
+                <p className="text-muted-foreground mx-auto max-w-xs text-xs">
+                  Mark AI responses as &ldquo;Wrong&rdquo; in the chat to earn $1 per confirmed failure. Your payouts will appear here.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 gap-2"
+                  onClick={() => router.push('/chat')}
+                >
+                  Go to Chat
+                </Button>
               </div>
             ) : (
               <div className="space-y-2">
@@ -203,6 +276,7 @@ export function WalletPage() {
                     'transfer_in',
                     'refund',
                     'payout',
+                    'failed_prompt_payout',
                   ].includes(tx.transaction_type);
 
                   return (
@@ -230,7 +304,15 @@ export function WalletPage() {
                               tx.transaction_type}
                           </p>
                           <p className="text-muted-foreground max-w-[200px] truncate text-xs sm:max-w-none">
-                            {tx.description || formatDate(tx.created_at)}
+                            {tx.reason || tx.description || formatDate(tx.created_at)}
+                            {tx.related_conversation_id && (
+                              <button
+                                onClick={() => router.push(`/chat/${tx.related_conversation_id}`)}
+                                className="text-[var(--color-signal)] hover:underline ml-1"
+                              >
+                                View chat
+                              </button>
+                            )}
                           </p>
                         </div>
                       </div>

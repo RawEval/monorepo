@@ -19,13 +19,12 @@ import {
   Wallet,
   RefreshCw,
   Loader2,
-  Star,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+// ScrollArea removed — using native scroll for consistency with wallet/settings pages
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -50,10 +49,11 @@ import {
 import { cn } from '@raweval/utils';
 import { paymentsService } from '@/services/payments-service';
 import { openRazorpayCheckout } from '@/lib/razorpay';
-import type { BankAccountCreate, PaymentResponse } from '@raweval/types';
+import type { BankAccountCreate } from '@raweval/types';
+import type { FailedConversationItem } from './api/get-payouts';
 import { usePayoutsData } from './api/get-payouts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { payoutKeys } from '@/lib/react-query/query-keys';
+import { payoutKeys, walletKeys } from '@/lib/react-query/query-keys';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -61,18 +61,38 @@ import { payoutKeys } from '@/lib/react-query/query-keys';
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? '';
 
-const PAYMENT_STATUS_CONFIG: Record<
+const VERDICT_CONFIG: Record<
   string,
   { label: string; icon: typeof Clock; color: string }
 > = {
-  pending: {
-    label: 'Pending QA',
+  true_failure: {
+    label: 'Confirmed Failure',
+    icon: CheckCircle2,
+    color: 'bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]',
+  },
+  false_positive: {
+    label: 'False Positive',
+    icon: XCircle,
+    color: 'bg-muted text-muted-foreground border-border',
+  },
+  needs_human_review: {
+    label: 'Under Review',
+    icon: Clock,
+    color: 'bg-primary/10 text-primary border-primary/20',
+  },
+  analysis_in_progress: {
+    label: 'Analyzing...',
+    icon: Loader2,
+    color: 'bg-primary/10 text-primary border-primary/20',
+  },
+  analysis_pending: {
+    label: 'Queued',
     icon: Clock,
     color: 'bg-muted text-muted-foreground border-border',
   },
-  pending_qa: {
-    label: 'Pending QA',
-    icon: Clock,
+  marked_as_failed: {
+    label: 'Marked',
+    icon: AlertCircle,
     color: 'bg-muted text-muted-foreground border-border',
   },
   completed: {
@@ -80,10 +100,10 @@ const PAYMENT_STATUS_CONFIG: Record<
     icon: CheckCircle2,
     color: 'bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]',
   },
-  approved: {
-    label: 'QA Approved',
-    icon: Star,
-    color: 'bg-primary/10 text-primary border-primary/20',
+  pending: {
+    label: 'Pending QA',
+    icon: Clock,
+    color: 'bg-muted text-muted-foreground border-border',
   },
   failed: {
     label: 'QA Rejected',
@@ -313,17 +333,20 @@ export function PayoutsPage() {
 
   // ---- Filter ----
   const filteredPayments = useMemo(() => {
-    let list = payments;
+    let list = payments as FailedConversationItem[];
     if (statusFilter !== 'all') {
-      list = list.filter((p: PaymentResponse) => p.status === statusFilter);
+      list = list.filter((p) => {
+        const pStatus = p.result_type || p.qc_status || p.status || '';
+        return pStatus === statusFilter || p.status === statusFilter;
+      });
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
-        (p: PaymentResponse) =>
-          p.payment_reason?.toLowerCase().includes(q) ||
-          p.payment_id?.toLowerCase().includes(q) ||
-          p.status?.toLowerCase().includes(q)
+        (p) =>
+          p.title?.toLowerCase().includes(q) ||
+          String(p.id).includes(q) ||
+          (p.result_type || '').toLowerCase().includes(q)
       );
     }
     return list;
@@ -384,7 +407,8 @@ export function PayoutsPage() {
         '✓ Withdrawal successful! Funds will arrive in 1-3 business days.'
       );
       setWithdrawAmount('');
-      refetch(); // refresh stats
+      refetch(); // refresh payout stats
+      queryClient.invalidateQueries({ queryKey: walletKeys.all }); // sync wallet balance
     } catch (e: any) {
       const msg: string = e?.message ?? 'Withdrawal failed.';
       if (msg.includes('cancelled')) {
@@ -403,6 +427,7 @@ export function PayoutsPage() {
       paymentsService.deleteBankAccount(accountId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: payoutKeys.all });
+      queryClient.invalidateQueries({ queryKey: walletKeys.all });
     },
     onError: (e: any) => {
       setError(e?.message ?? 'Failed to delete bank account.');
@@ -469,33 +494,10 @@ export function PayoutsPage() {
   // ---- Loading skeleton ----
   if (loading) {
     return (
-      <div className="bg-background flex h-full flex-col">
-        {/* Header */}
-        <div className="border-border bg-background shrink-0 border-b px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.back()}
-              className="hover:text-foreground text-muted-foreground -ml-2 shrink-0 hover:bg-transparent"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-foreground text-xl font-bold sm:text-2xl">
-                Payouts &amp; Earnings
-              </h1>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-                Track your marked responses and payouts
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <Loader2 className="text-primary h-8 w-8 animate-spin" />
-            <p className="text-muted-foreground text-sm">Loading payouts…</p>
-          </div>
+      <div className="bg-background flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">Loading payouts…</p>
         </div>
       </div>
     );
@@ -512,50 +514,51 @@ export function PayoutsPage() {
         }}
       />
 
-      <div className="bg-background flex h-full flex-col overflow-hidden">
-        {/* Header */}
-        <div className="border-border bg-background shrink-0 border-b px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex items-center gap-4">
+      <div className="bg-background flex h-full flex-col overflow-y-auto">
+        <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+          {/* Header — same pattern as Wallet & Settings */}
+          <div className="mb-6 space-y-4 sm:mb-8">
             <Button
               variant="ghost"
-              size="icon"
               onClick={() => router.back()}
-              className="hover:text-foreground text-muted-foreground -ml-2 shrink-0 hover:bg-transparent"
+              className="hover:text-foreground text-muted-foreground w-fit gap-2 pl-0 hover:bg-transparent"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
+              Back
             </Button>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-foreground text-xl font-bold sm:text-2xl">
-                Payouts &amp; Earnings
-              </h1>
-              <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-                Track your marked responses and payouts
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
+                  Payouts &amp; Earnings
+                </h1>
+                <p className="text-muted-foreground text-sm sm:text-base">
+                  Track your marked responses and payouts
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="gap-2"
+              >
+                <RefreshCw
+                  className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')}
+                />
+                Refresh
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="shrink-0 gap-1.5"
-            >
-              <RefreshCw
-                className={cn('h-4 w-4', refreshing && 'animate-spin')}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
           </div>
-        </div>
 
-        {/* Global error */}
-        {(error || queryError) && (
-          <div className="border-destructive/20 bg-destructive/10 text-destructive shrink-0 border-b px-4 py-2.5 text-sm">
-            {error || queryError?.message || 'Error occurred.'}
-          </div>
-        )}
+          {/* Error banner — same style as wallet */}
+          {(error || queryError) && (
+            <div className="border-destructive/20 bg-destructive/10 text-destructive mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error || queryError?.message || 'Error occurred.'}
+            </div>
+          )}
 
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="space-y-6 px-4 py-4 sm:px-6">
+          <div className="space-y-6">
             {/* ----------------------------------------------------------------
                 Stats Cards
             ---------------------------------------------------------------- */}
@@ -615,11 +618,11 @@ export function PayoutsPage() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <div className="relative max-w-xs flex-1">
                     <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2 text-sm">
-                      ₹
+                      $
                     </span>
                     <Input
                       type="number"
-                      placeholder="Amount in INR"
+                      placeholder="Amount in USD"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
                       className="h-9 pl-7"
@@ -790,7 +793,7 @@ export function PayoutsPage() {
                         <span className="hidden sm:inline">
                           {statusFilter === 'all'
                             ? 'All Statuses'
-                            : (PAYMENT_STATUS_CONFIG[statusFilter]?.label ??
+                            : (VERDICT_CONFIG[statusFilter]?.label ??
                               statusFilter)}
                         </span>
                       </Button>
@@ -799,7 +802,7 @@ export function PayoutsPage() {
                       <DropdownMenuItem onClick={() => setStatusFilter('all')}>
                         All Statuses
                       </DropdownMenuItem>
-                      {Object.entries(PAYMENT_STATUS_CONFIG).map(
+                      {Object.entries(VERDICT_CONFIG).map(
                         ([status, cfg]) => (
                           <DropdownMenuItem
                             key={status}
@@ -830,16 +833,17 @@ export function PayoutsPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredPayments.map((payment: PaymentResponse) => {
+                  {filteredPayments.map((item: FailedConversationItem) => {
+                    const verdictKey = item.result_type || item.qc_status || item.status || '';
                     const statusConf =
-                      PAYMENT_STATUS_CONFIG[payment.status || ''] ??
-                      DEFAULT_STATUS_CONFIG;
+                      VERDICT_CONFIG[verdictKey] ?? DEFAULT_STATUS_CONFIG;
                     const StatusIcon = statusConf.icon;
 
                     return (
                       <Card
-                        key={payment.payment_id}
-                        className="border-border shadow-subtle card-hover overflow-hidden transition-all hover:shadow-md"
+                        key={item.id}
+                        className="border-border shadow-subtle card-hover cursor-pointer overflow-hidden transition-all hover:shadow-md"
+                        onClick={() => router.push(`/chat/${item.id}`)}
                       >
                         <CardContent className="p-3 sm:p-4">
                           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
@@ -853,57 +857,59 @@ export function PayoutsPage() {
                                   <StatusIcon className="h-3 w-3" />
                                   {statusConf.label}
                                 </Badge>
+                                {item.payout_eligible === true && (
+                                  <Badge variant="outline" className="gap-1 bg-[var(--color-success-subtle)] text-[var(--color-success)] border-[var(--color-success-border)]">
+                                    <DollarSign className="h-3 w-3" />
+                                    $1.00
+                                  </Badge>
+                                )}
                               </div>
                               <p className="text-muted-foreground text-xs">
-                                {formatTimeAgo(payment.created_at)} •{' '}
-                                {formatDate(payment.created_at)}
+                                {item.created_at ? formatTimeAgo(item.created_at) : ''}{item.created_at ? ' • ' : ''}
+                                {item.created_at ? formatDate(item.created_at) : ''}
                               </p>
                               <p className="text-foreground text-sm font-medium">
-                                Payout #{payment.id}
+                                {item.title}
                               </p>
                               <p className="text-muted-foreground mt-0.5 text-xs">
-                                {payment.payment_reason ||
-                                  'Earnings Withdrawal'}
+                                Conversation #{item.id}
                               </p>
                             </div>
 
-                            {/* Right: amount */}
+                            {/* Right: view link */}
                             <div className="flex shrink-0 items-center sm:items-start sm:pt-1">
-                              <p className="text-foreground text-lg font-bold">
-                                {formatCurrency(
-                                  payment.amount,
-                                  payment.currency
-                                )}
-                              </p>
+                              <span className="text-primary text-sm font-medium">
+                                View →
+                              </span>
                             </div>
                           </div>
 
-                          {/* Status-specific info banners */}
-                          {payment.status === 'completed' &&
-                            payment.provider_payment_id && (
-                              <div className="mt-3 rounded-lg border border-[var(--color-success-border)] bg-[var(--color-success-subtle)] px-3 py-2">
-                                <p className="text-xs font-medium text-[var(--color-success)]">
-                                  ✓ Payment received via Razorpay
-                                </p>
-                                <p className="text-muted-foreground mt-0.5 font-mono text-xs">
-                                  {payment.provider_payment_id}
-                                </p>
-                              </div>
-                            )}
-                          {payment.status === 'pending' && (
-                            <div className="border-border bg-muted/30 mt-3 rounded-lg border px-3 py-2">
-                              <p className="text-muted-foreground text-xs font-medium">
-                                Waiting for QC verification…
-                              </p>
-                              <p className="text-muted-foreground mt-0.5 text-xs">
-                                Our workbench team will review this response
+                          {/* Verdict-specific banners */}
+                          {item.result_type === 'true_failure' && (
+                            <div className="mt-3 rounded-lg border border-[var(--color-success-border)] bg-[var(--color-success-subtle)] px-3 py-2">
+                              <p className="text-xs font-medium text-[var(--color-success)]">
+                                ✓ Confirmed failure — $1.00 credited to your wallet
                               </p>
                             </div>
                           )}
-                          {payment.status === 'failed' && (
-                            <div className="border-destructive/20 bg-destructive/5 mt-3 rounded-lg border px-3 py-2">
-                              <p className="text-destructive text-xs font-medium">
-                                QA rejected — no payment for this response
+                          {item.result_type === 'false_positive' && (
+                            <div className="border-border bg-muted/30 mt-3 rounded-lg border px-3 py-2">
+                              <p className="text-muted-foreground text-xs font-medium">
+                                Our analysis found the AI response was correct
+                              </p>
+                            </div>
+                          )}
+                          {item.result_type === 'needs_human_review' && (
+                            <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                              <p className="text-primary text-xs font-medium">
+                                Escalated for human review — verdict pending
+                              </p>
+                            </div>
+                          )}
+                          {!item.result_type && item.status !== 'completed' && (
+                            <div className="border-border bg-muted/30 mt-3 rounded-lg border px-3 py-2">
+                              <p className="text-muted-foreground text-xs font-medium">
+                                QC analysis in progress…
                               </p>
                             </div>
                           )}
@@ -915,7 +921,7 @@ export function PayoutsPage() {
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </div>
     </>
   );
