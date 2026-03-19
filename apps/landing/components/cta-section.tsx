@@ -1,5 +1,7 @@
+'use client';
+
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { GetStartedDropdown } from '@/components/get-started-dropdown';
 
 export function CTASection() {
   return (
@@ -33,20 +35,14 @@ export function CTASection() {
         </h2>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', flexWrap: 'wrap', marginBottom: 'var(--space-8)' }}>
-          <a
-            href="https://chat.raweval.com"
-            className="btn-primary"
-            style={{ padding: '16px 40px', fontSize: 'var(--text-sm)' }}
-          >
-            Try the Chat <ArrowRight size={14} />
-          </a>
-          <a
-            href="https://work.raweval.com"
+          <GetStartedDropdown variant="primary" size="large" />
+          <Link
+            href="/contact"
             className="btn-secondary"
             style={{ padding: '16px 32px', fontSize: 'var(--text-sm)' }}
           >
-            Expert Workbench →
-          </a>
+            Book a Demo
+          </Link>
         </div>
 
         <p
@@ -68,7 +64,7 @@ export function CTASection() {
           }}
         >
           <Link
-            href="/organizations"
+            href="/research"
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: 'var(--text-xs)',

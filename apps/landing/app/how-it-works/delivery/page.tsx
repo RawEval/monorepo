@@ -71,7 +71,7 @@ export default function DeliveryPage() {
 
         <div style={{ display: 'flex', gap: 'var(--space-6)' }}>
           <Link href="/how-it-works/workbench" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)', textDecoration: 'none' }}>← Workbench</Link>
-          <Link href="/organizations" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', textDecoration: 'none' }}>Get enterprise access →</Link>
+          <Link href="/research" style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', textDecoration: 'none' }}>Get enterprise access →</Link>
         </div>
       </div>
 

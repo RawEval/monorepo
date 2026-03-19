@@ -67,7 +67,7 @@ const platforms = [
     tagline: 'Production-Grade Data Infrastructure',
     description:
       'Enterprise platform for capturing, validating, and delivering gold-standard training data. API-first, custom workflows, enterprise security.',
-    href: appUrls.landing('/organizations'),
+    href: appUrls.landing('/research'),
     cta: 'Explore Platform →',
     icon: Building2,
     badge: 'For Teams',

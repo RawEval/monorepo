@@ -44,7 +44,7 @@ export default function NotFound() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-8)' }}>
           {[
             { label: 'Homepage', href: '/', desc: 'See what RawEval does' },
-            { label: 'Enterprise', href: '/organizations', desc: 'Evaluation data for AI labs' },
+            { label: 'Enterprise', href: '/research', desc: 'Evaluation data for AI labs' },
             { label: 'Expert Network', href: '/experts', desc: 'Join and start earning' },
             { label: 'Blog', href: '/blog', desc: 'Research and market analysis' },
           ].map((link) => (

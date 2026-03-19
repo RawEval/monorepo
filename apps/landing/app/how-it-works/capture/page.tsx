@@ -7,10 +7,10 @@ export const metadata: Metadata = {
 };
 
 const howItWorksNav = [
-  { label: 'Chat & Flag', href: '/how-it-works/capture' },
-  { label: 'Expert Review', href: '/how-it-works/vetting' },
-  { label: 'Evaluation', href: '/how-it-works/workbench' },
-  { label: 'Results', href: '/how-it-works/delivery' },
+  { label: 'Capture', href: '/how-it-works/capture' },
+  { label: 'Vetting', href: '/how-it-works/vetting' },
+  { label: 'Workbench', href: '/how-it-works/workbench' },
+  { label: 'Delivery', href: '/how-it-works/delivery' },
 ];
 
 const steps = [

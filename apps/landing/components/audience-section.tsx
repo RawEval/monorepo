@@ -4,23 +4,27 @@ import { Check } from 'lucide-react';
 const audiences = [
   {
     title: 'For AI Labs & Enterprises',
+    subtitle: 'Buy evaluation data',
     features: [
       'Buy verified evaluation data at scale',
       'Custom expert panels matched to your domain',
       'API-first delivery, RLHF-ready formats',
       'SOC 2 compliant, full data provenance',
     ],
-    cta: { label: 'View Enterprise Plans →', href: '/organizations' },
+    cta: { label: 'View Enterprise Plans →', href: '/research' },
+    accent: 'var(--color-success)',
   },
   {
     title: 'For Domain Experts',
+    subtitle: 'Evaluate AI, earn money',
     features: [
       'Earn $18–120 per evaluation task',
       'Work on your schedule, from anywhere',
       'AI-powered vetting ensures quality matches',
       'Transparent scoring and tier advancement',
     ],
-    cta: { label: 'Join the Expert Network →', href: '/experts' },
+    cta: { label: 'Join the Expert Network →', href: '/work' },
+    accent: 'var(--color-signal)',
   },
 ];
 
@@ -70,17 +74,31 @@ export function AudienceSection() {
                 gap: 'var(--space-6)',
               }}
             >
-              <h3
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: 'var(--text-lg)',
-                  color: 'var(--color-text-primary)',
-                  fontWeight: 500,
-                  margin: 0,
-                }}
-              >
-                {a.title}
-              </h3>
+              <div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '10px',
+                    letterSpacing: 'var(--tracking-wider)',
+                    textTransform: 'uppercase',
+                    color: a.accent,
+                    marginBottom: 'var(--space-2)',
+                  }}
+                >
+                  {a.subtitle}
+                </div>
+                <h3
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 'var(--text-lg)',
+                    color: 'var(--color-text-primary)',
+                    fontWeight: 500,
+                    margin: 0,
+                  }}
+                >
+                  {a.title}
+                </h3>
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', flex: 1 }}>
                 {a.features.map((f) => (
@@ -88,7 +106,7 @@ export function AudienceSection() {
                     <Check
                       size={16}
                       style={{
-                        color: 'var(--color-signal)',
+                        color: a.accent,
                         flexShrink: 0,
                         marginTop: '2px',
                       }}
@@ -113,7 +131,7 @@ export function AudienceSection() {
                 style={{
                   alignSelf: 'flex-start',
                   padding: '10px 0',
-                  color: 'var(--color-signal)',
+                  color: a.accent,
                 }}
               >
                 {a.cta.label}
