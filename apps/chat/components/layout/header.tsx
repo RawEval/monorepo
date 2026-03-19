@@ -6,8 +6,8 @@ import {
   CreditCard,
   LogOut,
   Menu,
-  MoreVertical,
   DollarSign,
+  MoreVertical,
 } from 'lucide-react';
 import {
   DropdownMenu,
