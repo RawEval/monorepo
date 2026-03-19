@@ -19,6 +19,8 @@ import { Separator } from '@/components/ui/separator';
 import { useUiStore } from '@/stores/ui-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { cn } from '@raweval/utils';
+import Image from 'next/image';
+import logoImg from '@/public/logo.png';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/auth-service';
 import { clearToken, getStoredToken, getStoredRefreshToken } from '@/lib/auth';
@@ -105,10 +107,12 @@ export function Header() {
           </button>
 
           <div className="flex min-w-0 items-center gap-3">
-            <img
-              src="/logo.png"
+            <Image
+              src={logoImg}
               alt="RawEval"
-              className="h-6 w-auto shrink-0 object-contain sm:h-7"
+              width={90}
+              height={26}
+              className="shrink-0 object-contain"
               style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }}
             />
             {/* Page title for non-chat pages */}
