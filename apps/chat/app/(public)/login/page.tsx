@@ -16,6 +16,7 @@ import { authService } from '@/services/auth-service';
 import { storeToken } from '@/lib/auth';
 import { isApiError, UnauthorizedError } from '@/lib/errors';
 import Image from 'next/image';
+import logoImg from '@/public/logo.png';
 
 export default function LoginPage() {
   return (
@@ -128,7 +129,7 @@ function LoginForm() {
           className={`mb-8 flex justify-center ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
         >
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="RawEval" width={128} height={37} unoptimized style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
+            <Image src={logoImg} alt="RawEval" width={140} height={40} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
           </Link>
         </div>
 
