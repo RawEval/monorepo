@@ -1,228 +1,98 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   MessageSquare,
-  AlertTriangle,
   Flag,
   DollarSign,
   Shield,
   CheckCircle2,
   Users,
-  Handshake,
   Database,
   Sparkles,
-  SmilePlus,
-  Frown,
-  Meh,
 } from 'lucide-react';
 
 const stages = [
   {
-    id: 'prompt',
+    id: 'capture',
+    phase: 'Capture',
     icon: MessageSquare,
-    emoji: null,
-    mood: null,
-    title: 'A user asks a question',
-    description: 'Someone chats with an AI model — asking about medicine, law, code, or any topic that matters.',
-    visual: 'chat',
+    title: 'User chats with AI',
+    description: 'Someone asks a question. The AI responds — but gets something wrong.',
     accent: 'var(--color-text-secondary)',
-  },
-  {
-    id: 'wrong',
-    icon: AlertTriangle,
-    emoji: Frown,
-    mood: 'worried',
-    title: 'The AI gets it wrong',
-    description: 'A wrong fact. A hallucination. A dangerous suggestion. The user notices something isn\'t right.',
-    visual: 'error',
-    accent: 'var(--color-error)',
+    visual: 'chat',
   },
   {
     id: 'flag',
+    phase: 'Capture',
     icon: Flag,
-    emoji: Meh,
-    mood: 'determined',
-    title: 'They flag it',
-    description: 'One tap. A quick note about what went wrong. The failed response enters our pipeline.',
-    visual: 'flag',
+    title: 'One tap to flag',
+    description: 'The user spots the error and flags it. A quick note about what went wrong enters our pipeline.',
     accent: 'var(--color-signal)',
+    visual: 'flag',
   },
   {
     id: 'reward',
+    phase: 'Capture',
     icon: DollarSign,
-    emoji: SmilePlus,
-    mood: 'happy',
-    title: 'They earn a reward',
-    description: 'The flagger gets paid for catching what AI missed. Good signal is valuable.',
-    visual: 'money',
+    title: 'Flagger earns a reward',
+    description: 'Good signal is valuable. The flagger gets paid for catching what AI missed.',
     accent: 'var(--color-success)',
+    visual: 'money',
   },
   {
-    id: 'pii',
+    id: 'sanitize',
+    phase: 'Verify',
     icon: Shield,
-    emoji: null,
-    mood: null,
-    title: 'PII removed & sanitized',
-    description: 'All personal information is stripped. The task is anonymized and made compliance-ready before any human sees it.',
-    visual: 'shield',
+    title: 'PII stripped & 20+ checks',
+    description: 'All personal data is removed. The flagged response goes through extensive quality verification.',
     accent: 'var(--color-info)',
-  },
-  {
-    id: 'checks',
-    icon: CheckCircle2,
-    emoji: null,
-    mood: null,
-    title: '20+ quality checks',
-    description: 'Every flagged response goes through extensive verification — true positive or false positive. Nothing slips through.',
-    visual: 'checks',
-    accent: 'var(--color-signal)',
+    visual: 'shield',
   },
   {
     id: 'experts',
+    phase: 'Verify',
     icon: Users,
-    emoji: null,
-    mood: null,
-    title: 'Best experts assigned',
-    description: 'We match the task to our highest-rated domain experts. Only verified specialists in that exact field.',
-    visual: 'experts',
+    title: 'Domain experts evaluate',
+    description: 'We match the task to our highest-rated specialists. 9 reviewers independently reach consensus.',
     accent: 'var(--color-signal)',
-  },
-  {
-    id: 'agreement',
-    icon: Handshake,
-    emoji: null,
-    mood: null,
-    title: '9 reviewers reach agreement',
-    description: 'Multiple experts independently evaluate. Consensus is reached across all reviewers before anything moves forward.',
-    visual: 'consensus',
-    accent: 'var(--color-success)',
+    visual: 'experts',
   },
   {
     id: 'payout',
+    phase: 'Deliver',
     icon: DollarSign,
-    emoji: SmilePlus,
-    mood: 'rewarded',
-    title: 'Expert payout initiated',
-    description: 'Once verified as a true positive, the original flagger receives their full payout. Quality is rewarded.',
-    visual: 'payout',
+    title: 'Expert payout confirmed',
+    description: 'Once verified as a true positive, experts receive their payout. Quality is rewarded at every step.',
     accent: 'var(--color-success)',
+    visual: 'payout',
   },
   {
     id: 'dataset',
+    phase: 'Deliver',
     icon: Database,
-    emoji: null,
-    mood: null,
-    title: 'Perfect dataset created',
-    description: 'The corrected, verified, provenance-rich data joins the training set — making AI better for everyone.',
+    title: 'Training data created',
+    description: 'Corrected, verified, provenance-rich data joins the training set — making AI better for everyone.',
+    accent: 'var(--color-signal)',
     visual: 'dataset',
-    accent: 'var(--color-signal)',
-  },
-  {
-    id: 'impact',
-    icon: Sparkles,
-    emoji: null,
-    mood: 'celebration',
-    title: 'Everyone wins',
-    description: 'The user earned money. The experts got paid. The AI got smarter. The world got safer. That\'s the RawEval loop.',
-    visual: 'celebration',
-    accent: 'var(--color-signal)',
   },
 ];
 
-function CheckAnimation({ count, active }: { count: number; active: boolean }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', maxWidth: '180px' }}>
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: '28px',
-            height: '28px',
-            borderRadius: 'var(--radius-sm)',
-            background: active ? 'var(--color-success-subtle)' : 'var(--color-bg-muted)',
-            border: `1px solid ${active ? 'var(--color-success-border)' : 'var(--color-border)'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: active ? 1 : 0.3,
-            transition: `all 0.3s ease ${i * 0.06}s`,
-            transform: active ? 'scale(1)' : 'scale(0.8)',
-          }}
-        >
-          <CheckCircle2 size={12} style={{ color: active ? 'var(--color-success)' : 'var(--color-text-faint)' }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ExpertAvatars({ active }: { active: boolean }) {
-  return (
-    <div style={{ display: 'flex', gap: '0', marginLeft: '8px' }}>
-      {Array.from({ length: 9 }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            background: active
-              ? `hsl(${20 + i * 15}, 80%, ${55 + i * 3}%)`
-              : 'var(--color-bg-muted)',
-            border: '2px solid var(--color-bg-base)',
-            marginLeft: i > 0 ? '-8px' : '0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: active ? 1 : 0.3,
-            transition: `all 0.4s ease ${i * 0.08}s`,
-            transform: active ? 'scale(1)' : 'scale(0.7)',
-            zIndex: 9 - i,
-            position: 'relative',
-          }}
-        >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#fff', fontWeight: 500 }}>
-            {active ? `E${i + 1}` : ''}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ProgressLine({ progress }: { progress: number }) {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: '23px',
-        top: '0',
-        bottom: '0',
-        width: '2px',
-        background: 'var(--color-border)',
-        zIndex: 0,
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          height: `${progress}%`,
-          background: 'var(--color-signal)',
-          transition: 'height 0.6s ease-out',
-          borderRadius: '1px',
-          boxShadow: progress > 0 ? '0 0 8px var(--color-signal-glow)' : 'none',
-        }}
-      />
-    </div>
-  );
-}
+const phases = ['Capture', 'Verify', 'Deliver'] as const;
+const phaseColors: Record<string, string> = {
+  'Capture': 'var(--color-signal)',
+  'Verify': 'var(--color-info)',
+  'Deliver': 'var(--color-success)',
+};
 
 export function JourneyAnimation() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeStage, setActiveStage] = useState(-1);
   const [isVisible, setIsVisible] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Observe visibility
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -234,32 +104,46 @@ export function JourneyAnimation() {
           setIsVisible(true);
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
 
     observer.observe(container);
     return () => observer.disconnect();
   }, [isVisible]);
 
+  // Auto-advance stages
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible || isPaused) return;
 
     let current = -1;
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       current++;
       if (current >= stages.length) {
-        clearInterval(interval);
+        if (intervalRef.current) clearInterval(intervalRef.current);
         return;
       }
       setActiveStage(current);
-    }, 1200);
+    }, 1800);
 
-    return () => clearInterval(interval);
-  }, [isVisible]);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isVisible, isPaused]);
 
-  const progress = activeStage >= 0
-    ? Math.min(((activeStage + 1) / stages.length) * 100, 100)
-    : 0;
+  const handleStageClick = useCallback((index: number) => {
+    setActiveStage(index);
+    setIsPaused(true);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  }, []);
+
+  const handleReplay = useCallback(() => {
+    setActiveStage(-1);
+    setIsPaused(false);
+    setIsVisible(false);
+    setTimeout(() => setIsVisible(true), 100);
+  }, []);
+
+  const currentPhase = activeStage >= 0 ? stages[activeStage]?.phase : null;
 
   return (
     <section
@@ -272,17 +156,17 @@ export function JourneyAnimation() {
         position: 'relative',
       }}
     >
-      {/* Background glow */}
+      {/* Subtle background glow */}
       <div
         aria-hidden="true"
         style={{
           position: 'absolute',
-          top: '30%',
+          top: '20%',
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '60%',
-          height: '40%',
-          background: 'radial-gradient(ellipse, rgba(255, 107, 53, 0.04), transparent 70%)',
+          width: '80%',
+          height: '60%',
+          background: 'radial-gradient(ellipse, rgba(255, 107, 53, 0.03), transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -295,8 +179,8 @@ export function JourneyAnimation() {
           position: 'relative',
         }}
       >
-        {/* Section header */}
-        <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-12)' }}>
           <p
             style={{
               fontFamily: 'var(--font-mono)',
@@ -317,275 +201,229 @@ export function JourneyAnimation() {
               letterSpacing: 'var(--tracking-tight)',
               color: 'var(--color-text-primary)',
               fontWeight: 400,
-              maxWidth: '640px',
+              maxWidth: 560,
               margin: '0 auto',
             }}
           >
-            From a wrong answer to a better AI — here&apos;s what happens behind the scenes
+            From wrong answer to better AI
           </h2>
         </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-body)',
-            fontSize: 'var(--text-base)',
-            color: 'var(--color-text-muted)',
-            textAlign: 'center',
-            maxWidth: '520px',
-            margin: '0 auto var(--space-16)',
-            lineHeight: 'var(--leading-relaxed)',
-          }}
-        >
-          Every flag you tap triggers a rigorous pipeline. Here&apos;s how one wrong answer becomes training data that makes AI safer for everyone.
-        </p>
-
-        {/* Timeline */}
+        {/* Phase tabs */}
         <div
           style={{
-            position: 'relative',
-            maxWidth: '680px',
-            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 'var(--space-1)',
+            marginBottom: 'var(--space-10)',
           }}
         >
-          <ProgressLine progress={progress} />
+          {phases.map((phase) => {
+            const isActive = currentPhase === phase;
+            const phaseIndex = stages.findIndex((s) => s.phase === phase);
+            const isPast = activeStage >= 0 && phaseIndex <= activeStage;
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-            {stages.map((stage, index) => {
-              const Icon = stage.icon;
-              const MoodIcon = stage.emoji;
-              const isActive = index <= activeStage;
-              const isCurrent = index === activeStage;
+            return (
+              <button
+                key={phase}
+                onClick={() => handleStageClick(stages.findIndex((s) => s.phase === phase))}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 20px',
+                  borderRadius: 'var(--radius-full)',
+                  border: `1px solid ${isActive ? phaseColors[phase] + '60' : isPast ? 'var(--color-border-strong)' : 'var(--color-border)'}`,
+                  background: isActive ? phaseColors[phase] + '12' : 'transparent',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '11px',
+                  letterSpacing: 'var(--tracking-wide)',
+                  color: isActive ? phaseColors[phase] : isPast ? 'var(--color-text-secondary)' : 'var(--color-text-faint)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {isPast && !isActive && <CheckCircle2 size={12} />}
+                {phase}
+              </button>
+            );
+          })}
+        </div>
 
-              return (
+        {/* Stage cards — horizontal scrollable on mobile, grid on desktop */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: 'var(--space-4)',
+            marginBottom: 'var(--space-8)',
+          }}
+        >
+          {stages.map((stage, index) => {
+            const Icon = stage.icon;
+            const isActive = index <= activeStage;
+            const isCurrent = index === activeStage;
+
+            return (
+              <button
+                key={stage.id}
+                onClick={() => handleStageClick(index)}
+                style={{
+                  textAlign: 'left',
+                  padding: 'var(--space-5)',
+                  borderRadius: 'var(--radius-lg)',
+                  background: isCurrent ? 'var(--color-bg-elevated)' : isActive ? 'var(--color-bg-surface)' : 'var(--color-bg-surface)',
+                  border: `1px solid ${isCurrent ? stage.accent + '50' : isActive ? 'var(--color-border-strong)' : 'var(--color-border)'}`,
+                  opacity: isActive ? 1 : activeStage === -1 ? 0.5 : 0.35,
+                  transform: isCurrent ? 'scale(1.02)' : 'scale(1)',
+                  transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                  cursor: 'pointer',
+                  boxShadow: isCurrent ? `0 4px 20px ${stage.accent}15, 0 0 0 1px ${stage.accent}20` : 'none',
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Phase label */}
                 <div
-                  key={stage.id}
                   style={{
-                    display: 'flex',
-                    gap: 'var(--space-5)',
-                    alignItems: 'flex-start',
-                    padding: 'var(--space-5) 0',
-                    position: 'relative',
-                    zIndex: 1,
-                    opacity: isActive ? 1 : 0.25,
-                    transform: isActive ? 'translateX(0)' : 'translateX(12px)',
-                    transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '9px',
+                    letterSpacing: 'var(--tracking-wider)',
+                    textTransform: 'uppercase',
+                    color: phaseColors[stage.phase],
+                    marginBottom: 'var(--space-3)',
+                    opacity: 0.8,
                   }}
                 >
-                  {/* Node */}
+                  {stage.phase} · {String(index + 1).padStart(2, '0')}
+                </div>
+
+                {/* Icon + Title */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
                   <div
                     style={{
-                      width: '48px',
-                      height: '48px',
-                      borderRadius: 'var(--radius-lg)',
-                      background: isCurrent ? stage.accent : isActive ? 'var(--color-bg-surface)' : 'var(--color-bg-muted)',
-                      border: `2px solid ${isCurrent ? stage.accent : isActive ? 'var(--color-border-strong)' : 'var(--color-border)'}`,
+                      width: 32,
+                      height: 32,
+                      borderRadius: 'var(--radius-md)',
+                      background: isCurrent ? stage.accent : `${stage.accent}15`,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-                      boxShadow: isCurrent ? `0 0 20px ${stage.accent}33` : 'none',
+                      transition: 'all 0.3s ease',
                     }}
                   >
                     <Icon
-                      size={20}
+                      size={15}
                       style={{
-                        color: isCurrent ? '#fff' : isActive ? stage.accent : 'var(--color-text-faint)',
+                        color: isCurrent ? '#fff' : stage.accent,
                         transition: 'color 0.3s ease',
                       }}
                     />
                   </div>
-
-                  {/* Content */}
-                  <div style={{ flex: 1, paddingTop: '2px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-1)' }}>
-                      <h3
-                        style={{
-                          fontFamily: 'var(--font-body)',
-                          fontSize: 'var(--text-base)',
-                          color: isCurrent ? 'var(--color-text-primary)' : isActive ? 'var(--color-text-secondary)' : 'var(--color-text-faint)',
-                          fontWeight: 500,
-                          margin: 0,
-                          transition: 'color 0.3s ease',
-                        }}
-                      >
-                        {stage.title}
-                      </h3>
-                      {MoodIcon && isActive && (
-                        <MoodIcon
-                          size={16}
-                          style={{
-                            color: stage.accent,
-                            opacity: isCurrent ? 1 : 0.5,
-                            transition: 'all 0.3s ease',
-                          }}
-                        />
-                      )}
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: 'var(--text-sm)',
-                        color: 'var(--color-text-muted)',
-                        lineHeight: 'var(--leading-relaxed)',
-                        margin: 0,
-                        maxWidth: '480px',
-                        opacity: isActive ? 1 : 0,
-                        transition: 'opacity 0.4s ease 0.1s',
-                      }}
-                    >
-                      {stage.description}
-                    </p>
-
-                    {/* Special visuals for certain stages */}
-                    {stage.id === 'checks' && (
-                      <div style={{ marginTop: 'var(--space-3)', opacity: isActive ? 1 : 0, transition: 'opacity 0.4s ease 0.2s' }}>
-                        <CheckAnimation count={20} active={isActive} />
-                      </div>
-                    )}
-
-                    {stage.id === 'experts' && (
-                      <div style={{ marginTop: 'var(--space-3)', opacity: isActive ? 1 : 0, transition: 'opacity 0.4s ease 0.2s' }}>
-                        <ExpertAvatars active={isActive} />
-                      </div>
-                    )}
-
-                    {stage.id === 'agreement' && isActive && (
-                      <div
-                        style={{
-                          marginTop: 'var(--space-3)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 'var(--space-2)',
-                          padding: '6px 14px',
-                          background: 'var(--color-success-subtle)',
-                          border: '1px solid var(--color-success-border)',
-                          borderRadius: 'var(--radius-full)',
-                          opacity: isCurrent ? 1 : 0.6,
-                          transition: 'opacity 0.4s ease',
-                        }}
-                      >
-                        <CheckCircle2 size={12} style={{ color: 'var(--color-success)' }} />
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-success)', letterSpacing: 'var(--tracking-wide)' }}>
-                          9/9 CONSENSUS REACHED
-                        </span>
-                      </div>
-                    )}
-
-                    {stage.id === 'payout' && isActive && (
-                      <div
-                        style={{
-                          marginTop: 'var(--space-3)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 'var(--space-2)',
-                          padding: '6px 14px',
-                          background: 'var(--color-success-subtle)',
-                          border: '1px solid var(--color-success-border)',
-                          borderRadius: 'var(--radius-full)',
-                          opacity: isCurrent ? 1 : 0.6,
-                          transition: 'opacity 0.4s ease',
-                        }}
-                      >
-                        <DollarSign size={12} style={{ color: 'var(--color-success)' }} />
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--color-success)', letterSpacing: 'var(--tracking-wide)' }}>
-                          PAYOUT CONFIRMED — TRUE POSITIVE
-                        </span>
-                      </div>
-                    )}
-
-                    {stage.id === 'dataset' && isActive && (
-                      <div style={{ marginTop: 'var(--space-3)', display: 'flex', gap: '4px', opacity: isCurrent ? 1 : 0.6, transition: 'opacity 0.4s ease' }}>
-                        {['Correction', 'Rubric', 'Provenance', 'Audit'].map((tag, i) => (
-                          <span
-                            key={tag}
-                            style={{
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '10px',
-                              color: 'var(--color-signal)',
-                              letterSpacing: 'var(--tracking-wide)',
-                              padding: '3px 8px',
-                              border: '1px solid var(--color-signal-border)',
-                              borderRadius: 'var(--radius-sm)',
-                              background: 'var(--color-signal-subtle)',
-                              opacity: isActive ? 1 : 0,
-                              transition: `opacity 0.3s ease ${i * 0.1}s`,
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {stage.id === 'impact' && isCurrent && (
-                      <div
-                        style={{
-                          marginTop: 'var(--space-4)',
-                          padding: 'var(--space-4) var(--space-5)',
-                          background: 'var(--color-signal-subtle)',
-                          border: '1px solid var(--color-signal-border)',
-                          borderRadius: 'var(--radius-md)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 'var(--space-2)',
-                        }}
-                      >
-                        {[
-                          { label: 'Flagger', result: 'Earned a payout' },
-                          { label: 'Experts', result: 'Got paid for evaluation' },
-                          { label: 'AI model', result: 'Got smarter' },
-                          { label: 'Next user', result: 'Gets a better answer' },
-                        ].map((item) => (
-                          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                            <CheckCircle2 size={12} style={{ color: 'var(--color-signal)', flexShrink: 0 }} />
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
-                              <strong style={{ color: 'var(--color-text-primary)' }}>{item.label}:</strong> {item.result}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Step number */}
-                  <div
+                  <h3
                     style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '10px',
-                      color: isCurrent ? stage.accent : 'var(--color-text-faint)',
-                      letterSpacing: 'var(--tracking-wider)',
-                      flexShrink: 0,
-                      paddingTop: '6px',
+                      fontFamily: 'var(--font-body)',
+                      fontSize: 'var(--text-sm)',
+                      color: isCurrent ? 'var(--color-text-primary)' : isActive ? 'var(--color-text-secondary)' : 'var(--color-text-faint)',
+                      fontWeight: 500,
+                      margin: 0,
                       transition: 'color 0.3s ease',
-                      minWidth: '24px',
-                      textAlign: 'right',
+                      lineHeight: 'var(--leading-snug)',
                     }}
                   >
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
+                    {stage.title}
+                  </h3>
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Description */}
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '12px',
+                    color: 'var(--color-text-muted)',
+                    lineHeight: 'var(--leading-relaxed)',
+                    margin: 0,
+                    opacity: isActive ? 1 : 0,
+                    maxHeight: isActive ? 80 : 0,
+                    transition: 'opacity 0.3s ease, max-height 0.3s ease',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {stage.description}
+                </p>
+
+                {/* Bottom progress indicator */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    background: isActive ? stage.accent : 'transparent',
+                    opacity: isCurrent ? 1 : 0.4,
+                    transition: 'all 0.3s ease',
+                  }}
+                />
+              </button>
+            );
+          })}
         </div>
 
-        {/* Replay button */}
-        {activeStage >= stages.length - 1 && (
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-10)' }}>
-            <button
-              onClick={() => {
-                setActiveStage(-1);
-                setIsVisible(false);
-                setTimeout(() => setIsVisible(true), 100);
+        {/* Bottom row: outcome + replay */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
+          {/* Outcome badges — appear when all stages complete */}
+          {activeStage >= stages.length - 1 && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 'var(--space-3)',
+                flexWrap: 'wrap',
+                animation: 'fade-up 0.4s ease-out',
               }}
-              className="btn-ghost"
-              style={{ fontSize: 'var(--text-sm)' }}
             >
-              Replay the journey ↻
+              {[
+                { label: 'Flagger paid', icon: DollarSign, color: 'var(--color-success)' },
+                { label: 'Experts paid', icon: Users, color: 'var(--color-success)' },
+                { label: 'AI improved', icon: Sparkles, color: 'var(--color-signal)' },
+              ].map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <div
+                    key={item.label}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                      padding: '5px 12px',
+                      background: `${item.color}10`,
+                      border: `1px solid ${item.color}25`,
+                      borderRadius: 'var(--radius-full)',
+                    }}
+                  >
+                    <ItemIcon size={12} style={{ color: item.color }} />
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: item.color, letterSpacing: 'var(--tracking-wide)' }}>
+                      {item.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Replay */}
+          {activeStage >= stages.length - 1 && (
+            <button
+              onClick={handleReplay}
+              className="btn-ghost"
+              style={{ fontSize: 'var(--text-sm)', marginLeft: 'auto' }}
+            >
+              Replay ↻
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </section>
   );

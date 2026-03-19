@@ -41,7 +41,7 @@ const openRoles: Role[] = [
   {
     title: 'Founding Engineer — Full Stack',
     type: 'Full-time',
-    location: 'San Francisco (hybrid) or Remote (US)',
+    location: 'Remote (India / Global)',
     team: 'Engineering',
     description: 'You\'ll own major surfaces across the platform — from the expert workbench to the org-facing dashboard to the evaluation pipeline. This is a generalist role where you\'ll build product, write infrastructure, and make architectural decisions that shape the system for years.',
     responsibilities: [
@@ -68,7 +68,7 @@ const openRoles: Role[] = [
   {
     title: 'ML / Data Engineer — Anti-Cheat & Quality',
     type: 'Full-time',
-    location: 'San Francisco (hybrid) or Remote (US/India)',
+    location: 'Remote (India / Global)',
     team: 'Engineering',
     description: 'You\'ll build and improve Iron Dome — our anti-cheat system that detects AI-generated annotations using keystroke dynamics, behavioral biometrics, and content analysis. This role sits at the intersection of ML, security, and data quality.',
     responsibilities: [
@@ -123,7 +123,7 @@ const openRoles: Role[] = [
   {
     title: 'Growth & Partnerships',
     type: 'Full-time',
-    location: 'San Francisco or Remote (US)',
+    location: 'Remote (India / Global)',
     team: 'Business',
     description: 'You\'ll be our first dedicated business hire, responsible for building relationships with AI labs, managing the sales pipeline, and closing design partnerships. This is founder-adjacent — you\'ll shape our go-to-market strategy and represent RawEval to the most important customers in AI.',
     responsibilities: [
@@ -186,7 +186,7 @@ export default function CareersPage() {
             </div>
             <span style={{ color: 'var(--color-border-strong)', fontSize: '11px' }}>·</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)' }}>
-              San Francisco + Remote
+              Remote-first
             </span>
             <span style={{ color: 'var(--color-border-strong)', fontSize: '11px' }}>·</span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-wide)' }}>

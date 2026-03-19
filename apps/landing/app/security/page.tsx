@@ -147,10 +147,10 @@ export default function SecurityPage() {
             AI labs trust us with data that defines their competitive advantage. That trust requires security practices that go beyond checkboxes — from data isolation to behavioral biometrics to EU AI Act compliance.
           </p>
           <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-            <a href="mailto:security@raweval.com" className="btn-primary">
+            <a href="mailto:contact@raweval.com" className="btn-primary">
               Request security questionnaire
             </a>
-            <a href="mailto:security@raweval.com?subject=Vulnerability Report" className="btn-secondary">
+            <a href="mailto:contact@raweval.com?subject=Vulnerability Report" className="btn-secondary">
               Report a vulnerability
             </a>
           </div>
@@ -236,7 +236,7 @@ export default function SecurityPage() {
             We&apos;re happy to walk through our security practices, share our SOC 2 readiness assessment, or complete your security questionnaire.
           </p>
           <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <a href="mailto:security@raweval.com" className="btn-primary">Email security@raweval.com</a>
+            <a href="mailto:contact@raweval.com" className="btn-primary">Email contact@raweval.com</a>
             <Link href="/legal/privacy" className="btn-outline-inverse">View privacy policy</Link>
           </div>
         </div>

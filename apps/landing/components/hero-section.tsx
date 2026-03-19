@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { GetStartedDropdown } from '@/components/get-started-dropdown';
 
 const platformCapabilities = [
   'Multi-model comparison',
@@ -176,20 +176,15 @@ export function HeroSection() {
           Deliver audit-ready RLHF data.
         </p>
 
-        {/* CTA row */}
+        {/* CTA row — Get Started dropdown + Book a Demo */}
         <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-12)' }}>
-          <a href="https://chat.raweval.com" className="btn-primary" style={{ padding: '14px 32px', fontSize: 'var(--text-sm)' }}>
-            Try the Chat <ArrowRight size={14} />
-          </a>
-          <Link href="/contact" className="btn-secondary" style={{ padding: '14px 28px', fontSize: 'var(--text-sm)' }}>
+          <GetStartedDropdown variant="primary" size="large" />
+          <Link href="/contact" className="btn-secondary" style={{ padding: '16px 28px', fontSize: 'var(--text-sm)' }}>
             Book a Demo
           </Link>
-          <a href="https://work.raweval.com" className="btn-ghost" style={{ padding: '14px 20px', fontSize: 'var(--text-sm)' }}>
-            Expert Workbench →
-          </a>
         </div>
 
-        {/* Capability pills — scrolling ticker-style */}
+        {/* Capability pills */}
         <div style={{ marginBottom: 'var(--space-8)' }}>
           <p
             style={{

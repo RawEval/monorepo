@@ -1,15 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, MessageSquare, Wrench, Building2 } from 'lucide-react';
 
 const navLinks = [
   { label: 'Product', href: '/how-it-works/capture' },
-  { label: 'Enterprise', href: '/organizations' },
+  { label: 'Enterprise', href: '/research' },
   { label: 'Docs', href: '/developers' },
   { label: 'Blog', href: '/blog' },
+];
+
+const productLinks = [
+  { icon: MessageSquare, label: 'Chat', description: 'Chat with AI, earn rewards', href: '/chat', accent: 'var(--color-signal)' },
+  { icon: Wrench, label: 'Work', description: 'Expert evaluation workbench', href: '/work', accent: 'var(--color-info)' },
+  { icon: Building2, label: 'Research', description: 'Marketplace for verified AI evaluation data', href: '/research', accent: 'var(--color-success)' },
 ];
 
 export function Navbar() {
@@ -98,12 +104,7 @@ export function Navbar() {
           >
             Log in
           </a>
-          <a
-            href="https://chat.raweval.com/signup"
-            className="btn-primary"
-          >
-            Get Started →
-          </a>
+          <NavGetStarted />
         </div>
 
         {/* Mobile menu button */}
@@ -162,7 +163,50 @@ export function Navbar() {
           </Link>
         ))}
 
-        <div style={{ borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)' }}>
+        {/* Product links for mobile */}
+        <div style={{ borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)' }}>
+          <p style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            letterSpacing: 'var(--tracking-wider)',
+            textTransform: 'uppercase',
+            color: 'var(--color-text-faint)',
+            padding: '4px 8px',
+            marginBottom: 'var(--space-1)',
+          }}>
+            Products
+          </p>
+          {productLinks.map((product) => {
+            const Icon = product.icon;
+            return (
+              <Link
+                key={product.label}
+                href={product.href}
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
+                  padding: '10px 8px',
+                  borderRadius: 'var(--radius-md)',
+                  minHeight: '44px',
+                }}
+              >
+                <Icon size={16} style={{ color: product.accent, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)' }}>
+                    {product.label}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--color-text-faint)' }}>
+                    {product.description}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div style={{ borderTop: '1px solid var(--color-border)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-3)' }}>
           <a
             href="https://chat.raweval.com/login"
             onClick={() => setMobileOpen(false)}
@@ -178,14 +222,14 @@ export function Navbar() {
           >
             Log in
           </a>
-          <a
-            href="https://chat.raweval.com/signup"
+          <Link
+            href="/chat"
             className="btn-primary"
             onClick={() => setMobileOpen(false)}
             style={{ width: '100%', marginTop: 'var(--space-3)', justifyContent: 'center', padding: '14px 24px' }}
           >
             Get Started →
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -206,3 +250,101 @@ export function Navbar() {
     </header>
   );
 }
+
+/**
+ * Desktop "Get Started" with inline dropdown — uses the same product links.
+ */
+function NavGetStarted() {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <button
+        className="btn-primary"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        style={{ gap: 6 }}
+      >
+        Get Started
+        <svg
+          width="10"
+          height="10"
+          viewBox="0 0 10 10"
+          fill="none"
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: open ? 'rotate(180deg)' : 'rotate(0)',
+          }}
+        >
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            right: 0,
+            minWidth: 260,
+            background: 'var(--color-bg-surface)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+            overflow: 'hidden',
+            animation: 'nav-dropdown-in 0.15s ease-out',
+            zIndex: 100,
+          }}
+          role="menu"
+        >
+          {productLinks.map((product, i) => {
+            const Icon = product.icon;
+            return (
+              <Link
+                key={product.label}
+                href={product.href}
+                onClick={() => setOpen(false)}
+                role="menuitem"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
+                  padding: '12px 14px',
+                  borderBottom: i < productLinks.length - 1 ? '1px solid var(--color-border-subtle)' : 'none',
+                  transition: 'background 0.15s ease',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+                onMouseOver={(e) => (e.currentTarget.style.background = 'var(--color-bg-muted)')}
+                onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <Icon size={16} style={{ color: product.accent, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)', fontWeight: 500 }}>
+                    {product.label}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                    {product.description}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+

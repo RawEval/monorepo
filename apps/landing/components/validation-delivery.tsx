@@ -551,7 +551,7 @@ export function ValidationDelivery() {
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link
-              href={appUrls.landing('/organizations')}
+              href={appUrls.landing('/research')}
               className="rounded-lg bg-white px-6 py-3 font-medium text-slate-900 transition-colors hover:bg-slate-100"
             >
               Request API Access

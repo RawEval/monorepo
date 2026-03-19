@@ -67,7 +67,7 @@ export function ExpertsCTA() {
                   className="h-12 border-white/30 px-6 text-base text-white hover:bg-white/10"
                   asChild
                 >
-                  <Link href="mailto:experts@raweval.com">
+                  <Link href="mailto:contact@raweval.com">
                     <Mail className="mr-2 h-4 w-4" />
                     Contact us
                   </Link>
@@ -133,7 +133,7 @@ export function ExpertsCTA() {
               Expert FAQ
             </Link>{' '}
             or{' '}
-            <Link href="mailto:experts@raweval.com" className="text-purple-600 hover:underline">
+            <Link href="mailto:contact@raweval.com" className="text-purple-600 hover:underline">
               contact our team
             </Link>
             .

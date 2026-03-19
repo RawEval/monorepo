@@ -31,7 +31,7 @@ const howItWorks = [
   { step: '04', title: 'Data delivered', body: 'Clean, structured evaluation data delivered on your schedule via API, webhook, or bulk download.' },
 ];
 
-export default function OrganizationsPage() {
+export default function ResearchPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)', paddingTop: 'var(--section-y)' }}>
 
@@ -46,8 +46,9 @@ export default function OrganizationsPage() {
             RawEval gives your team a reliable supply of verified evaluation data — preference pairs, corrected completions, and rubric-scored evaluations — so you can improve your models without worrying about data quality.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 'var(--space-3)' }}>
-            <Link href="/contact" className="btn-primary">Talk to us →</Link>
-            <a href="https://chat.raweval.com" className="btn-secondary">Try the chat first</a>
+            <a href="https://research.raweval.com" className="btn-primary">Browse Datasets &rarr;</a>
+            <Link href="/contact" className="btn-secondary">Talk to us</Link>
+            <a href="https://chat.raweval.com" className="btn-ghost">Try the chat first</a>
           </div>
         </div>
       </section>
@@ -62,7 +63,7 @@ export default function OrganizationsPage() {
           <div className="grid-cols-3-md">
             {features.map((f) => (
               <div key={f.label} style={{ paddingTop: 'var(--space-5)', borderTop: '1px solid var(--color-border)' }}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-3)', textTransform: 'uppercase' }}>◈</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 'var(--text-xs)', color: 'var(--color-signal)', letterSpacing: 'var(--tracking-wide)', marginBottom: 'var(--space-3)', textTransform: 'uppercase' }}>&#9670;</div>
                 <h3 style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-base)', color: 'var(--color-text-primary)', fontWeight: 500, margin: '0 0 var(--space-3)' }}>{f.label}</h3>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)', margin: 0 }}>{f.body}</p>
               </div>
@@ -120,7 +121,7 @@ export default function OrganizationsPage() {
             Tell us about your use case and we&apos;ll scope a custom pilot. Most teams go from first conversation to first data delivery in under 4 weeks.
           </p>
           <Link href="/contact" className="btn-primary" style={{ padding: '14px 36px', fontSize: 'var(--text-sm)' }}>
-            Contact us →
+            Contact us &rarr;
           </Link>
         </div>
       </section>
