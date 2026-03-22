@@ -39,7 +39,7 @@ export default function ModelAnalyticsPage() {
 
   const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
 
-  const { data: costData } = useQuery({
+  const { data: _costData } = useQuery({
     queryKey: ['llm-cost-summary', dateRange],
     queryFn: () => adminLLMConfigService.getCostSummary({ days, group_by: 'model' }),
   });
