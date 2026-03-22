@@ -1,23 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Loader2, Plus, BrainCircuit, Globe, ArrowUp } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Loader2, Plus, BrainCircuit, Globe, ArrowUp, Check, ChevronDown, X as XIcon, Search, Maximize2, Zap, Eye, Globe2 } from 'lucide-react';
 import { cn } from '@raweval/utils';
 import { AttachmentPreview, Attachment } from './attachment-preview';
 import { VoiceRecorder } from './voice-recorder';
 import { useChatStore } from '@/stores/chat-store';
 import { useModels } from '../api/get-models';
 import type { Provider } from '@raweval/types';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
-} from '@raweval/ui/select';
 
 interface ChatInputProps {
   onSend: (message: string, images?: string[], files?: File[]) => void;
@@ -154,11 +145,21 @@ export function ChatInput({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [modelFullscreen, setModelFullscreen] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+  const modelSearchRef = useRef<HTMLInputElement>(null);
 
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
   const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
   const setWebSearchEnabled = useChatStore((s) => s.setWebSearchEnabled);
+  const selectedModels = useChatStore((s) => s.selectedModels);
+  const toggleModelInComparison = useChatStore((s) => s.toggleModelInComparison);
+  const setCompareMode = useChatStore((s) => s.setCompareMode);
+  const setSelectedModels = useChatStore((s) => s.setSelectedModels);
   const activeModelValue = `${selectedModel.provider}:${selectedModel.model}`;
 
   const { data: modelsResult } = useModels();
@@ -169,6 +170,28 @@ export function ChatInput({
   }, [modelsResult]);
 
   const groupedModels = useMemo(() => groupModelsByProvider(availableModels), [availableModels]);
+
+  // Filtered models based on search
+  const filteredGroupedModels = useMemo(() => {
+    if (!modelSearchQuery.trim()) return groupedModels;
+    const q = modelSearchQuery.toLowerCase();
+    return groupedModels
+      .map((group) => ({
+        ...group,
+        models: group.models.filter(
+          (m) =>
+            m.label.toLowerCase().includes(q) ||
+            m.description.toLowerCase().includes(q) ||
+            m.provider.toLowerCase().includes(q)
+        ),
+      }))
+      .filter((group) => group.models.length > 0);
+  }, [groupedModels, modelSearchQuery]);
+
+  // Sync multiSelectMode with store compareMode
+  useEffect(() => {
+    setMultiSelectMode(selectedModels.length > 1);
+  }, [selectedModels.length]);
 
   // Current model's capabilities
   const currentModelOption = useMemo(() => {
@@ -202,10 +225,40 @@ export function ChatInput({
     }
   }, [availableModels, selectedModel, setSelectedModel]);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (modelFullscreen) return; // fullscreen has its own close
+      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
+        setModelMenuOpen(false);
+        setModelSearchQuery('');
+      }
+    }
+    if (modelMenuOpen && !modelFullscreen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [modelMenuOpen, modelFullscreen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (modelMenuOpen && modelSearchRef.current) {
+      setTimeout(() => modelSearchRef.current?.focus(), 100);
+    }
+    if (!modelMenuOpen) {
+      setModelSearchQuery('');
+      setModelFullscreen(false);
+    }
+  }, [modelMenuOpen]);
+
   const handleModelChange = (value: string) => {
     const modelDef = availableModels.find((m) => m.value === value);
     if (modelDef) {
-      setSelectedModel({ provider: modelDef.provider as Provider, model: modelDef.model });
+      const provider = modelDef.provider;
+      const modelId = modelDef.model;
+      setSelectedModel({ provider: provider as Provider, model: modelId });
+      setSelectedModels([{ provider: provider as Provider, model: modelId }]);
+      setCompareMode(false);
+      setModelMenuOpen(false);
     }
   };
 
@@ -560,50 +613,341 @@ export function ChatInput({
           </div>
         </div>
 
+        {/* Selected model pills — shown above bottom bar when 2+ models */}
+        {selectedModels.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto px-3 pb-1.5 sm:px-4 scrollbar-none">
+            {selectedModels.map((sm) => {
+              const def = availableModels.find(
+                (m) => m.provider === sm.provider && m.model === sm.model
+              );
+              return (
+                <span
+                  key={`${sm.provider}:${sm.model}`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary"
+                >
+                  {def?.label || sm.model.split('/').pop()}
+                  <button
+                    type="button"
+                    onClick={() => toggleModelInComparison(sm)}
+                    className="hover:text-destructive -mr-1 rounded-full p-0.5 transition-colors"
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
+
         {/* Bottom Bar - Model Selection, Web Search, Character Count */}
         <div className="flex items-center justify-between px-3 pb-2 sm:px-4">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Select value={activeModelValue} onValueChange={handleModelChange}>
-              <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit max-w-[55%] gap-1 border-none bg-transparent! p-0 text-[11px] font-medium shadow-none focus:ring-0 sm:max-w-none sm:gap-1.5 sm:text-xs [&>svg]:ml-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-3.5 sm:[&>svg]:w-3.5">
+            {/* Model Selection */}
+            <div className="relative" ref={modelMenuRef}>
+              <button
+                type="button"
+                onClick={() => setModelMenuOpen(!modelMenuOpen)}
+                className="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1 text-[11px] font-medium sm:gap-1.5 sm:text-xs"
+              >
                 <BrainCircuit className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
-                <SelectValue>
-                  <span className="truncate">{activeModelDef?.label}</span>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="max-h-[400px]">
-                {groupedModels.map((group, gi) => (
-                  <SelectGroup key={group.provider}>
-                    {gi > 0 && <SelectSeparator />}
-                    <SelectLabel className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider px-2 py-1">
-                      {group.label}
-                    </SelectLabel>
-                    {group.models.map((model) => (
-                      <SelectItem key={model.value} value={model.value}>
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col gap-0">
-                            <span className="text-[13px]">{model.label}</span>
-                            <span className="text-muted-foreground text-[10px] font-normal leading-tight">
-                              {model.description}
-                            </span>
-                          </div>
-                          <div className="ml-auto flex shrink-0 items-center gap-0.5">
-                            {model.supportsWebSearch && (
-                              <span className="text-[8px] rounded bg-blue-500/10 px-1 py-px text-blue-600 dark:text-blue-400">search</span>
-                            )}
-                            {model.supportsVision && (
-                              <span className="text-[8px] rounded bg-purple-500/10 px-1 py-px text-purple-600 dark:text-purple-400">vision</span>
-                            )}
-                            {model.supportsTools && !model.supportsVision && !model.supportsWebSearch && (
-                              <span className="text-[8px] rounded bg-green-500/10 px-1 py-px text-green-600 dark:text-green-400">tools</span>
-                            )}
+                <span className="truncate max-w-[120px] sm:max-w-none">
+                  {selectedModels.length > 1
+                    ? `${selectedModels.length} models`
+                    : activeModelDef?.label || 'Select model'}
+                </span>
+                <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+              </button>
+
+              {/* Inline dropdown (non-fullscreen) */}
+              {modelMenuOpen && !modelFullscreen && (
+                <div className="absolute bottom-full left-0 mb-2 w-80 sm:w-96 max-h-[min(500px,60vh)] flex flex-col rounded-xl border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150 z-50">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 border-b border-border px-3 py-2 shrink-0">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        ref={modelSearchRef}
+                        type="text"
+                        placeholder="Search models..."
+                        value={modelSearchQuery}
+                        onChange={(e) => setModelSearchQuery(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (multiSelectMode) {
+                          if (selectedModels.length > 0) {
+                            const first = selectedModels[0]!;
+                            handleModelChange(`${first.provider}:${first.model}`);
+                          }
+                          setMultiSelectMode(false);
+                        } else {
+                          setMultiSelectMode(true);
+                        }
+                      }}
+                      className={cn(
+                        'shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors',
+                        multiSelectMode
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                      )}
+                    >
+                      {multiSelectMode ? `Compare (${selectedModels.length}/4)` : 'Compare'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModelFullscreen(true)}
+                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Expand to fullscreen"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Model list — compact */}
+                  <div className="overflow-y-auto p-1 flex-1">
+                    {filteredGroupedModels.map((group, gi) => (
+                      <div key={group.provider}>
+                        {gi > 0 && <div className="my-1 border-t border-border/50" />}
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                          {group.label}
+                        </div>
+                        {group.models.map((model) => {
+                          const isActive = selectedModels.some(
+                            (sm) => sm.provider === model.provider && sm.model === model.model
+                          ) || (!multiSelectMode && activeModelValue === model.value);
+                          const isDisabled = multiSelectMode && !isActive && selectedModels.length >= 4;
+                          return (
+                            <button
+                              key={model.value}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => {
+                                const modelSel = { provider: model.provider as Provider, model: model.model };
+                                if (multiSelectMode) {
+                                  if (isActive && selectedModels.length <= 1) return;
+                                  if (isActive) {
+                                    toggleModelInComparison(modelSel);
+                                    if (selectedModels.length === 2) { setCompareMode(false); setMultiSelectMode(false); }
+                                  } else {
+                                    if (selectedModels.length === 0) { setSelectedModels([modelSel]); setSelectedModel(modelSel); }
+                                    else if (selectedModels.length === 1) { setSelectedModels([...selectedModels, modelSel]); setCompareMode(true); }
+                                    else { toggleModelInComparison(modelSel); }
+                                  }
+                                } else {
+                                  handleModelChange(model.value);
+                                  setModelMenuOpen(false);
+                                }
+                              }}
+                              className={cn(
+                                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
+                                isActive ? 'bg-primary/10 text-primary' : isDisabled ? 'text-muted-foreground/30 cursor-not-allowed' : 'text-foreground hover:bg-muted'
+                              )}
+                            >
+                              {multiSelectMode ? (
+                                <div className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded border', isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30')}>
+                                  {isActive && <Check className="h-3 w-3" />}
+                                </div>
+                              ) : isActive ? (
+                                <div className="flex h-4 w-4 shrink-0 items-center justify-center"><div className="h-1.5 w-1.5 rounded-full bg-primary" /></div>
+                              ) : <div className="w-4 shrink-0" />}
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[13px] font-medium">{model.label}</div>
+                                <div className="truncate text-[10px] text-muted-foreground">{model.description}</div>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-0.5">
+                                {model.supportsWebSearch && <span className="rounded bg-blue-500/10 px-1 py-px text-[8px] text-blue-600">search</span>}
+                                {model.supportsVision && <span className="rounded bg-purple-500/10 px-1 py-px text-[8px] text-purple-600">vision</span>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                    {filteredGroupedModels.length === 0 && (
+                      <div className="px-3 py-6 text-center text-sm text-muted-foreground">No models match &ldquo;{modelSearchQuery}&rdquo;</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fullscreen Model Toolbox — portaled to body */}
+              {modelMenuOpen && modelFullscreen && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
+                  {/* Backdrop */}
+                  <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                  />
+                  {/* Panel */}
+                  <div className="relative z-10 flex h-[90vh] w-[95vw] max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl animate-in zoom-in-95 duration-200">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 border-b border-border px-5 py-3.5 shrink-0">
+                      <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+                      <h2 className="text-lg font-semibold text-foreground">Model Toolbox</h2>
+                      <div className="flex-1" />
+                      <div className="relative w-64">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search models..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          autoFocus
+                          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (multiSelectMode) {
+                            if (selectedModels.length > 0) {
+                              const first = selectedModels[0]!;
+                              handleModelChange(`${first.provider}:${first.model}`);
+                            }
+                            setMultiSelectMode(false);
+                          } else {
+                            setMultiSelectMode(true);
+                          }
+                        }}
+                        className={cn(
+                          'shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors',
+                          multiSelectMode
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                      >
+                        {multiSelectMode ? `Compare (${selectedModels.length}/4)` : 'Compare'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                        className="shrink-0 rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Model cards grid */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                      {filteredGroupedModels.map((group, gi) => (
+                        <div key={group.provider} className={gi > 0 ? 'mt-6' : ''}>
+                          <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {group.label}
+                          </h3>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {group.models.map((model) => {
+                              const isActive = selectedModels.some(
+                                (sm) => sm.provider === model.provider && sm.model === model.model
+                              ) || (!multiSelectMode && activeModelValue === model.value);
+                              const isDisabled = multiSelectMode && !isActive && selectedModels.length >= 4;
+                              return (
+                                <button
+                                  key={model.value}
+                                  type="button"
+                                  disabled={isDisabled}
+                                  onClick={() => {
+                                    const modelSel = { provider: model.provider as Provider, model: model.model };
+                                    if (multiSelectMode) {
+                                      if (isActive && selectedModels.length <= 1) return;
+                                      if (isActive) {
+                                        toggleModelInComparison(modelSel);
+                                        if (selectedModels.length === 2) { setCompareMode(false); setMultiSelectMode(false); }
+                                      } else {
+                                        if (selectedModels.length === 0) { setSelectedModels([modelSel]); setSelectedModel(modelSel); }
+                                        else if (selectedModels.length === 1) { setSelectedModels([...selectedModels, modelSel]); setCompareMode(true); }
+                                        else { toggleModelInComparison(modelSel); }
+                                      }
+                                    } else {
+                                      handleModelChange(model.value);
+                                      setModelFullscreen(false);
+                                      setModelMenuOpen(false);
+                                      setModelSearchQuery('');
+                                    }
+                                  }}
+                                  className={cn(
+                                    'group relative flex flex-col rounded-xl border p-4 text-left transition-all duration-150',
+                                    isActive
+                                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm'
+                                      : isDisabled
+                                        ? 'border-border/50 opacity-40 cursor-not-allowed'
+                                        : 'border-border hover:border-foreground/20 hover:bg-muted/50 hover:shadow-sm'
+                                  )}
+                                >
+                                  {/* Checkbox (compare mode) */}
+                                  {multiSelectMode && (
+                                    <div className={cn(
+                                      'absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded border transition-colors',
+                                      isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                                    )}>
+                                      {isActive && <Check className="h-3.5 w-3.5" />}
+                                    </div>
+                                  )}
+                                  {/* Active dot (single mode) */}
+                                  {!multiSelectMode && isActive && (
+                                    <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-primary/20" />
+                                  )}
+
+                                  <div className="text-sm font-semibold text-foreground">{model.label}</div>
+                                  <div className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">{model.description}</div>
+
+                                  {/* Capability badges */}
+                                  <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {model.supportsWebSearch && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                        <Globe2 className="h-2.5 w-2.5" />Search
+                                      </span>
+                                    )}
+                                    {model.supportsVision && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-600">
+                                        <Eye className="h-2.5 w-2.5" />Vision
+                                      </span>
+                                    )}
+                                    {model.supportsTools && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+                                        <Zap className="h-2.5 w-2.5" />Tools
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+                      ))}
+                      {filteredGroupedModels.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                          <Search className="mb-3 h-8 w-8 opacity-40" />
+                          <p className="text-sm">No models match &ldquo;{modelSearchQuery}&rdquo;</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between border-t border-border px-5 py-3 shrink-0">
+                      <div className="text-xs text-muted-foreground">
+                        {availableModels.length} models available
+                        {selectedModels.length > 1 && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                            {selectedModels.length} selected for comparison
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                        className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
 
             <button
               type="button"

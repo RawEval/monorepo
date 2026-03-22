@@ -247,6 +247,7 @@ class ChatService {
       onStart?: (data: any) => void;
       onChunk?: (provider: string, model: string, delta: string) => void;
       onModelComplete?: (data: any) => void;
+      onModelError?: (data: { provider: string; model: string; error: string }) => void;
       onDone?: (data: any) => void;
       onError?: (error: Error) => void;
     }
@@ -350,7 +351,11 @@ class ChatService {
                   callbacks.onModelComplete?.(data);
                   break;
                 case 'model_error':
-                  callbacks.onError?.(new Error(data.error));
+                  if (callbacks.onModelError) {
+                    callbacks.onModelError({ provider: data.provider, model: data.model, error: data.error });
+                  } else {
+                    callbacks.onError?.(new Error(data.error));
+                  }
                   break;
                 case 'done':
                   callbacks.onDone?.(data);
