@@ -241,7 +241,7 @@ export function HeroSection() {
             { step: '02', label: 'Route', desc: 'Match to domain experts' },
             { step: '03', label: 'Verify', desc: 'Iron Dome anti-cheat' },
             { step: '04', label: 'Deliver', desc: 'RLHF-ready training data' },
-          ].map((s, i) => (
+          ].map((s) => (
             <div
               key={s.step}
               className="first:rounded-tl-lg sm:first:rounded-bl-lg last:rounded-br-lg sm:last:rounded-tr-lg [&:nth-child(2)]:rounded-tr-lg sm:[&:nth-child(2)]:rounded-none [&:nth-child(3)]:rounded-bl-lg sm:[&:nth-child(3)]:rounded-none"
