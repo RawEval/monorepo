@@ -10,14 +10,10 @@ import {
   ChevronDown,
   ChevronRight,
   Activity,
-  DollarSign,
-  Zap,
-  Clock,
   Layers,
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  MinusCircle,
   Shield,
   Brain,
   Scale,
@@ -30,7 +26,7 @@ import {
 } from 'lucide-react';
 import { adminLLMConfigService } from '@/services/admin/llm-config-service';
 import type { PipelineCallsResponse } from '@/services/admin/llm-config-service';
-import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
+import { Card, CardContent } from '@raweval/ui/card';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
 import { cn } from '@raweval/utils';
@@ -264,40 +260,6 @@ function getStageGroup(stageName: string): string | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Score Bar Component
-// ─────────────────────────────────────────────────────────────────────────────
-
-function ScoreBar({
-  label,
-  value,
-  colorFn,
-  barColorFn,
-  max = 1,
-}: {
-  label: string;
-  value: number | null | undefined;
-  colorFn?: (v: number | null | undefined) => string;
-  barColorFn?: (v: number | null | undefined) => string;
-  max?: number;
-}) {
-  const pct = value != null ? Math.min((value / max) * 100, 100) : 0;
-  const textColor = colorFn ? colorFn(value) : scoreColor(value);
-  const barColor = barColorFn ? barColorFn(value) : scoreBarColor(value);
-
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-muted-foreground w-28 shrink-0 text-xs font-medium">{label}</span>
-      <span className={cn('w-12 shrink-0 font-mono text-sm font-bold', textColor)}>
-        {value != null ? value.toFixed(2) : '--'}
-      </span>
-      <div className="bg-muted h-3 flex-1 overflow-hidden rounded-full">
-        <div className={cn('h-full rounded-full transition-all', barColor)} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Collapsible Section Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -355,16 +317,16 @@ function ContextDetail({ calls }: { calls: CallData[] }) {
       {parsed && (
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            {parsed.task_type && (
+            {parsed.task_type ? (
               <Badge variant="outline" className="font-mono">
                 task_type: {String(parsed.task_type)}
               </Badge>
-            )}
-            {parsed.domain && (
+            ) : null}
+            {parsed.domain ? (
               <Badge variant="outline" className="font-mono">
                 domain: {String(parsed.domain)}
               </Badge>
-            )}
+            ) : null}
             {parsed.difficulty_score != null && (
               <Badge variant="outline" className={cn('font-mono', scoreColor(Number(parsed.difficulty_score)))}>
                 difficulty: {Number(parsed.difficulty_score).toFixed(2)}
@@ -457,9 +419,9 @@ function KLEDetail({ calls }: { calls: CallData[] }) {
               </Badge>
             )}
           </div>
-          {parsed.interpretation && (
+          {parsed.interpretation ? (
             <p className="text-muted-foreground text-xs italic">{String(parsed.interpretation)}</p>
-          )}
+          ) : null}
         </div>
       )}
       <BaseCallDetail call={call} />
@@ -472,8 +434,6 @@ function KLEDetail({ calls }: { calls: CallData[] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function JudgeDetail({ stages }: { stages: StageData[] }) {
-  // Collect all judge calls
-  const judgeCalls = stages.flatMap((s) => s.calls);
   const judgeOutputs: { stageName: string; call: CallData; parsed: Record<string, unknown> | null }[] = stages.map(
     (s) => ({
       stageName: s.stage,
@@ -669,11 +629,11 @@ function ClaimsDetail({ calls }: { calls: CallData[] }) {
                 <span className="text-foreground min-w-0 flex-1 truncate text-xs">
                   {String(claim.claim ?? claim.text ?? claim.statement ?? `Claim ${i + 1}`)}
                 </span>
-                {claim.type && (
+                {claim.type ? (
                   <Badge variant="outline" className="shrink-0 text-[10px]">
                     {String(claim.type)}
                   </Badge>
-                )}
+                ) : null}
                 {confidence != null && (
                   <div className="flex w-20 shrink-0 items-center gap-1">
                     <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
@@ -734,7 +694,7 @@ function FraudDetail({ calls }: { calls: CallData[] }) {
                     </span>
                   )}
                 </div>
-                {sig.description && <p className="text-muted-foreground mt-1 text-xs">{String(sig.description)}</p>}
+                {sig.description ? <p className="text-muted-foreground mt-1 text-xs">{String(sig.description)}</p> : null}
               </CardContent>
             </Card>
           ))}
@@ -1655,7 +1615,8 @@ export default function QCInspectorPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.stages.map((stage) => (
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {data.stages.map((stage: any) => (
                         <tr key={stage.stage} className="border-border border-b last:border-0">
                           <td className="px-4 py-2">
                             <div className="flex items-center gap-2">

@@ -10,7 +10,6 @@ import {
   Power,
   PowerOff,
   Eye,
-  EyeOff,
   Wrench,
   Sparkles,
   Zap,

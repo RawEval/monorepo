@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, KeyboardEvent, ClipboardEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@raweval/ui/button';
 import {
@@ -29,7 +28,6 @@ import logoImg from '@/public/logo.png';
 type Step = 'email' | 'reset' | 'success';
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [newPassword, setNewPassword] = useState('');

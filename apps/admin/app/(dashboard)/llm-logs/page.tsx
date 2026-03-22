@@ -21,7 +21,7 @@ import {
   Settings2,
 } from 'lucide-react';
 import { adminLLMConfigService } from '@/services/admin/llm-config-service';
-import type { LLMCallLog, CallLogFilters } from '@/services/admin/llm-config-service';
+import type { CallLogFilters } from '@/services/admin/llm-config-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { Button } from '@raweval/ui/button';
 import { Badge } from '@raweval/ui/badge';
