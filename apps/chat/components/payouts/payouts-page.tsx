@@ -399,7 +399,7 @@ export function PayoutsPage() {
         payment_id: pendingPayment.payment_id,
         amount: Math.round(amount * 100), // paise
         currency: 'INR',
-        notes: 'RawEval Wallet Withdrawal',
+        notes: { description: 'RawEval Wallet Withdrawal' },
       });
 
       // 2. Open Razorpay checkout modal
