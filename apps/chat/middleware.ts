@@ -20,7 +20,8 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/_next') ||
-    pathname === '/favicon.ico'
+    pathname === '/favicon.ico' ||
+    pathname === '/icon.svg'
   ) {
     return NextResponse.next();
   }
@@ -54,6 +55,6 @@ export const config = {
      * - _next/static, _next/image
      * - favicon.ico
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|icon.svg).*)',
   ],
 };
