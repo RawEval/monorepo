@@ -437,8 +437,10 @@ export default function ConversationsPage() {
               <thead className="border-border bg-muted/30 text-muted-foreground border-b text-xs font-medium tracking-wider uppercase">
                 <tr>
                   <th className="px-6 py-3">ID</th>
+                  <th className="px-6 py-3">QC Case</th>
                   <th className="px-6 py-3">Status</th>
                   <th className="px-6 py-3">QC Verdict</th>
+                  <th className="px-6 py-3">Scores</th>
                   <th className="px-6 py-3">Domain</th>
                   <th className="px-6 py-3">Model</th>
                   <th className="px-6 py-3">Failure Type</th>
@@ -467,6 +469,15 @@ export default function ConversationsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        {(conv as any).qc_case_id ? (
+                          <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
+                            QC-{(conv as any).qc_case_id}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">&mdash;</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <Badge
                           variant="outline"
                           className={cn(
@@ -482,7 +493,7 @@ export default function ConversationsPage() {
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        {conv.qc_outcome ? (
+                        {conv.qc_outcome || (conv as any).qc_verdict ? (
                           <Badge
                             variant="outline"
                             className={cn(
@@ -492,6 +503,19 @@ export default function ConversationsPage() {
                           >
                             {getVerdictLabel(conv.qc_outcome)}
                           </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">&mdash;</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {(conv as any).qc_fp_score != null ? (
+                          <div className="flex flex-col gap-0.5 text-[10px]">
+                            <span>FP: <strong>{((conv as any).qc_fp_score * 100).toFixed(0)}%</strong></span>
+                            <span>Proc: <strong>{(((conv as any).qc_process_score || 0) * 100).toFixed(0)}%</strong></span>
+                            {(conv as any).qc_pipeline_latency_ms && (
+                              <span className="text-muted-foreground">{((conv as any).qc_pipeline_latency_ms / 1000).toFixed(1)}s</span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-muted-foreground text-xs">&mdash;</span>
                         )}

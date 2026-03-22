@@ -16,6 +16,7 @@ export interface FailedConversationItem {
   updated_at?: string;
   // Enriched from failure status
   qc_status?: string;
+  qc_outcome?: string;
   current_phase?: string;
   result_type?: string;
   payout_eligible?: boolean;
@@ -70,6 +71,7 @@ export function usePayoutsData() {
             item.result_type = sd?.result_type ?? sd?.status ?? undefined;
             item.payout_eligible = sd?.payout_eligible ?? undefined;
             item.qc_status = sd?.status ?? sd?.fpf_status ?? undefined;
+            item.qc_outcome = sd?.qc_outcome ?? sd?.fpf_qc_outcome ?? undefined;
           } catch {
             // Analysis not available yet — that's normal for pending items
           }

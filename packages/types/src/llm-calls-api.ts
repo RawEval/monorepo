@@ -13,9 +13,17 @@ export type Provider =
   | 'anthropic'
   | 'claude'
   | 'gemini'
+  | 'google'
   | 'grok'
+  | 'groq'
   | 'deepseek'
-  | 'openrouter';
+  | 'openrouter'
+  | 'azure'
+  | 'together_ai'
+  | 'mistral'
+  | 'cohere'
+  | 'replicate'
+  | 'perplexity';
 
 /**
  * Workflow Type enumeration

@@ -190,8 +190,8 @@ class ChatService {
     options: Omit<SendMessageOptions, 'sessionId' | 'backendSessionId'> = {}
   ): Promise<ChatMessage & { backendSessionId?: number }> {
     const {
-      model = 'openai',
-      modelName = 'gpt-4o',
+      model,
+      modelName,
       models,
       systemPrompt,
       temperature = 0.7,
@@ -203,7 +203,7 @@ class ChatService {
     const modelList =
       models && models.length > 0
         ? models.map((m) => ({ ...m, temperature }))
-        : [{ provider: model, model: modelName, temperature }];
+        : [{ provider: model || 'openai', model: modelName || 'gpt-4o-mini', temperature }];
 
     const body: Record<string, unknown> = {
       prompt: message,
@@ -252,8 +252,8 @@ class ChatService {
     }
   ): Promise<void> {
     const {
-      model = 'openai',
-      modelName = 'gpt-4o',
+      model,
+      modelName,
       models,
       systemPrompt,
       temperature = 0.7,
@@ -264,7 +264,7 @@ class ChatService {
     const modelList =
       models && models.length > 0
         ? models.map((m) => ({ ...m, temperature }))
-        : [{ provider: model, model: modelName, temperature }];
+        : [{ provider: model || 'openai', model: modelName || 'gpt-4o-mini', temperature }];
 
     const body: Record<string, unknown> = {
       prompt: message,
@@ -277,7 +277,7 @@ class ChatService {
 
     try {
       const baseUrl =
-        process.env.NEXT_PUBLIC_API_URL || 'https://api.raweval.com';
+        process.env.NEXT_PUBLIC_API_URL || 'https://dev.api.raweval.com';
       const response = await fetch(
         `${baseUrl}/api/v1/chat/sessions/${sessionId}/messages/stream`,
         {
@@ -382,8 +382,8 @@ class ChatService {
   ): Promise<ChatMessage & { backendSessionId?: number }> {
     const {
       backendSessionId,
-      model = 'openai',
-      modelName = 'gpt-4o',
+      model,
+      modelName,
       models,
       systemPrompt,
       temperature = 0.7,

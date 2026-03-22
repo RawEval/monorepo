@@ -34,6 +34,13 @@ export interface AdminFailedConversation {
   qc_version: number | null;
   priority: string | null;
   fpf_id: number | null;
+  qc_case_id: number | null;
+  qc_verdict: string | null;
+  qc_fp_score: number | null;
+  qc_process_score: number | null;
+  qc_d_global: number | null;
+  qc_pipeline_latency_ms: number | null;
+  qc_fraud_score: number | null;
   current_status: string | null;
   current_status_display: string | null;
   current_status_phase: string | null;
@@ -996,6 +1003,33 @@ export interface UpdateAnnotationConfigRequest {
   reason: string;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 8. QC Version History
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface QcVersionEntry {
+  id: number;
+  version: number;
+  verdict: string | null;
+  fp_score: number | null;
+  process_score: number | null;
+  d_global: number | null;
+  fraud_score: number | null;
+  pipeline_latency_ms: number | null;
+  status: string | null;
+  pipeline_stage: string | null;
+  failed_model: string | null;
+  created_at: string | null;
+  pipeline_started_at: string | null;
+  pipeline_completed_at: string | null;
+}
+
+export interface QcVersionHistoryResponse {
+  conversation_id: number;
+  total_versions: number;
+  versions: QcVersionEntry[];
+}
+
 export class AdminConversationsService extends ApiService {
   async listFailedConversations(
     params: ListFailedConversationsParams = {}
@@ -1121,6 +1155,13 @@ export class AdminConversationsService extends ApiService {
   async getPipelineStatus(conversationId: number, model?: string): Promise<any> {
     const query = model ? `?model=${encodeURIComponent(model)}` : '';
     const response = await this.client.get(`/chat/failure/status/${conversationId}${query}`);
+    return this.handleResponse(response);
+  }
+
+  async getQcVersions(conversationId: number): Promise<QcVersionHistoryResponse> {
+    const response = await this.client.get<QcVersionHistoryResponse>(
+      `/admin/failed-conversations/${conversationId}/qc-versions`
+    );
     return this.handleResponse(response);
   }
 }

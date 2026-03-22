@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminAnalyticsService } from '@/services/admin/analytics-service';
+import { adminLLMConfigService } from '@/services/admin/llm-config-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@raweval/ui/card';
 import { cn } from '@raweval/utils';
 import {
@@ -12,6 +13,9 @@ import {
   ActivityIcon,
   CheckCircle2,
   ShieldAlert,
+  DollarSign,
+  Clock,
+  Zap,
 } from 'lucide-react';
 
 export default function ModelAnalyticsPage() {
@@ -31,6 +35,23 @@ export default function ModelAnalyticsPage() {
       adminAnalyticsService.getModelQcBreakdown({
         date_from: getDateFrom(dateRange),
       }),
+  });
+
+  const days = dateRange === '7d' ? 7 : dateRange === '30d' ? 30 : 90;
+
+  const { data: costData } = useQuery({
+    queryKey: ['llm-cost-summary', dateRange],
+    queryFn: () => adminLLMConfigService.getCostSummary({ days, group_by: 'model' }),
+  });
+
+  const { data: qcCostData } = useQuery({
+    queryKey: ['qc-cost-analytics', dateRange],
+    queryFn: () => adminLLMConfigService.getQCCostAnalytics({ days }),
+  });
+
+  const { data: perfData } = useQuery({
+    queryKey: ['model-performance', dateRange],
+    queryFn: () => adminLLMConfigService.getModelPerformance(days),
   });
 
   function getDateFrom(range: string) {
@@ -321,6 +342,118 @@ export default function ModelAnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
+          </div>
+          {/* LLM Cost Analytics */}
+          <div className="mt-8 pt-6 border-t border-border">
+            <h2 className="text-foreground flex items-center gap-2 text-xl font-bold mb-4">
+              <DollarSign className="text-primary h-5 w-5" />
+              LLM Cost & Performance
+            </h2>
+
+            {/* QC Pipeline Costs */}
+            {qcCostData && qcCostData.total_pipeline_runs > 0 && (
+              <div className="grid gap-4 md:grid-cols-4 mb-6">
+                <Card className="shadow-sm">
+                  <CardContent className="py-4">
+                    <p className="text-muted-foreground text-xs font-semibold uppercase">Pipeline Runs</p>
+                    <p className="font-mono text-2xl font-black mt-1">{qcCostData.total_pipeline_runs.toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="py-4">
+                    <p className="text-muted-foreground text-xs font-semibold uppercase">Total LLM Cost</p>
+                    <p className="font-mono text-2xl font-black mt-1 text-amber-600">${qcCostData.total_llm_cost_usd.toFixed(2)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="py-4">
+                    <p className="text-muted-foreground text-xs font-semibold uppercase">Avg Cost / Pipeline</p>
+                    <p className="font-mono text-2xl font-black mt-1">${qcCostData.avg_cost_per_pipeline.toFixed(4)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="py-4">
+                    <p className="text-muted-foreground text-xs font-semibold uppercase">Avg Tokens / Pipeline</p>
+                    <p className="font-mono text-2xl font-black mt-1">{Math.round(qcCostData.avg_tokens_per_pipeline).toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Per-Stage Cost Breakdown */}
+            {qcCostData?.per_stage_avg_cost && Object.keys(qcCostData.per_stage_avg_cost).length > 0 && (
+              <Card className="shadow-sm mb-6">
+                <CardHeader className="bg-muted/30 border-border border-b">
+                  <div className="flex items-center gap-2">
+                    <Zap className="text-primary h-5 w-5" />
+                    <CardTitle className="text-base font-bold">Avg Cost per QC Stage</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 text-sm">
+                  <table className="w-full">
+                    <thead className="bg-muted/10 border-border border-b">
+                      <tr>
+                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold uppercase">Stage</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Avg Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-border divide-y">
+                      {Object.entries(qcCostData.per_stage_avg_cost)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([stage, cost]) => (
+                          <tr key={stage} className="hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-2 font-mono text-xs">{stage}</td>
+                            <td className="px-4 py-2 text-right font-mono text-xs">${cost.toFixed(6)}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Model Performance Table */}
+            {perfData?.models && perfData.models.length > 0 && (
+              <Card className="shadow-sm">
+                <CardHeader className="bg-muted/30 border-border border-b">
+                  <div className="flex items-center gap-2">
+                    <Clock className="text-primary h-5 w-5" />
+                    <CardTitle className="text-base font-bold">Model Performance (All Calls)</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0 text-sm">
+                  <table className="w-full">
+                    <thead className="bg-muted/10 border-border border-b">
+                      <tr>
+                        <th className="text-muted-foreground px-4 py-3 text-left text-xs font-semibold uppercase">Model</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Calls</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Error %</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Avg Latency</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Total Cost</th>
+                        <th className="text-muted-foreground px-4 py-3 text-right text-xs font-semibold uppercase">Avg Cost/Call</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-border divide-y">
+                      {perfData.models.map((m, i) => (
+                        <tr key={i} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-2">
+                            <div className="font-bold text-foreground">{m.model}</div>
+                            <div className="text-muted-foreground text-[10px] uppercase">{m.provider}</div>
+                          </td>
+                          <td className="px-4 py-2 text-right font-mono">{m.call_count.toLocaleString()}</td>
+                          <td className={cn('px-4 py-2 text-right font-mono', m.error_rate_pct > 5 ? 'text-red-600' : '')}>
+                            {m.error_rate_pct.toFixed(1)}%
+                          </td>
+                          <td className="px-4 py-2 text-right font-mono">{(m.avg_latency_ms / 1000).toFixed(1)}s</td>
+                          <td className="px-4 py-2 text-right font-mono">${m.total_cost_usd.toFixed(4)}</td>
+                          <td className="px-4 py-2 text-right font-mono">${m.avg_cost_per_call.toFixed(6)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </>
       )}

@@ -12,5 +12,6 @@ export * from './judge-config-service';
 export * from './config-service';
 export * from './audit-service';
 export * from './analytics-service';
+export * from './llm-config-service';
 export * from './iaa-service';
 export * from './reviewers-service';
