@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   title: 'RawEval Chat | AI Chatbot with Expert Verification',
   description:
     'Fully reinforced AI chatbot with multimodal support. Mark incorrect responses and contribute to expert-verified training data.',
+  icons: {
+    icon: '/icon.svg',
+  },
 };
 
 export default function RootLayout({
