@@ -39,12 +39,12 @@ export function InterviewHeader({ sessionId, progress, phase }: InterviewHeaderP
 
   return (
     <div className="border-b border-[var(--color-border)] bg-[var(--color-bg-surface)] px-[var(--space-5)] py-[var(--space-3)]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <h2 className="font-[family-name:var(--font-display)] text-[var(--text-lg)] text-[var(--color-text-primary)]">
             Interview
           </h2>
-          <span className="font-[family-name:var(--font-mono)] text-[var(--text-xs)] text-[var(--color-text-muted)]">
+          <span className="hidden font-[family-name:var(--font-mono)] text-[var(--text-xs)] text-[var(--color-text-muted)] sm:inline">
             #{sessionId}
           </span>
           <div
@@ -60,10 +60,10 @@ export function InterviewHeader({ sessionId, progress, phase }: InterviewHeaderP
             {phaseDisplay(phase)}
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {progress && (
-            <span className="font-[family-name:var(--font-mono)] text-[var(--text-sm)] text-[var(--color-text-secondary)]">
-              {progress.questions_answered}/{progress.total_planned} questions
+            <span className="font-[family-name:var(--font-mono)] text-[var(--text-xs)] sm:text-[var(--text-sm)] text-[var(--color-text-secondary)]">
+              {progress.questions_answered}/{progress.total_planned} qs
             </span>
           )}
           <span className="countdown-timer">

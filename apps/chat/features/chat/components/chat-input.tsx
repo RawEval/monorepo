@@ -528,7 +528,7 @@ export function ChatInput({
               placeholder={placeholder}
               rows={1}
               disabled={disabled}
-              className="text-foreground placeholder:text-muted-foreground/60 min-h-[44px] w-full resize-none border-0 bg-transparent py-2.5 text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap shadow-none outline-none transition-[padding] duration-200 ease-in-out focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed"
+              className="text-foreground placeholder:text-muted-foreground/60 min-h-[44px] w-full resize-none border-0 bg-transparent py-2.5 text-base sm:text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap shadow-none outline-none transition-[padding] duration-200 ease-in-out focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed"
               style={{ WebkitAppearance: 'none' }}
             />
           </div>

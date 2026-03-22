@@ -88,7 +88,7 @@ export function GetStartedDropdown({ variant = 'primary', size = 'default' }: Ge
             top: 'calc(100% + 8px)',
             left: '50%',
             transform: 'translateX(-50%)',
-            minWidth: 280,
+            minWidth: 'min(280px, 90vw)',
             background: 'var(--color-bg-surface)',
             border: '1px solid var(--color-border)',
             borderRadius: 'var(--radius-lg)',
