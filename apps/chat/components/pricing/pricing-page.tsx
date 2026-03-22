@@ -153,7 +153,7 @@ export function PricingPage() {
         payment_id: pendingPayment.payment_id,
         amount: amountPaise,
         currency: 'INR',
-        notes: `RawEval ${plan.plan_name} Plan (${billingCycle})`,
+        notes: { description: `RawEval ${plan.plan_name} Plan (${billingCycle})` },
       });
 
       // 2. Open Razorpay checkout
