@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   DollarSign,
   Clock,
+  CheckCircle,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -19,6 +20,8 @@ import {
   Wallet,
   RefreshCw,
   Loader2,
+  ShieldAlert,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,8 +55,10 @@ import { openRazorpayCheckout } from '@/lib/razorpay';
 import type { BankAccountCreate } from '@raweval/types';
 import type { FailedConversationItem } from './api/get-payouts';
 import { usePayoutsData } from './api/get-payouts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { payoutKeys, walletKeys } from '@/lib/react-query/query-keys';
+import { walletService } from '@/services/wallet-service';
+import { qcService } from '@/services/qc-service';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -319,6 +324,11 @@ export function PayoutsPage() {
   const payments = data?.payments || [];
   const bankAccounts = data?.bankAccounts || [];
 
+  const { data: walletBalance } = useQuery({
+    queryKey: walletKeys.balance(),
+    queryFn: () => walletService.getBalance(),
+  });
+
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -326,6 +336,14 @@ export function PayoutsPage() {
   const [withdrawing, setWithdrawing] = useState(false);
   const [showAddBank, setShowAddBank] = useState(false);
   const [withdrawStatus, setWithdrawStatus] = useState<string | null>(null);
+
+  // Dispute dialog state
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
+  const [disputeItem, setDisputeItem] = useState<any>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [disputeSuccess, setDisputeSuccess] = useState(false);
+  const [disputedIds, setDisputedIds] = useState<Set<number>>(new Set());
 
   const handleRefresh = () => {
     refetch();
@@ -599,6 +617,23 @@ export function PayoutsPage() {
                 );
               })}
             </div>
+
+            {/* Wallet Freeze Banner */}
+            {walletBalance?.is_frozen && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="h-5 w-5 text-red-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-800">Wallet Frozen</p>
+                    <p className="text-xs text-red-600 mt-0.5">
+                      {walletBalance.freeze_reason || 'Your wallet has been temporarily frozen.'}
+                      {walletBalance.frozen_until && ` Unfreezes: ${new Date(walletBalance.frozen_until).toLocaleString()}`}
+                    </p>
+                    <p className="text-xs text-red-500 mt-1">Deposits are still allowed. Withdrawals are blocked until the freeze expires.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* ----------------------------------------------------------------
                 Withdrawal Section
@@ -899,6 +934,35 @@ export function PayoutsPage() {
                               </p>
                             </div>
                           )}
+                          {(() => {
+                            const isDisputed = disputedIds.has(item.id) || item.qc_status === 'disputed' || item.qc_outcome === 'qc_wrong' || item.qc_outcome === 'qc_disputed' || item.status === 'pre_annotation_review_pending';
+                            const canDispute = (item.result_type === 'false_positive' || (item.qc_status && !item.payout_eligible && item.result_type !== 'true_failure' && item.result_type !== 'needs_human_review')) && !isDisputed;
+
+                            if (isDisputed) return (
+                              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-blue-50 border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700">
+                                <Clock className="h-3.5 w-3.5" />
+                                Dispute submitted — under review
+                              </div>
+                            );
+
+                            if (canDispute) return (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDisputeItem(item);
+                                  setDisputeReason('');
+                                  setDisputeSuccess(false);
+                                  setDisputeDialogOpen(true);
+                                }}
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                              >
+                                <MessageSquareWarning className="h-3.5 w-3.5" />
+                                Dispute this decision
+                              </button>
+                            );
+
+                            return null;
+                          })()}
                           {item.result_type === 'needs_human_review' && (
                             <div className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                               <p className="text-primary text-xs font-medium">
@@ -923,6 +987,118 @@ export function PayoutsPage() {
           </div>
         </div>
       </div>
+
+      {/* Dispute Dialog */}
+      <Dialog
+        open={disputeDialogOpen}
+        onOpenChange={(open: boolean) => {
+          if (!open) {
+            setDisputeDialogOpen(false);
+            setDisputeReason('');
+            setDisputeSuccess(false);
+          }
+        }}
+      >
+        <DialogContent className="p-0 sm:max-w-[480px] overflow-hidden border-0 shadow-2xl">
+          {disputeSuccess ? (
+            <div className="px-8 py-12 text-center">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-emerald-50 ring-4 ring-green-50">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold tracking-tight">Dispute Submitted</h3>
+              <p className="text-sm text-muted-foreground mt-2 max-w-[320px] mx-auto leading-relaxed">
+                A senior reviewer will independently re-evaluate this conversation. The updated status will appear here once resolved.
+              </p>
+              <Button
+                className="mt-8 px-8"
+                onClick={() => {
+                  setDisputeDialogOpen(false);
+                  setDisputeReason('');
+                  setDisputeSuccess(false);
+                }}
+              >
+                Close
+              </Button>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <div className="border-b px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                    <MessageSquareWarning className="h-5 w-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold tracking-tight">Dispute Decision</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Challenge the QC verdict on this response</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                <div className="flex gap-3 rounded-xl bg-amber-50/80 p-4">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-[13px] leading-relaxed text-amber-800">
+                    Our analysis found the AI response was correct. If you believe this is wrong, provide your reasoning below. A senior reviewer will evaluate independently.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Why do you disagree?</label>
+                  <textarea
+                    value={disputeReason}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 500) setDisputeReason(e.target.value);
+                    }}
+                    placeholder="Be specific — describe what the AI got wrong and what the correct answer should be..."
+                    className="border-input bg-background w-full rounded-xl border px-4 py-3 text-sm leading-relaxed min-h-[140px] resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground">Minimum 10 characters</p>
+                    <p className={`text-[11px] ${disputeReason.length > 450 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                      {disputeReason.length}/500
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t bg-muted/30 px-6 py-4 flex items-center justify-end gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setDisputeDialogOpen(false)}
+                  className="px-5"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!disputeItem || !disputeReason.trim()) return;
+                    setDisputeSubmitting(true);
+                    try {
+                      await qcService.createDispute(disputeItem.id, disputeReason.trim());
+                      setDisputeSuccess(true);
+                      setDisputedIds((prev) => new Set(prev).add(disputeItem.id));
+                      // Refresh the payouts list so the item shows updated status
+                      queryClient.invalidateQueries({ queryKey: payoutKeys.all });
+                    } catch (err: any) {
+                      setError(err?.message ?? 'Failed to submit dispute. Please try again.');
+                    } finally {
+                      setDisputeSubmitting(false);
+                    }
+                  }}
+                  disabled={disputeSubmitting || disputeReason.trim().length < 10}
+                  className="gap-2 px-6 shadow-sm"
+                >
+                  {disputeSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Submit Dispute
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

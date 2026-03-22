@@ -14,6 +14,9 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
 } from '@raweval/ui/select';
 
 interface ChatInputProps {
@@ -27,22 +30,120 @@ const MAX_IMAGES = 5;
 const MAX_FILES = 5;
 const CHAR_WARNING_THRESHOLD = 9000;
 
-const MODELS: {
+interface ModelOption {
   label: string;
   value: string;
-  provider: Provider;
+  provider: string;
   model: string;
   max?: boolean;
   description: string;
-}[] = [
-  { label: 'GPT-4o', value: 'openai:gpt-4o', provider: 'openai', model: 'gpt-4o', max: true, description: 'Most advanced model' },
-  { label: 'GPT-4', value: 'openai:gpt-4', provider: 'openai', model: 'gpt-4', description: 'Reliable and accurate' },
-  { label: 'Claude 3.5 Sonnet', value: 'anthropic:claude-3-5-sonnet-20240620', provider: 'anthropic', model: 'claude-3-5-sonnet-20240620', description: 'Great for coding tasks' },
-  { label: 'GPT-4o Mini', value: 'openai:gpt-4o-mini', provider: 'openai', model: 'gpt-4o-mini', description: 'Fast and lightweight' },
-  { label: 'o1 Mini', value: 'openai:o1-mini', provider: 'openai', model: 'o1-mini', description: 'Reasoning model' },
-  { label: 'DeepSeek Chat', value: 'deepseek:deepseek-chat', provider: 'deepseek', model: 'deepseek-chat', description: 'High capability model' },
-  { label: 'DeepSeek Coder', value: 'deepseek:deepseek-coder', provider: 'deepseek', model: 'deepseek-coder', description: 'Coding focused model' },
+  supportsVision?: boolean;
+  supportsWebSearch?: boolean;
+  supportsTools?: boolean;
+}
+
+/** Fallback model list — only used when /chat/models API is unreachable. */
+const FALLBACK_MODELS: ModelOption[] = [
+  { label: 'GPT-4.1', value: 'openai:gpt-4.1', provider: 'openai', model: 'gpt-4.1', description: 'Latest flagship — 1M context', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'GPT-4o Mini', value: 'openai:gpt-4o-mini', provider: 'openai', model: 'gpt-4o-mini', description: 'Fast, affordable', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'Claude Sonnet 4', value: 'anthropic:anthropic/claude-sonnet-4-20250514', provider: 'anthropic', model: 'anthropic/claude-sonnet-4-20250514', description: 'Best for coding', supportsVision: true, supportsWebSearch: false, supportsTools: true },
+  { label: 'Gemini 2.5 Flash', value: 'google:gemini/gemini-2.5-flash', provider: 'google', model: 'gemini/gemini-2.5-flash', description: 'Fast reasoning, 1M context', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'DeepSeek V3', value: 'deepseek:deepseek/deepseek-chat', provider: 'deepseek', model: 'deepseek/deepseek-chat', description: 'Ultra cheap open model', supportsVision: false, supportsWebSearch: false, supportsTools: true },
 ];
+
+/** Provider display names and order for the model selector */
+const PROVIDER_META: Record<string, { label: string; order: number }> = {
+  openai: { label: 'OpenAI', order: 1 },
+  anthropic: { label: 'Anthropic', order: 2 },
+  google: { label: 'Google', order: 3 },
+  deepseek: { label: 'DeepSeek', order: 4 },
+  mistral: { label: 'Mistral', order: 5 },
+  groq: { label: 'Groq', order: 6 },
+  perplexity: { label: 'Perplexity', order: 7 },
+  cohere: { label: 'Cohere', order: 8 },
+  openrouter: { label: 'OpenRouter', order: 9 },
+};
+
+/** Group models by provider, sorted by provider order */
+function groupModelsByProvider(models: ModelOption[]): { provider: string; label: string; models: ModelOption[] }[] {
+  const groups: Record<string, ModelOption[]> = {};
+  for (const m of models) {
+    const key = m.provider;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  }
+  return Object.entries(groups)
+    .map(([provider, models]) => ({
+      provider,
+      label: PROVIDER_META[provider]?.label || provider,
+      models,
+    }))
+    .sort((a, b) => (PROVIDER_META[a.provider]?.order ?? 99) - (PROVIDER_META[b.provider]?.order ?? 99));
+}
+
+/**
+ * Parse the backend /chat/models response into a flat model list.
+ * Backend returns: { models_by_provider: {...}, models: [{model, display_name, provider, capabilities}] }
+ */
+function parseModelsResponse(data: unknown): ModelOption[] | null {
+  if (!data || typeof data !== 'object') return null;
+
+  // Format 1: Array of model objects (pre-parsed by subscription endpoint)
+  if (Array.isArray(data) && data.length > 0) {
+    return data.map((m: Record<string, unknown>) => ({
+      label: (m.display_name || m.label || m.model || 'Unknown') as string,
+      value: `${m.provider || 'unknown'}:${m.model}`,
+      provider: (m.provider || 'unknown') as string,
+      model: (m.model || '') as string,
+      max: Boolean(m.max),
+      description: (m.description || '') as string,
+      supportsVision: Boolean((m.capabilities as Record<string, unknown>)?.supports_vision ?? m.supports_vision),
+      supportsWebSearch: Boolean((m.capabilities as Record<string, unknown>)?.supports_web_search ?? m.supports_web_search),
+      supportsTools: Boolean((m.capabilities as Record<string, unknown>)?.supports_tools ?? m.supports_tools),
+    }));
+  }
+
+  const resp = data as Record<string, unknown>;
+
+  // Format 2 (preferred): { models: [{model, display_name, provider, description, capabilities}] }
+  const modelsArray = resp.models as Record<string, unknown>[] | undefined;
+  if (Array.isArray(modelsArray) && modelsArray.length > 0) {
+    return modelsArray.map((m) => {
+      const caps = (m.capabilities || {}) as Record<string, unknown>;
+      return {
+        label: (m.display_name || m.model || 'Unknown') as string,
+        value: `${m.provider || 'unknown'}:${m.model}`,
+        provider: (m.provider || 'unknown') as string,
+        model: (m.model || '') as string,
+        description: (m.description || '') as string,
+        supportsVision: Boolean(caps.supports_vision),
+        supportsWebSearch: Boolean(caps.supports_web_search),
+        supportsTools: Boolean(caps.supports_tools),
+      };
+    });
+  }
+
+  // Format 3 (legacy): { models_by_provider: { openai: ["gpt-4o", ...] } }
+  const byProvider = resp.models_by_provider as Record<string, string[]> | undefined;
+  if (byProvider && typeof byProvider === 'object') {
+    const result: ModelOption[] = [];
+    for (const [provider, models] of Object.entries(byProvider)) {
+      if (!Array.isArray(models)) continue;
+      for (const model of models) {
+        result.push({
+          label: model,
+          value: `${provider}:${model}`,
+          provider,
+          model,
+          description: provider,
+        });
+      }
+    }
+    return result.length > 0 ? result : null;
+  }
+
+  return null;
+}
 
 export function ChatInput({
   onSend,
@@ -63,18 +164,27 @@ export function ChatInput({
   const { data: modelsResult } = useModels();
 
   const availableModels = useMemo(() => {
-    if (Array.isArray(modelsResult) && modelsResult.length > 0) {
-      return modelsResult.map((m: any) => ({
-        label: m.label || m.model || 'Unknown Model',
-        value: `${m.provider || 'unknown'}:${m.model}`,
-        provider: m.provider || 'unknown',
-        model: m.model,
-        max: m.max || false,
-        description: m.description || '',
-      }));
-    }
-    return MODELS;
+    const parsed = parseModelsResponse(modelsResult);
+    return parsed ?? FALLBACK_MODELS;
   }, [modelsResult]);
+
+  const groupedModels = useMemo(() => groupModelsByProvider(availableModels), [availableModels]);
+
+  // Current model's capabilities
+  const currentModelOption = useMemo(() => {
+    return availableModels.find(
+      (m) => m.provider === selectedModel?.provider && m.model === selectedModel?.model
+    );
+  }, [availableModels, selectedModel]);
+
+  const modelSupportsSearch = currentModelOption?.supportsWebSearch ?? false;
+
+  // Auto-disable web search when switching to a model that doesn't support it
+  useEffect(() => {
+    if (webSearchEnabled && !modelSupportsSearch) {
+      setWebSearchEnabled(false);
+    }
+  }, [modelSupportsSearch, webSearchEnabled, setWebSearchEnabled]);
 
   useEffect(() => {
     if (availableModels.length > 0) {
@@ -95,7 +205,7 @@ export function ChatInput({
   const handleModelChange = (value: string) => {
     const modelDef = availableModels.find((m) => m.value === value);
     if (modelDef) {
-      setSelectedModel({ provider: modelDef.provider, model: modelDef.model });
+      setSelectedModel({ provider: modelDef.provider as Provider, model: modelDef.model });
     }
   };
 
@@ -349,20 +459,7 @@ export function ChatInput({
   const imageCount = attachments.filter((a) => a.type === 'image').length;
   const canAddFiles = fileCount + imageCount < MAX_FILES + MAX_IMAGES;
 
-  const renderMaxBadge = () => (
-    <div className="border-border flex h-[14px] items-center gap-1.5 rounded border px-1 py-0">
-      <span
-        className="text-[9px] font-bold uppercase"
-        style={{
-          background: 'linear-gradient(to right, rgb(129, 161, 193), rgb(125, 124, 155))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}
-      >
-        MAX
-      </span>
-    </div>
-  );
+
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -470,47 +567,57 @@ export function ChatInput({
               <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit max-w-[55%] gap-1 border-none bg-transparent! p-0 text-[11px] font-medium shadow-none focus:ring-0 sm:max-w-none sm:gap-1.5 sm:text-xs [&>svg]:ml-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-3.5 sm:[&>svg]:w-3.5">
                 <BrainCircuit className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
                 <SelectValue>
-                  {activeModelDef?.max ? (
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      <span className="truncate">{activeModelDef.label}</span>
-                      <span className="hidden sm:inline-flex">{renderMaxBadge()}</span>
-                    </div>
-                  ) : (
-                    <span className="truncate">{activeModelDef?.label}</span>
-                  )}
+                  <span className="truncate">{activeModelDef?.label}</span>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                {availableModels.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    <div className="flex flex-col gap-0.5">
-                      {model.max ? (
-                        <div className="flex items-center gap-1.5">
-                          <span>{model.label}</span>
-                          {renderMaxBadge()}
+              <SelectContent className="max-h-[400px]">
+                {groupedModels.map((group, gi) => (
+                  <SelectGroup key={group.provider}>
+                    {gi > 0 && <SelectSeparator />}
+                    <SelectLabel className="text-muted-foreground text-[10px] font-semibold uppercase tracking-wider px-2 py-1">
+                      {group.label}
+                    </SelectLabel>
+                    {group.models.map((model) => (
+                      <SelectItem key={model.value} value={model.value}>
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-0">
+                            <span className="text-[13px]">{model.label}</span>
+                            <span className="text-muted-foreground text-[10px] font-normal leading-tight">
+                              {model.description}
+                            </span>
+                          </div>
+                          <div className="ml-auto flex shrink-0 items-center gap-0.5">
+                            {model.supportsWebSearch && (
+                              <span className="text-[8px] rounded bg-blue-500/10 px-1 py-px text-blue-600 dark:text-blue-400">search</span>
+                            )}
+                            {model.supportsVision && (
+                              <span className="text-[8px] rounded bg-purple-500/10 px-1 py-px text-purple-600 dark:text-purple-400">vision</span>
+                            )}
+                            {model.supportsTools && !model.supportsVision && !model.supportsWebSearch && (
+                              <span className="text-[8px] rounded bg-green-500/10 px-1 py-px text-green-600 dark:text-green-400">tools</span>
+                            )}
+                          </div>
                         </div>
-                      ) : (
-                        <span>{model.label}</span>
-                      )}
-                      <span className="text-muted-foreground text-[10px] font-normal">
-                        {model.description}
-                      </span>
-                    </div>
-                  </SelectItem>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
 
             <button
               type="button"
-              onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+              onClick={() => modelSupportsSearch && setWebSearchEnabled(!webSearchEnabled)}
+              disabled={!modelSupportsSearch}
               className={cn(
                 'flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-all duration-150 outline-none sm:gap-1.5 sm:px-2.5 sm:text-xs',
-                webSearchEnabled
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                !modelSupportsSearch
+                  ? 'text-muted-foreground/40 cursor-not-allowed'
+                  : webSearchEnabled
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
-              title={webSearchEnabled ? 'Web Search enabled' : 'Enable Web Search'}
+              title={!modelSupportsSearch ? 'This model does not support web search' : webSearchEnabled ? 'Web Search enabled' : 'Enable Web Search'}
               aria-label="Toggle Web Search"
             >
               <Globe className={cn('h-3 w-3 sm:h-3.5 sm:w-3.5', webSearchEnabled && 'opacity-90')} />

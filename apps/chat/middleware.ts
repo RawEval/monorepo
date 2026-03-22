@@ -11,7 +11,7 @@ import type { NextRequest } from 'next/server';
  * The client-side AuthGuard handles token validation/refresh as a fallback.
  */
 
-const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/terms', '/privacy'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/forgot-password', '/verify-email', '/terms', '/privacy'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

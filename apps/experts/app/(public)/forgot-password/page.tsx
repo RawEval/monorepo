@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, KeyboardEvent, ClipboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@raweval/ui/button';
 import {
   Card,
@@ -22,9 +23,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { authService } from '@/services/auth-service';
-import { isApiError } from '@/lib/errors';
-import Image from 'next/image';
-import logoImg from '@/public/logo.png';
+import { isApiError } from '@raweval/api-client';
 
 type Step = 'email' | 'reset' | 'success';
 
@@ -160,7 +159,7 @@ export default function ForgotPasswordPage() {
         inputRefs.current[index + 1]?.focus();
       }
     },
-    []
+    [],
   );
 
   const handleOtpKeyDown = useCallback(
@@ -180,7 +179,7 @@ export default function ForgotPasswordPage() {
         inputRefs.current[index + 1]?.focus();
       }
     },
-    [otp]
+    [otp],
   );
 
   const handleOtpPaste = useCallback(
@@ -203,7 +202,7 @@ export default function ForgotPasswordPage() {
       const focusIndex = Math.min(digits.length, 5);
       inputRefs.current[focusIndex]?.focus();
     },
-    []
+    [],
   );
 
   const handleResend = async () => {
@@ -276,17 +275,7 @@ export default function ForgotPasswordPage() {
           className={`mb-8 flex justify-center ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`}
         >
           <Link href="/" className="flex items-center gap-2">
-            <Image
-              src={logoImg}
-              alt="RawEval"
-              width={140}
-              height={40}
-              style={{
-                objectFit: 'contain',
-                filter:
-                  'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)',
-              }}
-            />
+            <Image src="/logo.png" alt="RawEval" width={128} height={128} style={{ objectFit: 'contain', filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }} />
           </Link>
         </div>
 
@@ -312,7 +301,7 @@ export default function ForgotPasswordPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
-              <div className="bg-destructive/10 border-destructive/20 text-destructive rounded-lg border p-3 text-sm">
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -328,7 +317,7 @@ export default function ForgotPasswordPage() {
                     Email
                   </label>
                   <div className="relative">
-                    <Mail className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Mail className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <input
                       id="email"
                       type="email"
@@ -338,7 +327,7 @@ export default function ForgotPasswordPage() {
                         setError('');
                       }}
                       placeholder="you@example.com"
-                      className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-4 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                      className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       disabled={isSubmitting}
                       required
                     />
@@ -391,7 +380,7 @@ export default function ForgotPasswordPage() {
                         onPaste={index === 0 ? handleOtpPaste : undefined}
                         disabled={isSubmitting}
                         aria-label={`Digit ${index + 1} of reset code`}
-                        className="border-input bg-background focus:ring-ring focus:border-primary h-12 w-10 rounded-lg border text-center text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl"
+                        className="border-input bg-background focus:ring-ring focus:border-primary h-12 w-10 rounded-lg border text-center text-lg font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl"
                       />
                     ))}
                   </div>
@@ -426,7 +415,7 @@ export default function ForgotPasswordPage() {
                     New password
                   </label>
                   <div className="relative">
-                    <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <input
                       id="new-password"
                       type={showPassword ? 'text' : 'password'}
@@ -436,14 +425,14 @@ export default function ForgotPasswordPage() {
                         setError('');
                       }}
                       placeholder="Enter new password"
-                      className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                      className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       disabled={isSubmitting}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                      className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                       disabled={isSubmitting}
                     >
                       {showPassword ? (
@@ -468,7 +457,7 @@ export default function ForgotPasswordPage() {
                     Confirm new password
                   </label>
                   <div className="relative">
-                    <Lock className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+                    <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
                     <input
                       id="confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -478,7 +467,7 @@ export default function ForgotPasswordPage() {
                         setError('');
                       }}
                       placeholder="Confirm new password"
-                      className="border-input bg-background focus:ring-ring w-full rounded-lg border py-2.5 pr-10 pl-10 text-sm transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none"
+                      className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       disabled={isSubmitting}
                       required
                     />
@@ -487,7 +476,7 @@ export default function ForgotPasswordPage() {
                       onClick={() =>
                         setShowConfirmPassword(!showConfirmPassword)
                       }
-                      className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors"
+                      className="text-muted-foreground hover:text-foreground absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                       disabled={isSubmitting}
                     >
                       {showConfirmPassword ? (

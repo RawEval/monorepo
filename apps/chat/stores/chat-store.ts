@@ -48,7 +48,7 @@ function newId(prefix: string) {
 
 export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
   messagesByProject: {},
-  selectedModel: { provider: 'openai', model: 'gpt-4o-mini' },
+  selectedModel: { provider: 'openai' as Provider, model: 'gpt-4o-mini' },
   webSearchEnabled: false,
 
   getMessages: (projectId) => get().messagesByProject[projectId] ?? [],

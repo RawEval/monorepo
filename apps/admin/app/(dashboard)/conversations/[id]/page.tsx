@@ -11,7 +11,8 @@ import {
   Info, AlertTriangle, TrendingUp, Ban, Eye
 } from 'lucide-react';
 import {
-  adminConversationsService
+  adminConversationsService,
+  type QcVersionEntry,
 } from '@/services/admin/conversations-service';
 import {
   Card,
@@ -84,6 +85,12 @@ export default function ConversationDetailPage() {
     queryKey: ['entropyDetails', id],
     queryFn: () => adminConversationsService.getEntropyDetails(id),
     enabled: isIdValid && tab === 'entropy',
+  });
+
+  const { data: qcVersionsData } = useQuery({
+    queryKey: ['qcVersions', id],
+    queryFn: () => adminConversationsService.getQcVersions(id),
+    enabled: isIdValid && tab === 'overview',
   });
 
   const activeModelQueryVal = qcDetailData?.models?.[0]?.model;
@@ -265,7 +272,7 @@ export default function ConversationDetailPage() {
 
              <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
                 <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-2 fade-in duration-300">
-                  {tab === 'overview' && <OverviewTab qcCase={qcCase} />}
+                  {tab === 'overview' && <OverviewTab qcCase={qcCase} qcVersions={qcVersionsData?.versions} />}
                   {tab === 'rubric' && (rubricLoading ? <LoadingTab /> : <RubricTab criteria={rubricData || activeModel?.qc_rubric} />)}
                   {tab === 'judges' && (judgesLoading ? <LoadingTab /> : <JudgesTab judges={judgesData || activeModel?.qc_judges} />)}
                   {tab === 'fraud' && <FraudTab signals={activeModel?.qc_fraud_signals} qcCase={qcCase} />}
@@ -329,7 +336,7 @@ function MetricCard({ title, value, suffix, isPercent = false, tip }: { title: s
 
 // ─── Overview Tab ────────────────────────────────────────────────────────────
 
-function OverviewTab({ qcCase }: { qcCase: any }) {
+function OverviewTab({ qcCase, qcVersions }: { qcCase: any; qcVersions?: QcVersionEntry[] }) {
   if (!qcCase) return <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground">QC Case still processing or unavailable.</div>;
 
   return (
@@ -463,6 +470,80 @@ function OverviewTab({ qcCase }: { qcCase: any }) {
                    </div>
                 ))}
              </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* QC Version History */}
+      {qcVersions && qcVersions.length > 0 && (
+        <Card className="shadow-sm border-border">
+          <CardHeader className="py-4 bg-muted/20 border-b border-border">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-blue-500" />
+              QC Version History
+              <Badge variant="secondary" className="text-[10px] ml-1 font-mono">{qcVersions.length} run{qcVersions.length !== 1 ? 's' : ''}</Badge>
+            </CardTitle>
+            <CardDescription className="text-xs">All QC pipeline runs for this conversation, newest first</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Ver</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Case ID</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Verdict</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">FP</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Process</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Latency</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Status</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {qcVersions.map((v) => {
+                    const isLatest = v.version === qcVersions.length;
+                    const statusColor =
+                      v.status === 'completed' ? 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' :
+                      v.status === 'failed' || v.status === 'error' ? 'text-red-600 bg-red-500/10 border-red-500/20' :
+                      'text-blue-600 bg-blue-500/10 border-blue-500/20';
+                    return (
+                      <tr key={v.id} className={cn("hover:bg-muted/20 transition-colors", isLatest && "bg-primary/[0.03]")}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-foreground">v{v.version}</span>
+                            {isLatest && <Badge variant="outline" className="text-[8px] px-1 py-0 font-bold text-primary border-primary/30">LATEST</Badge>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">#{v.id}</td>
+                        <td className="px-4 py-3">
+                          {v.verdict ? (
+                            <Badge variant="outline" className={cn("text-[10px] uppercase font-bold px-2 py-0.5", getVerdictTheme(v.verdict))}>
+                              {getVerdictLabel(v.verdict)}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">--</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">{v.fp_score != null ? v.fp_score.toFixed(3) : '--'}</td>
+                        <td className="px-4 py-3 text-right font-mono text-xs">{v.process_score != null ? v.process_score.toFixed(3) : '--'}</td>
+                        <td className="px-4 py-3 text-right font-mono text-xs text-muted-foreground">
+                          {v.pipeline_latency_ms != null ? `${(v.pipeline_latency_ms / 1000).toFixed(1)}s` : '--'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline" className={cn("text-[9px] uppercase font-bold px-1.5 py-0", statusColor)}>
+                            {v.status || v.pipeline_stage || 'unknown'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                          {v.created_at ? format(new Date(v.created_at), 'MMM d, yyyy HH:mm') : '--'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       )}

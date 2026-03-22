@@ -141,4 +141,12 @@ export const queryKeys = {
     postAnnotation: (params: Record<string, unknown>) =>
       ['reviewers', 'post-annotation', params] as const,
   },
+
+  llmConfig: {
+    all: ['llm-config'] as const,
+    providers: ['llm-config', 'providers'] as const,
+    models: ['llm-config', 'models'] as const,
+    qcStageDefaults: ['llm-config', 'qc-stage-defaults'] as const,
+    qcStageModels: ['llm-config', 'qc-stage-models'] as const,
+  },
 } as const;
