@@ -57,6 +57,7 @@ interface ChatMessageProps {
   isLast?: boolean;
   onWrong?: () => void;
   onRegenerate?: () => void;
+  compact?: boolean;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -72,12 +73,10 @@ export const ChatMessage = memo(function ChatMessage({
   isLast = false,
   onWrong,
   onRegenerate,
+  compact: _compact = false,
 }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
-  const [wrongClicked, setWrongClicked] = useState(false);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
-
-  const isActuallyFailed = isFailed || wrongClicked;
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(content);
@@ -92,10 +91,9 @@ export const ChatMessage = memo(function ChatMessage({
   }, []);
 
   const handleWrong = useCallback(() => {
-    if (isMarkingWrong || isActuallyFailed) return;
-    setWrongClicked(true);
+    if (isMarkingWrong || isFailed) return;
     onWrong?.();
-  }, [isMarkingWrong, isActuallyFailed, onWrong]);
+  }, [isMarkingWrong, isFailed, onWrong]);
 
   const formattedTime = useMemo(
     () => format(new Date(createdAt), 'MMM d, h:mm a'),
@@ -525,17 +523,17 @@ export const ChatMessage = memo(function ChatMessage({
 
               <ActionButton
                 onClick={handleWrong}
-                disabled={isMarkingWrong || isActuallyFailed}
-                active={isActuallyFailed}
+                disabled={isMarkingWrong || isFailed}
+                active={isFailed}
                 activeColor="text-[var(--color-signal)]"
                 activeBg="bg-[var(--color-signal-subtle)]"
                 activeBorder="border-[var(--color-signal-border)]"
                 icon={isMarkingWrong ? Loader2 : XCircle}
                 iconClassName={isMarkingWrong ? 'animate-spin' : ''}
-                label={isMarkingWrong ? 'Marking...' : isActuallyFailed ? 'Marked' : 'Wrong'}
+                label={isMarkingWrong ? 'Marking...' : isFailed ? 'Flagged' : 'Mark Failed'}
               />
 
-              {isLast && onRegenerate && !isActuallyFailed && (
+              {isLast && onRegenerate && !isFailed && (
                 <ActionButton
                   onClick={onRegenerate}
                   icon={RotateCcw}
