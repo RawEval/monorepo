@@ -130,7 +130,7 @@ export function Navbar() {
           top: 'var(--nav-height)',
           right: 0,
           bottom: 0,
-          width: '280px',
+          width: 'min(280px, 75vw)',
           background: 'var(--color-bg-surface)',
           borderLeft: '1px solid var(--color-border)',
           transform: mobileOpen ? 'translateX(0)' : 'translateX(100%)',

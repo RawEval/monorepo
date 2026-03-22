@@ -274,7 +274,7 @@ function VerifyEmailForm() {
                   onPaste={index === 0 ? handlePaste : undefined}
                   disabled={isVerifying}
                   aria-label={`Digit ${index + 1} of verification code`}
-                  className="border-input bg-background focus:ring-ring focus:border-primary h-12 w-10 rounded-lg border text-center text-lg font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl"
+                  className="border-input bg-background focus:ring-ring focus:border-primary h-11 w-11 rounded-lg border text-center text-base font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-50 sm:h-14 sm:w-12 sm:text-xl"
                 />
               ))}
             </div>

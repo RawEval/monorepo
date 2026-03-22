@@ -186,7 +186,7 @@ export function Sidebar({ showOnDesktop = true }: SidebarProps) {
             className={cn(
               'text-muted-foreground relative flex h-9 items-center rounded-lg border-transparent transition-all',
               isSearchExpanded
-                ? 'bg-background border-border ring-primary/20 z-10 w-44 shadow-sm ring-1'
+                ? 'bg-background border-border ring-primary/20 z-10 w-36 sm:w-44 shadow-sm ring-1'
                 : 'hover:bg-muted/80 w-9 cursor-pointer justify-center border'
             )}
             onClick={() => {

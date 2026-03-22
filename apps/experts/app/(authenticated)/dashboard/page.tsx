@@ -119,7 +119,7 @@ export default function DashboardPage() {
       {isActive && score && (
         <section style={{ borderTop: '1px solid var(--color-border)', borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg-surface)' }}>
           <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--space-8) var(--section-x)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-6)' }} className="stats-grid">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
               {[
                 { icon: Award, value: tierLabel(score.derived_tier), label: 'Expert tier' },
                 { icon: BarChart3, value: score.expert_score?.toFixed(1) ?? '—', label: 'Expert score' },

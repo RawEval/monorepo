@@ -82,7 +82,7 @@ export function Header() {
 
   return (
     <header
-      className="safe-area-inset-top sticky top-0 z-40 h-14 backdrop-blur-xl"
+      className="safe-area-inset-top sticky top-0 z-30 h-14 backdrop-blur-xl"
       style={{
         background: 'var(--color-bg-base)',
         borderBottom: '1px solid var(--color-border)',

@@ -211,7 +211,7 @@ function RegisterForm() {
                       setError('');
                     }}
                     placeholder="John Doe"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-base sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     disabled={isSubmitting}
                     required
                   />
@@ -237,7 +237,7 @@ function RegisterForm() {
                       setError('');
                     }}
                     placeholder="you@example.com"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-4 text-base sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     disabled={isSubmitting}
                     required
                   />
@@ -263,7 +263,7 @@ function RegisterForm() {
                       setError('');
                     }}
                     placeholder="Min. 8 characters"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-base sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     disabled={isSubmitting}
                     required
                   />
@@ -301,7 +301,7 @@ function RegisterForm() {
                       setError('');
                     }}
                     placeholder="Re-enter your password"
-                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="border-input bg-background w-full rounded-lg border py-2.5 pl-10 pr-10 text-base sm:text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     disabled={isSubmitting}
                     required
                   />
