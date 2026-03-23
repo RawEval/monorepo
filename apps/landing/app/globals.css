@@ -142,6 +142,11 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
 }
 
 body {
@@ -586,6 +591,22 @@ main {
   .chat-hero-grid {
     grid-template-columns: 1fr;
     gap: var(--space-8);
+  }
+}
+
+/* Mobile: scale down hero animations to fit screen */
+@media (max-width: 600px) {
+  .chat-hero-grid {
+    gap: var(--space-6);
+  }
+
+  /* Hero headings — smaller on phone */
+  .chat-hero-grid h1 {
+    font-size: var(--text-3xl) !important;
+  }
+
+  .chat-hero-grid p {
+    font-size: var(--text-base) !important;
   }
 }
 

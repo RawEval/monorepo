@@ -142,6 +142,15 @@ export const queryKeys = {
       ['reviewers', 'post-annotation', params] as const,
   },
 
+  contact: {
+    all: ['contact'] as const,
+    list: (params: Record<string, unknown>) =>
+      ['contact', 'list', params] as const,
+    detail: (id: number) => ['contact', 'detail', id] as const,
+    stats: ['contact', 'stats'] as const,
+    topics: ['contact', 'topics'] as const,
+  },
+
   llmConfig: {
     all: ['llm-config'] as const,
     providers: ['llm-config', 'providers'] as const,

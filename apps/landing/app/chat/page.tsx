@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--color-bg-base)', overflowX: 'hidden' }}>
 
       {/* Hero — split layout with animated chat */}
       <section
@@ -42,10 +42,6 @@ export default function ChatPage() {
             maxWidth: 'var(--max-content)',
             margin: '0 auto',
             padding: '100px var(--section-x) var(--section-y)',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: 'var(--space-12)',
-            alignItems: 'center',
             position: 'relative',
           }}
           className="chat-hero-grid"

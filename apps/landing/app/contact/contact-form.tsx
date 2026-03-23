@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.raweval.com';
 
 const inputStyle: React.CSSProperties = {
   background: 'var(--color-bg-surface)',
@@ -15,28 +17,89 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box' as const,
 };
 
-const inquiryTypes = [
-  { value: 'sales', label: 'Sales — I want evaluation data for my team' },
-  { value: 'expert', label: 'Expert — I want to join the network' },
-  { value: 'investor', label: 'Investor — I\'m interested in the company' },
-  { value: 'partnership', label: 'Partnership — I want to integrate or collaborate' },
-  { value: 'press', label: 'Press — Media inquiry' },
-  { value: 'other', label: 'Other' },
+interface TopicOption {
+  value: string;
+  label: string;
+}
+
+// Hardcoded fallback topics (used if API fetch fails)
+const fallbackTopics: TopicOption[] = [
+  { value: 'Enterprise', label: 'Enterprise — I want evaluation data for my team' },
+  { value: 'Partnership', label: 'Partnership — I want to integrate or collaborate' },
+  { value: 'Demo Request', label: 'Demo Request — I want to see RawEval in action' },
+  { value: 'Pricing', label: 'Pricing — I want to understand costs' },
+  { value: 'Support', label: 'Support — I need help with something' },
+  { value: 'Feedback', label: 'Feedback — I have a suggestion' },
+  { value: 'Other', label: 'Other' },
 ];
 
 export function ContactForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    inquiryType: '',
-    company: '',
-    message: '',
+    topic: '',
+    organization: '',
+    description: '',
   });
+  const [topics, setTopics] = useState<TopicOption[]>(fallbackTopics);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: React.FormEvent) {
+  // Fetch topics from backend (admin-configurable)
+  useEffect(() => {
+    fetch(`${API_URL}/api/v1/contact/topics`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.topics && Array.isArray(data.topics)) {
+          setTopics(
+            data.topics.map((t: string) => ({
+              value: t,
+              label: t,
+            }))
+          );
+        }
+      })
+      .catch(() => {
+        // Keep fallback topics
+      });
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${API_URL}/api/v1/contact/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          organization: formData.organization || null,
+          topic: formData.topic,
+          description: formData.description,
+        }),
+      });
+
+      if (res.status === 429) {
+        setError('Too many submissions. Please try again in a few minutes.');
+        return;
+      }
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.detail?.message || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      setSubmitted(true);
+    } catch {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -78,7 +141,7 @@ export function ContactForm() {
           lineHeight: 'var(--leading-relaxed)',
           margin: 0,
         }}>
-          We&apos;ll get back to you within 24–48 hours depending on inquiry type. Check your email for a confirmation.
+          We&apos;ll get back to you within 24–48 hours. Check your email for a confirmation.
         </p>
       </div>
     );
@@ -106,6 +169,7 @@ export function ContactForm() {
           type="text"
           placeholder="Your name"
           required
+          minLength={2}
           value={formData.name}
           onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
           style={inputStyle}
@@ -123,15 +187,15 @@ export function ContactForm() {
       <input
         type="text"
         placeholder="Company / organization (optional)"
-        value={formData.company}
-        onChange={(e) => setFormData((prev) => ({ ...prev, company: e.target.value }))}
+        value={formData.organization}
+        onChange={(e) => setFormData((prev) => ({ ...prev, organization: e.target.value }))}
         style={inputStyle}
       />
 
       <select
         required
-        value={formData.inquiryType}
-        onChange={(e) => setFormData((prev) => ({ ...prev, inquiryType: e.target.value }))}
+        value={formData.topic}
+        onChange={(e) => setFormData((prev) => ({ ...prev, topic: e.target.value }))}
         style={{
           ...inputStyle,
           appearance: 'none',
@@ -139,11 +203,11 @@ export function ContactForm() {
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'right 14px center',
           paddingRight: '36px',
-          color: formData.inquiryType ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+          color: formData.topic ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
         }}
       >
         <option value="" disabled>What is this about?</option>
-        {inquiryTypes.map((t) => (
+        {topics.map((t) => (
           <option key={t.value} value={t.value}>{t.label}</option>
         ))}
       </select>
@@ -152,8 +216,9 @@ export function ContactForm() {
         placeholder="Your message"
         required
         rows={4}
-        value={formData.message}
-        onChange={(e) => setFormData((prev) => ({ ...prev, message: e.target.value }))}
+        minLength={10}
+        value={formData.description}
+        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
         style={{
           ...inputStyle,
           resize: 'vertical',
@@ -162,8 +227,31 @@ export function ContactForm() {
         }}
       />
 
-      <button type="submit" className="btn-primary" style={{ alignSelf: 'flex-start' }}>
-        Send message →
+      {error && (
+        <div style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--color-error, #ef4444)',
+          padding: '8px 12px',
+          background: 'var(--color-error-subtle, rgba(239,68,68,0.1))',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--color-error-border, rgba(239,68,68,0.2))',
+        }}>
+          {error}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        className="btn-primary"
+        disabled={submitting}
+        style={{
+          alignSelf: 'flex-start',
+          opacity: submitting ? 0.7 : 1,
+          cursor: submitting ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {submitting ? 'Sending...' : 'Send message →'}
       </button>
     </form>
   );
