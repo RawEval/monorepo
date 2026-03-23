@@ -29,6 +29,7 @@ import {
   ScrollText,
   Search,
   GitBranch,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
@@ -87,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'QC Config', href: '/qc-config', icon: Shield },
       { title: 'Judge Config', href: '/judge-config', icon: Gavel },
       { title: 'Domains', href: '/roles', icon: Globe },
+      { title: 'Contact Inquiries', href: '/contact', icon: Mail },
       { title: 'Config', href: '/platform', icon: SlidersHorizontal },
       { title: 'Settings', href: '/settings', icon: Settings },
     ],
