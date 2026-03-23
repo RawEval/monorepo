@@ -1,0 +1,89 @@
+{
+  "cli": {
+    "version": ">= 15.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://dev.api.raweval.com",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_API_RETRIES": "3",
+        "EXPO_PUBLIC_API_RETRY_DELAY": "1000",
+        "EXPO_PUBLIC_DEBUG_API": "true",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SMs6fbkLKOSlo1",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "241450506110-9t7k10qeh0jaal6em7oi2umkgtcnpt94.apps.googleusercontent.com"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "development:device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "env": {
+        "APP_ENV": "development",
+        "EXPO_PUBLIC_API_URL": "https://dev.api.raweval.com",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_API_RETRIES": "3",
+        "EXPO_PUBLIC_API_RETRY_DELAY": "1000",
+        "EXPO_PUBLIC_DEBUG_API": "true",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SMs6fbkLKOSlo1",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "241450506110-9t7k10qeh0jaal6em7oi2umkgtcnpt94.apps.googleusercontent.com"
+      }
+    },
+    "staging": {
+      "distribution": "internal",
+      "channel": "staging",
+      "autoIncrement": true,
+      "env": {
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://dev.api.raweval.com",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_API_RETRIES": "3",
+        "EXPO_PUBLIC_API_RETRY_DELAY": "1000",
+        "EXPO_PUBLIC_DEBUG_API": "false",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_test_SMs6fbkLKOSlo1",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "241450506110-9t7k10qeh0jaal6em7oi2umkgtcnpt94.apps.googleusercontent.com"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_PUBLIC_API_URL": "https://api.raweval.com",
+        "EXPO_PUBLIC_API_VERSION": "v1",
+        "EXPO_PUBLIC_API_TIMEOUT": "30000",
+        "EXPO_PUBLIC_API_RETRIES": "3",
+        "EXPO_PUBLIC_API_RETRY_DELAY": "1000",
+        "EXPO_PUBLIC_DEBUG_API": "false",
+        "EXPO_PUBLIC_RAZORPAY_KEY_ID": "rzp_live_xxxxxxxxxxxxxxxxxxxx",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "241450506110-9t7k10qeh0jaal6em7oi2umkgtcnpt94.apps.googleusercontent.com"
+      },
+      "ios": {
+        "buildConfiguration": "Release"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}
