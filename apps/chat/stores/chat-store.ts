@@ -13,6 +13,8 @@ interface ChatState {
   messagesByProject: Record<string, ChatMessage[]>;
   selectedModel: ModelSelection;
   webSearchEnabled: boolean;
+  selectedModels: ModelSelection[];
+  compareMode: boolean;
 }
 
 interface ChatActions {
@@ -33,6 +35,11 @@ interface ChatActions {
   setSelectedModel: (selection: ModelSelection) => void;
   setMessages: (projectId: string, messages: ChatMessage[]) => void;
   setWebSearchEnabled: (enabled: boolean) => void;
+  setSelectedModels: (models: ModelSelection[]) => void;
+  setCompareMode: (enabled: boolean) => void;
+  toggleModelInComparison: (model: ModelSelection) => void;
+  /** Update specific fields on a message */
+  updateMessage: (projectId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   // For streaming: Append token to a specific existing message
   appendToken: (projectId: string, messageId: string, token: string) => void;
   setIsStreaming: (
@@ -48,8 +55,10 @@ function newId(prefix: string) {
 
 export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
   messagesByProject: {},
-  selectedModel: { provider: 'openai', model: 'gpt-4o-mini' },
+  selectedModel: { provider: 'openai' as Provider, model: 'gpt-4o-mini' },
   webSearchEnabled: false,
+  selectedModels: [],
+  compareMode: false,
 
   getMessages: (projectId) => get().messagesByProject[projectId] ?? [],
 
@@ -94,6 +103,19 @@ export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
     }));
   },
 
+  updateMessage: (projectId, messageId, updates) =>
+    set((s) => {
+      const messages = s.messagesByProject[projectId] ?? [];
+      return {
+        messagesByProject: {
+          ...s.messagesByProject,
+          [projectId]: messages.map((m) =>
+            m.id === messageId ? { ...m, ...updates } : m
+          ),
+        },
+      };
+    }),
+
   appendToken: (projectId, messageId, token) =>
     set((s) => {
       const messages = s.messagesByProject[projectId] ?? [];
@@ -133,4 +155,38 @@ export const useChatStore = create<ChatState & ChatActions>()((set, get) => ({
       messagesByProject: { ...s.messagesByProject, [projectId]: messages },
     })),
   setWebSearchEnabled: (enabled) => set({ webSearchEnabled: enabled }),
+  setSelectedModels: (models) => set({ selectedModels: models }),
+  setCompareMode: (enabled) =>
+    set((s) => {
+      if (!enabled && s.selectedModels.length > 0) {
+        const first = s.selectedModels[0]!;
+        return {
+          compareMode: false,
+          selectedModel: first,
+          selectedModels: [first],
+        };
+      }
+      return { compareMode: enabled };
+    }),
+  toggleModelInComparison: (model) =>
+    set((s) => {
+      const exists = s.selectedModels.some(
+        (m) => m.provider === model.provider && m.model === model.model
+      );
+      let next: ModelSelection[];
+      if (exists) {
+        next = s.selectedModels.filter(
+          (m) => !(m.provider === model.provider && m.model === model.model)
+        );
+      } else {
+        if (s.selectedModels.length >= 4) return {};
+        next = [...s.selectedModels, model];
+      }
+      return {
+        selectedModels: next,
+        compareMode: next.length > 1,
+        // Keep selectedModel in sync with first selection
+        ...(next.length > 0 ? { selectedModel: next[0] } : {}),
+      };
+    }),
 }));

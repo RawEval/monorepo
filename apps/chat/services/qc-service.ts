@@ -75,6 +75,20 @@ class QCService {
     const query = model ? `?model=${encodeURIComponent(model)}` : '';
     return api.get(`/chat/failure/analysis/${conversationId}/rubric${query}`);
   }
+
+  /**
+   * File an appeal for a FalsePositive verdict (within 7 days).
+   */
+  async createAppeal(qcCaseId: number, justification: string): Promise<Any> {
+    return api.post('/chat/qc/appeals', { qc_case_id: qcCaseId, justification });
+  }
+
+  /**
+   * File a dispute when QC is wrong.
+   */
+  async createDispute(conversationId: number, reason: string): Promise<Any> {
+    return api.post('/chat/qc/dispute', { conversation_id: conversationId, reason });
+  }
 }
 
 export const qcService = new QCService();

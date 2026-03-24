@@ -33,6 +33,7 @@ export function useChat(pathId?: string) {
   const sendUserMessage = useChatStore((s) => s.sendUserMessage);
   const appendAssistantMessage = useChatStore((s) => s.appendAssistantMessage);
   const appendToken = useChatStore((s) => s.appendToken);
+  const updateMessage = useChatStore((s) => s.updateMessage);
   const setIsStreaming = useChatStore((s) => s.setIsStreaming);
   const setMessages = useChatStore((s) => s.setMessages);
   const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
@@ -60,12 +61,37 @@ export function useChat(pathId?: string) {
   // Update local store when query data changes (or derive completely from query)
   useEffect(() => {
     if (sessionData?.messages && sessionData.messages.length > 0) {
-      const formattedMessages = sessionData.messages.map(
+      // Group assistant messages by turn_number to reconstruct multi-model groups
+      const turnGroups = new Map<number, string>();
+      const rawMsgs: any[] = sessionData.messages;
+
+      // First pass: find turns with multiple assistant messages (multi-model)
+      const turnCounts = new Map<number, number>();
+      for (const m of rawMsgs) {
+        if (m.role === 'assistant' && m.turn_number != null) {
+          turnCounts.set(m.turn_number, (turnCounts.get(m.turn_number) || 0) + 1);
+        }
+      }
+      // Assign groupIds to turns with 2+ assistant messages
+      for (const [turn, count] of turnCounts) {
+        if (count > 1) {
+          turnGroups.set(turn, `group_restored_${backendSessionId}_${turn}`);
+        }
+      }
+
+      const formattedMessages = rawMsgs.map(
         (m: any, idx: number) => ({
           id: m.id ? String(m.id) : `${backendSessionId}-${idx}`,
           role: m.role || 'user',
           content: m.content || '',
+          model: m.model || undefined,
+          provider: m.provider || undefined,
           isFailed: m.metadata?.marked_failed === true,
+          latencyMs: m.latency_ms ?? undefined,
+          tokensUsed: m.tokens_used != null ? { total: m.tokens_used } : undefined,
+          groupId: m.role === 'assistant' && m.turn_number != null
+            ? turnGroups.get(m.turn_number)
+            : undefined,
           createdAt: new Date(
             m.created_at || m.timestamp || sessionData.created_at || Date.now()
           ).getTime(),
@@ -114,11 +140,6 @@ export function useChat(pathId?: string) {
 
         const allFiles = [...imageFiles, ...(files ?? [])];
 
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-        appendAssistantMessage(projectId, '', false, tempId, true);
-        setIsStreaming(projectId, tempId, true);
-
         let activeBackendId = backendSessionId;
         let targetProjectId = projectId;
 
@@ -161,98 +182,211 @@ export function useChat(pathId?: string) {
           }
         }
 
-        // 3) Start streaming the message
-        await chatService.streamMessage(
-          activeBackendId,
-          content,
-          {
-            model: selectedModel.provider,
-            modelName: selectedModel.model,
-            models: [
+        // Determine if we're in compare mode
+        const currentCompareMode = useChatStore.getState().compareMode;
+        const currentSelectedModels = useChatStore.getState().selectedModels;
+        const isComparing = currentCompareMode && currentSelectedModels.length > 1;
+
+        if (isComparing) {
+          // --- Multi-model compare mode ---
+          const groupId = `group_${Date.now()}`;
+          const tempIds: Record<string, string> = {};
+
+          for (const m of currentSelectedModels) {
+            const key = `${m.provider}:${m.model}`;
+            const tid = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+            tempIds[key] = tid;
+
+            const currentMsgs = useChatStore.getState().getMessages(targetProjectId);
+            useChatStore.getState().setMessages(targetProjectId, [
+              ...currentMsgs,
               {
-                provider: selectedModel.provider,
-                model: selectedModel.model,
+                id: tid,
+                role: 'assistant' as const,
+                content: '',
+                createdAt: Date.now(),
+                isStreaming: true,
+                model: m.model,
+                provider: m.provider,
+                groupId,
               },
-            ],
-            temperature: 0.7,
-            attachmentIds:
-              attachmentIds.length > 0 ? attachmentIds : undefined,
-            webSearch: webSearchEnabled,
-          },
-          {
-            onChunk: (_provider, _model, delta) => {
-              // Stream content natively to the placeholder
-              appendToken(targetProjectId, tempId, delta);
+            ]);
+          }
+
+          await chatService.streamMessage(
+            activeBackendId,
+            content,
+            {
+              models: currentSelectedModels.map((m) => ({
+                provider: m.provider,
+                model: m.model,
+              })),
+              temperature: 0.7,
+              attachmentIds:
+                attachmentIds.length > 0 ? attachmentIds : undefined,
+              webSearch: webSearchEnabled,
             },
-            onDone: (_data) => {
-              setIsStreaming(targetProjectId, tempId, false);
-              touchProject(targetProjectId);
-
-              if (activeBackendId) {
-                queryClient.invalidateQueries({
-                  queryKey: chatKeys.session(activeBackendId),
-                });
-                queryClient.invalidateQueries({
-                  queryKey: chatKeys.sessions(),
-                });
-              }
-
-              // Reload sidebar projects so the new session title appears
-              useProjectsStore
-                .getState()
-                .loadProjects()
-                .catch(console.error);
-            },
-            onError: (err) => {
-              setIsStreaming(targetProjectId, tempId, false);
-
-              // Reuse existing robust error extraction
-              if (isApiError(err)) {
-                if (err.statusCode === 402) {
-                  setUpgradeRequired(true);
-                  setError(
-                    'This model requires a subscription upgrade. Please upgrade your plan to continue.'
-                  );
-                  return;
+            {
+              onChunk: (provider, model, delta) => {
+                const key = `${provider}:${model}`;
+                const tid = tempIds[key];
+                if (tid) appendToken(targetProjectId, tid, delta);
+              },
+              onModelComplete: (data) => {
+                const key = `${data.provider}:${data.model}`;
+                const tid = tempIds[key];
+                if (tid) {
+                  setIsStreaming(targetProjectId, tid, false);
+                  updateMessage(targetProjectId, tid, {
+                    latencyMs: data.latency_ms,
+                    tokensUsed: data.tokens_used,
+                  });
                 }
-                if (err.statusCode === 403) {
-                  const resData = err.response as any;
-                  const nestedMsgObj =
-                    resData?.error?.message ||
-                    resData?.message ||
-                    resData?.error ||
-                    resData;
-                  if (
-                    nestedMsgObj?.error === 'SUBSCRIPTION_REQUIRED' ||
-                    nestedMsgObj?.code === 'SUBSCRIPTION_REQUIRED'
-                  ) {
-                    const dispMsg =
-                      nestedMsgObj?.message ||
-                      'This model requires a premium subscription. Please upgrade your plan to use it.';
-                    appendAssistantMessage(
-                      targetProjectId,
-                      `⚠️ **Subscription Required**\n\n${dispMsg}`,
-                      false
+              },
+              onModelError: (data) => {
+                const key = `${data.provider}:${data.model}`;
+                const tid = tempIds[key];
+                if (tid) {
+                  setIsStreaming(targetProjectId, tid, false);
+                  updateMessage(targetProjectId, tid, {
+                    modelError: data.error,
+                    content: `⚠️ **Error:** ${data.error}`,
+                  });
+                }
+              },
+              onDone: () => {
+                // Ensure all are marked done
+                for (const tid of Object.values(tempIds)) {
+                  setIsStreaming(targetProjectId, tid, false);
+                }
+                touchProject(targetProjectId);
+
+                if (activeBackendId) {
+                  queryClient.invalidateQueries({
+                    queryKey: chatKeys.session(activeBackendId),
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: chatKeys.sessions(),
+                  });
+                }
+
+                useProjectsStore
+                  .getState()
+                  .loadProjects()
+                  .catch(console.error);
+              },
+              onError: (err) => {
+                for (const tid of Object.values(tempIds)) {
+                  setIsStreaming(targetProjectId, tid, false);
+                }
+                const msg = isApiError(err)
+                  ? err.message || 'Failed to send message.'
+                  : err instanceof Error
+                    ? err.message
+                    : 'An unexpected error occurred.';
+                setError(msg);
+              },
+            }
+          );
+        } else {
+          // --- Single model mode (existing behavior) ---
+          const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+          appendAssistantMessage(targetProjectId, '', false, tempId, true);
+          setIsStreaming(targetProjectId, tempId, true);
+
+          // 3) Start streaming the message
+          await chatService.streamMessage(
+            activeBackendId,
+            content,
+            {
+              model: selectedModel.provider,
+              modelName: selectedModel.model,
+              models: [
+                {
+                  provider: selectedModel.provider,
+                  model: selectedModel.model,
+                },
+              ],
+              temperature: 0.7,
+              attachmentIds:
+                attachmentIds.length > 0 ? attachmentIds : undefined,
+              webSearch: webSearchEnabled,
+            },
+            {
+              onChunk: (_provider, _model, delta) => {
+                // Stream content natively to the placeholder
+                appendToken(targetProjectId, tempId, delta);
+              },
+              onDone: (_data) => {
+                setIsStreaming(targetProjectId, tempId, false);
+                touchProject(targetProjectId);
+
+                if (activeBackendId) {
+                  queryClient.invalidateQueries({
+                    queryKey: chatKeys.session(activeBackendId),
+                  });
+                  queryClient.invalidateQueries({
+                    queryKey: chatKeys.sessions(),
+                  });
+                }
+
+                // Reload sidebar projects so the new session title appears
+                useProjectsStore
+                  .getState()
+                  .loadProjects()
+                  .catch(console.error);
+              },
+              onError: (err) => {
+                setIsStreaming(targetProjectId, tempId, false);
+
+                // Reuse existing robust error extraction
+                if (isApiError(err)) {
+                  if (err.statusCode === 402) {
+                    setUpgradeRequired(true);
+                    setError(
+                      'This model requires a subscription upgrade. Please upgrade your plan to continue.'
                     );
-                    openUpgradeModal();
+                    return;
+                  }
+                  if (err.statusCode === 403) {
+                    const resData = err.response as any;
+                    const nestedMsgObj =
+                      resData?.error?.message ||
+                      resData?.message ||
+                      resData?.error ||
+                      resData;
+                    if (
+                      nestedMsgObj?.error === 'SUBSCRIPTION_REQUIRED' ||
+                      nestedMsgObj?.code === 'SUBSCRIPTION_REQUIRED'
+                    ) {
+                      const dispMsg =
+                        nestedMsgObj?.message ||
+                        'This model requires a premium subscription. Please upgrade your plan to use it.';
+                      appendAssistantMessage(
+                        targetProjectId,
+                        `⚠️ **Subscription Required**\n\n${dispMsg}`,
+                        false
+                      );
+                      openUpgradeModal();
+                      return;
+                    }
+                  }
+                  if (err.statusCode === 429) {
+                    setError(
+                      'Rate limit exceeded. Please wait a moment before sending another message.'
+                    );
                     return;
                   }
                 }
-                if (err.statusCode === 429) {
-                  setError(
-                    'Rate limit exceeded. Please wait a moment before sending another message.'
-                  );
-                  return;
-                }
-              }
-              const msg = isApiError(err)
-                ? err.message || 'Failed to send message.'
-                : err.message || 'An unexpected error occurred.';
-              setError(msg);
-              appendAssistantMessage(targetProjectId, `Error: ${msg}`, false);
-            },
-          }
-        );
+                const msg = isApiError(err)
+                  ? err.message || 'Failed to send message.'
+                  : err.message || 'An unexpected error occurred.';
+                setError(msg);
+                appendAssistantMessage(targetProjectId, `Error: ${msg}`, false);
+              },
+            }
+          );
+        }
       } catch (err) {
         // any synchronous errors before stream initialization
       }
@@ -261,6 +395,7 @@ export function useChat(pathId?: string) {
     [
       appendAssistantMessage,
       appendToken,
+      updateMessage,
       backendSessionId,
       projectId,
       selectedModel,
@@ -356,8 +491,15 @@ export function useChat(pathId?: string) {
           { sessionId: backendSessionId, messageId: numericMessageId, request },
           {
             onSuccess: () => {
+              // Update the message in the store to show as failed
+              const currentMsgs = useChatStore.getState().getMessages(projectId);
+              const updated = currentMsgs.map((m) =>
+                m.id === messageId ? { ...m, isFailed: true } : m
+              );
+              setMessages(projectId, updated);
+
               setError(
-                "✓ Marked as wrong! Our workbench team will review this response. You'll receive your wallet credit upon successful QC."
+                "✓ Marked as failed! Our workbench team will review this response. You'll receive your wallet credit upon successful QC."
               );
               setTimeout(() => setError(null), 6000);
             },

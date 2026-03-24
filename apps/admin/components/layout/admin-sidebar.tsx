@@ -25,6 +25,11 @@ import {
   Gavel,
   Briefcase,
   Mic,
+  Cpu,
+  ScrollText,
+  Search,
+  GitBranch,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@raweval/ui/button';
 import { useUIStore } from '@/stores/ui-store';
@@ -53,11 +58,20 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: 'LLM & Models',
+    items: [
+      { title: 'LLM Config', href: '/llm-config', icon: Cpu },
+      { title: 'LLM Observability', href: '/llm-logs', icon: ScrollText },
+      { title: 'QC Inspector', href: '/qc-inspector', icon: GitBranch },
+      { title: 'Session Trace', href: '/session-trace', icon: Search },
+      { title: 'Model Analytics', href: '/model-analytics', icon: TrendingUp },
+    ],
+  },
+  {
     label: 'Monitoring',
     items: [
       { title: 'Wallets', href: '/wallets', icon: Wallet },
       { title: 'Payments', href: '/payments', icon: Coins },
-      { title: 'Model Analytics', href: '/model-analytics', icon: TrendingUp },
       { title: 'Audit Logs', href: '/audit', icon: History },
     ],
   },
@@ -74,6 +88,7 @@ const NAV_GROUPS: NavGroup[] = [
       { title: 'QC Config', href: '/qc-config', icon: Shield },
       { title: 'Judge Config', href: '/judge-config', icon: Gavel },
       { title: 'Domains', href: '/roles', icon: Globe },
+      { title: 'Contact Inquiries', href: '/contact', icon: Mail },
       { title: 'Config', href: '/platform', icon: SlidersHorizontal },
       { title: 'Settings', href: '/settings', icon: Settings },
     ],

@@ -4,7 +4,7 @@ Chat interface for chat.raweval.com
 
 ## Features
 
-- Real-time AI chat with multimodal support
+- Real-time AI chat with multimodal supportttt
 - Flag incorrect responses for expert review
 - Image, video, and document processing
 - Expert-verified responses

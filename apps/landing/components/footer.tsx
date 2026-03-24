@@ -9,7 +9,7 @@ const footerCols = [
       { label: 'How It Works', href: '/how-it-works/capture' },
       { label: 'Chat', href: '/chat' },
       { label: 'Expert Network', href: '/experts' },
-      { label: 'Enterprise', href: '/organizations' },
+      { label: 'Enterprise', href: '/research' },
       { label: 'API & Docs', href: '/developers' },
     ],
   },

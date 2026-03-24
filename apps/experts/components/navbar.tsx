@@ -52,7 +52,7 @@ export function Navbar() {
       </nav>
 
       {mobileOpen && (
-        <div className="md:hidden" style={{ borderTop: '1px solid var(--color-border)', padding: 'var(--space-5)', background: 'var(--color-bg-base)' }}>
+        <div className="md:hidden" style={{ borderTop: '1px solid var(--color-border)', padding: 'var(--space-5)', background: 'var(--color-bg-base)', maxHeight: 'calc(100dvh - 56px)', overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             <Link href="/dashboard" onClick={() => setMobileOpen(false)} style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', padding: '10px 8px' }}>Dashboard</Link>
             <Link href="/workbench" onClick={() => setMobileOpen(false)} style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', padding: '10px 8px' }}>Workbench</Link>

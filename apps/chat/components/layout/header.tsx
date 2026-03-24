@@ -6,8 +6,8 @@ import {
   CreditCard,
   LogOut,
   Menu,
-  MoreVertical,
   DollarSign,
+  MoreVertical,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -19,6 +19,8 @@ import { Separator } from '@/components/ui/separator';
 import { useUiStore } from '@/stores/ui-store';
 import { useProjectsStore } from '@/stores/projects-store';
 import { cn } from '@raweval/utils';
+import Image from 'next/image';
+import logoImg from '@/public/logo.png';
 import { useRouter, usePathname } from 'next/navigation';
 import { authService } from '@/services/auth-service';
 import { clearToken, getStoredToken, getStoredRefreshToken } from '@/lib/auth';
@@ -80,7 +82,7 @@ export function Header() {
 
   return (
     <header
-      className="safe-area-inset-top sticky top-0 z-40 h-14 backdrop-blur-xl"
+      className="safe-area-inset-top sticky top-0 z-30 h-14 backdrop-blur-xl"
       style={{
         background: 'var(--color-bg-base)',
         borderBottom: '1px solid var(--color-border)',
@@ -105,10 +107,12 @@ export function Header() {
           </button>
 
           <div className="flex min-w-0 items-center gap-3">
-            <img
-              src="/logo.png"
+            <Image
+              src={logoImg}
               alt="RawEval"
-              className="h-6 w-auto shrink-0 object-contain sm:h-7"
+              width={90}
+              height={26}
+              className="shrink-0 object-contain"
               style={{ filter: 'brightness(0) saturate(100%) invert(55%) sepia(82%) saturate(2200%) hue-rotate(344deg) brightness(105%) contrast(96%)' }}
             />
             {/* Page title for non-chat pages */}

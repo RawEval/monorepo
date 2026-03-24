@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { GetStartedDropdown } from '@/components/get-started-dropdown';
 
 const platformCapabilities = [
   'Multi-model comparison',
@@ -120,7 +120,7 @@ export function HeroSection() {
         style={{
           maxWidth: 'var(--max-content)',
           margin: '0 auto',
-          padding: '120px var(--section-x) var(--section-y)',
+          padding: 'clamp(60px, 12vw, 120px) var(--section-x) var(--section-y)',
           position: 'relative',
           textAlign: 'center',
         }}
@@ -176,20 +176,15 @@ export function HeroSection() {
           Deliver audit-ready RLHF data.
         </p>
 
-        {/* CTA row */}
+        {/* CTA row — Get Started dropdown + Book a Demo */}
         <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 'var(--space-12)' }}>
-          <a href="https://chat.raweval.com" className="btn-primary" style={{ padding: '14px 32px', fontSize: 'var(--text-sm)' }}>
-            Try the Chat <ArrowRight size={14} />
-          </a>
-          <Link href="/contact" className="btn-secondary" style={{ padding: '14px 28px', fontSize: 'var(--text-sm)' }}>
+          <GetStartedDropdown variant="primary" size="large" />
+          <Link href="/contact" className="btn-secondary" style={{ padding: '16px 28px', fontSize: 'var(--text-sm)' }}>
             Book a Demo
           </Link>
-          <a href="https://work.raweval.com" className="btn-ghost" style={{ padding: '14px 20px', fontSize: 'var(--text-sm)' }}>
-            Expert Workbench →
-          </a>
         </div>
 
-        {/* Capability pills — scrolling ticker-style */}
+        {/* Capability pills */}
         <div style={{ marginBottom: 'var(--space-8)' }}>
           <p
             style={{
@@ -210,6 +205,7 @@ export function HeroSection() {
             flexWrap: 'wrap',
             maxWidth: 720,
             margin: '0 auto',
+            padding: '0 var(--space-3)',
           }}>
             {platformCapabilities.map((name) => (
               <span
@@ -233,11 +229,10 @@ export function HeroSection() {
 
         {/* Pipeline visualization — 4 steps */}
         <div
+          className="grid grid-cols-2 sm:grid-cols-4"
           style={{
             maxWidth: '800px',
             margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
             gap: 'var(--space-1)',
           }}
         >
@@ -246,14 +241,14 @@ export function HeroSection() {
             { step: '02', label: 'Route', desc: 'Match to domain experts' },
             { step: '03', label: 'Verify', desc: 'Iron Dome anti-cheat' },
             { step: '04', label: 'Deliver', desc: 'RLHF-ready training data' },
-          ].map((s, i) => (
+          ].map((s) => (
             <div
               key={s.step}
+              className="first:rounded-tl-lg sm:first:rounded-bl-lg last:rounded-br-lg sm:last:rounded-tr-lg [&:nth-child(2)]:rounded-tr-lg sm:[&:nth-child(2)]:rounded-none [&:nth-child(3)]:rounded-bl-lg sm:[&:nth-child(3)]:rounded-none"
               style={{
                 padding: 'var(--space-4) var(--space-3)',
                 background: 'var(--color-bg-surface)',
                 border: '1px solid var(--color-border)',
-                borderRadius: i === 0 ? 'var(--radius-lg) 0 0 var(--radius-lg)' : i === 3 ? '0 var(--radius-lg) var(--radius-lg) 0' : 0,
                 textAlign: 'center',
               }}
             >

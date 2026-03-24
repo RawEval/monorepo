@@ -10,40 +10,40 @@ export const metadata: Metadata = {
 const channels = [
   {
     label: 'Sales & Partnerships',
-    email: 'sales@raweval.com',
+    email: 'contact@raweval.com',
     desc: 'For AI labs and enterprises interested in evaluation data, pilot programs, or enterprise plans.',
     response: 'Response within 24 hours',
   },
   {
     label: 'Expert Applications',
-    email: 'experts@raweval.com',
+    email: 'contact@raweval.com',
     desc: 'For domain experts interested in joining our network. Or apply directly through our expert portal.',
     response: 'Review within 5 business days',
     link: { label: 'Apply at work.raweval.com', href: 'https://work.raweval.com/apply' },
   },
   {
     label: 'Press & Media',
-    email: 'press@raweval.com',
+    email: 'contact@raweval.com',
     desc: 'For journalists, analysts, and media inquiries about AI data quality, training data provenance, or the evaluation market.',
     response: 'Response within 48 hours',
   },
   {
-    label: 'Security',
-    email: 'security@raweval.com',
+    label: 'Security & Compliance',
+    email: 'contact@raweval.com',
     desc: 'For security questionnaires, vulnerability reports, or compliance inquiries.',
     response: 'Response within 24 hours',
     link: { label: 'View security practices', href: '/security' },
   },
   {
     label: 'API & Technical Support',
-    email: 'api@raweval.com',
+    email: 'contact@raweval.com',
     desc: 'For API integration questions, technical documentation, or developer support.',
     response: 'Response within 24 hours',
     link: { label: 'View API docs', href: '/developers' },
   },
   {
     label: 'General Inquiries',
-    email: 'hello@raweval.com',
+    email: 'contact@raweval.com',
     desc: 'For everything else — investor inquiries, general questions, or just saying hi.',
     response: 'Response within 48 hours',
   },
@@ -78,19 +78,19 @@ export default function ContactPage() {
               Whether you&apos;re an AI lab looking for evaluation data, an expert who wants to join the network, or an investor interested in the space — we&apos;d like to hear from you.
             </p>
 
-            {/* Office */}
+            {/* Team */}
             <div style={{
               padding: 'var(--space-5)',
               border: '1px solid var(--color-border)',
               borderRadius: 'var(--radius-lg)',
               background: 'var(--color-bg-surface)',
             }}>
-              <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-3)', fontSize: '10px' }}>Office</div>
+              <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-3)', fontSize: '10px' }}>Our Team</div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
-                San Francisco, CA
+                Distributed & Heads-down
               </div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-                We&apos;re a distributed team with roots in San Francisco. Happy to meet in person if you&apos;re in the Bay Area.
+                We&apos;re a small, focused team building the infrastructure the AI industry needs. We move fast, ship constantly, and obsess over data quality. Reach out — we respond to every message.
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function ContactPage() {
         <div style={{ maxWidth: 'var(--max-content)', margin: '0 auto', padding: 'var(--section-y) var(--section-x)' }}>
           <div className="mono-label" style={{ color: 'var(--color-text-faint)', marginBottom: 'var(--space-8)' }}>Not sure where to start?</div>
           <div className="grid-cols-3-md" style={{ gap: 'var(--space-4)' }}>
-            <Link href="/organizations" className="hover-lift" style={{
+            <Link href="/research" className="hover-lift" style={{
               display: 'block',
               padding: 'var(--space-5)',
               border: '1px solid var(--color-border)',

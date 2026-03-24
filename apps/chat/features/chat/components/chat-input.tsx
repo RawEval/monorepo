@@ -1,20 +1,14 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { Loader2, Plus, BrainCircuit, Globe, ArrowUp } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Loader2, Plus, BrainCircuit, Globe, ArrowUp, Check, ChevronDown, X as XIcon, Search, Maximize2, Zap, Eye, Globe2 } from 'lucide-react';
 import { cn } from '@raweval/utils';
 import { AttachmentPreview, Attachment } from './attachment-preview';
 import { VoiceRecorder } from './voice-recorder';
 import { useChatStore } from '@/stores/chat-store';
 import { useModels } from '../api/get-models';
 import type { Provider } from '@raweval/types';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@raweval/ui/select';
 
 interface ChatInputProps {
   onSend: (message: string, images?: string[], files?: File[]) => void;
@@ -27,22 +21,120 @@ const MAX_IMAGES = 5;
 const MAX_FILES = 5;
 const CHAR_WARNING_THRESHOLD = 9000;
 
-const MODELS: {
+interface ModelOption {
   label: string;
   value: string;
-  provider: Provider;
+  provider: string;
   model: string;
   max?: boolean;
   description: string;
-}[] = [
-  { label: 'GPT-4o', value: 'openai:gpt-4o', provider: 'openai', model: 'gpt-4o', max: true, description: 'Most advanced model' },
-  { label: 'GPT-4', value: 'openai:gpt-4', provider: 'openai', model: 'gpt-4', description: 'Reliable and accurate' },
-  { label: 'Claude 3.5 Sonnet', value: 'anthropic:claude-3-5-sonnet-20240620', provider: 'anthropic', model: 'claude-3-5-sonnet-20240620', description: 'Great for coding tasks' },
-  { label: 'GPT-4o Mini', value: 'openai:gpt-4o-mini', provider: 'openai', model: 'gpt-4o-mini', description: 'Fast and lightweight' },
-  { label: 'o1 Mini', value: 'openai:o1-mini', provider: 'openai', model: 'o1-mini', description: 'Reasoning model' },
-  { label: 'DeepSeek Chat', value: 'deepseek:deepseek-chat', provider: 'deepseek', model: 'deepseek-chat', description: 'High capability model' },
-  { label: 'DeepSeek Coder', value: 'deepseek:deepseek-coder', provider: 'deepseek', model: 'deepseek-coder', description: 'Coding focused model' },
+  supportsVision?: boolean;
+  supportsWebSearch?: boolean;
+  supportsTools?: boolean;
+}
+
+/** Fallback model list — only used when /chat/models API is unreachable. */
+const FALLBACK_MODELS: ModelOption[] = [
+  { label: 'GPT-4.1', value: 'openai:gpt-4.1', provider: 'openai', model: 'gpt-4.1', description: 'Latest flagship — 1M context', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'GPT-4o Mini', value: 'openai:gpt-4o-mini', provider: 'openai', model: 'gpt-4o-mini', description: 'Fast, affordable', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'Claude Sonnet 4', value: 'anthropic:anthropic/claude-sonnet-4-20250514', provider: 'anthropic', model: 'anthropic/claude-sonnet-4-20250514', description: 'Best for coding', supportsVision: true, supportsWebSearch: false, supportsTools: true },
+  { label: 'Gemini 2.5 Flash', value: 'google:gemini/gemini-2.5-flash', provider: 'google', model: 'gemini/gemini-2.5-flash', description: 'Fast reasoning, 1M context', supportsVision: true, supportsWebSearch: true, supportsTools: true },
+  { label: 'DeepSeek V3', value: 'deepseek:deepseek/deepseek-chat', provider: 'deepseek', model: 'deepseek/deepseek-chat', description: 'Ultra cheap open model', supportsVision: false, supportsWebSearch: false, supportsTools: true },
 ];
+
+/** Provider display names and order for the model selector */
+const PROVIDER_META: Record<string, { label: string; order: number }> = {
+  openai: { label: 'OpenAI', order: 1 },
+  anthropic: { label: 'Anthropic', order: 2 },
+  google: { label: 'Google', order: 3 },
+  deepseek: { label: 'DeepSeek', order: 4 },
+  mistral: { label: 'Mistral', order: 5 },
+  groq: { label: 'Groq', order: 6 },
+  perplexity: { label: 'Perplexity', order: 7 },
+  cohere: { label: 'Cohere', order: 8 },
+  openrouter: { label: 'OpenRouter', order: 9 },
+};
+
+/** Group models by provider, sorted by provider order */
+function groupModelsByProvider(models: ModelOption[]): { provider: string; label: string; models: ModelOption[] }[] {
+  const groups: Record<string, ModelOption[]> = {};
+  for (const m of models) {
+    const key = m.provider;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  }
+  return Object.entries(groups)
+    .map(([provider, models]) => ({
+      provider,
+      label: PROVIDER_META[provider]?.label || provider,
+      models,
+    }))
+    .sort((a, b) => (PROVIDER_META[a.provider]?.order ?? 99) - (PROVIDER_META[b.provider]?.order ?? 99));
+}
+
+/**
+ * Parse the backend /chat/models response into a flat model list.
+ * Backend returns: { models_by_provider: {...}, models: [{model, display_name, provider, capabilities}] }
+ */
+function parseModelsResponse(data: unknown): ModelOption[] | null {
+  if (!data || typeof data !== 'object') return null;
+
+  // Format 1: Array of model objects (pre-parsed by subscription endpoint)
+  if (Array.isArray(data) && data.length > 0) {
+    return data.map((m: Record<string, unknown>) => ({
+      label: (m.display_name || m.label || m.model || 'Unknown') as string,
+      value: `${m.provider || 'unknown'}:${m.model}`,
+      provider: (m.provider || 'unknown') as string,
+      model: (m.model || '') as string,
+      max: Boolean(m.max),
+      description: (m.description || '') as string,
+      supportsVision: Boolean((m.capabilities as Record<string, unknown>)?.supports_vision ?? m.supports_vision),
+      supportsWebSearch: Boolean((m.capabilities as Record<string, unknown>)?.supports_web_search ?? m.supports_web_search),
+      supportsTools: Boolean((m.capabilities as Record<string, unknown>)?.supports_tools ?? m.supports_tools),
+    }));
+  }
+
+  const resp = data as Record<string, unknown>;
+
+  // Format 2 (preferred): { models: [{model, display_name, provider, description, capabilities}] }
+  const modelsArray = resp.models as Record<string, unknown>[] | undefined;
+  if (Array.isArray(modelsArray) && modelsArray.length > 0) {
+    return modelsArray.map((m) => {
+      const caps = (m.capabilities || {}) as Record<string, unknown>;
+      return {
+        label: (m.display_name || m.model || 'Unknown') as string,
+        value: `${m.provider || 'unknown'}:${m.model}`,
+        provider: (m.provider || 'unknown') as string,
+        model: (m.model || '') as string,
+        description: (m.description || '') as string,
+        supportsVision: Boolean(caps.supports_vision),
+        supportsWebSearch: Boolean(caps.supports_web_search),
+        supportsTools: Boolean(caps.supports_tools),
+      };
+    });
+  }
+
+  // Format 3 (legacy): { models_by_provider: { openai: ["gpt-4o", ...] } }
+  const byProvider = resp.models_by_provider as Record<string, string[]> | undefined;
+  if (byProvider && typeof byProvider === 'object') {
+    const result: ModelOption[] = [];
+    for (const [provider, models] of Object.entries(byProvider)) {
+      if (!Array.isArray(models)) continue;
+      for (const model of models) {
+        result.push({
+          label: model,
+          value: `${provider}:${model}`,
+          provider,
+          model,
+          description: provider,
+        });
+      }
+    }
+    return result.length > 0 ? result : null;
+  }
+
+  return null;
+}
 
 export function ChatInput({
   onSend,
@@ -53,28 +145,69 @@ export function ChatInput({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const [modelFullscreen, setModelFullscreen] = useState(false);
+  const [multiSelectMode, setMultiSelectMode] = useState(false);
+  const modelMenuRef = useRef<HTMLDivElement>(null);
+  const modelSearchRef = useRef<HTMLInputElement>(null);
 
   const selectedModel = useChatStore((s) => s.selectedModel);
   const setSelectedModel = useChatStore((s) => s.setSelectedModel);
   const webSearchEnabled = useChatStore((s) => s.webSearchEnabled);
   const setWebSearchEnabled = useChatStore((s) => s.setWebSearchEnabled);
+  const selectedModels = useChatStore((s) => s.selectedModels);
+  const toggleModelInComparison = useChatStore((s) => s.toggleModelInComparison);
+  const setCompareMode = useChatStore((s) => s.setCompareMode);
+  const setSelectedModels = useChatStore((s) => s.setSelectedModels);
   const activeModelValue = `${selectedModel.provider}:${selectedModel.model}`;
 
   const { data: modelsResult } = useModels();
 
   const availableModels = useMemo(() => {
-    if (Array.isArray(modelsResult) && modelsResult.length > 0) {
-      return modelsResult.map((m: any) => ({
-        label: m.label || m.model || 'Unknown Model',
-        value: `${m.provider || 'unknown'}:${m.model}`,
-        provider: m.provider || 'unknown',
-        model: m.model,
-        max: m.max || false,
-        description: m.description || '',
-      }));
-    }
-    return MODELS;
+    const parsed = parseModelsResponse(modelsResult);
+    return parsed ?? FALLBACK_MODELS;
   }, [modelsResult]);
+
+  const groupedModels = useMemo(() => groupModelsByProvider(availableModels), [availableModels]);
+
+  // Filtered models based on search
+  const filteredGroupedModels = useMemo(() => {
+    if (!modelSearchQuery.trim()) return groupedModels;
+    const q = modelSearchQuery.toLowerCase();
+    return groupedModels
+      .map((group) => ({
+        ...group,
+        models: group.models.filter(
+          (m) =>
+            m.label.toLowerCase().includes(q) ||
+            m.description.toLowerCase().includes(q) ||
+            m.provider.toLowerCase().includes(q)
+        ),
+      }))
+      .filter((group) => group.models.length > 0);
+  }, [groupedModels, modelSearchQuery]);
+
+  // Sync multiSelectMode with store compareMode
+  useEffect(() => {
+    setMultiSelectMode(selectedModels.length > 1);
+  }, [selectedModels.length]);
+
+  // Current model's capabilities
+  const currentModelOption = useMemo(() => {
+    return availableModels.find(
+      (m) => m.provider === selectedModel?.provider && m.model === selectedModel?.model
+    );
+  }, [availableModels, selectedModel]);
+
+  const modelSupportsSearch = currentModelOption?.supportsWebSearch ?? false;
+
+  // Auto-disable web search when switching to a model that doesn't support it
+  useEffect(() => {
+    if (webSearchEnabled && !modelSupportsSearch) {
+      setWebSearchEnabled(false);
+    }
+  }, [modelSupportsSearch, webSearchEnabled, setWebSearchEnabled]);
 
   useEffect(() => {
     if (availableModels.length > 0) {
@@ -92,10 +225,40 @@ export function ChatInput({
     }
   }, [availableModels, selectedModel, setSelectedModel]);
 
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (modelFullscreen) return; // fullscreen has its own close
+      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
+        setModelMenuOpen(false);
+        setModelSearchQuery('');
+      }
+    }
+    if (modelMenuOpen && !modelFullscreen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [modelMenuOpen, modelFullscreen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (modelMenuOpen && modelSearchRef.current) {
+      setTimeout(() => modelSearchRef.current?.focus(), 100);
+    }
+    if (!modelMenuOpen) {
+      setModelSearchQuery('');
+      setModelFullscreen(false);
+    }
+  }, [modelMenuOpen]);
+
   const handleModelChange = (value: string) => {
     const modelDef = availableModels.find((m) => m.value === value);
     if (modelDef) {
-      setSelectedModel({ provider: modelDef.provider, model: modelDef.model });
+      const provider = modelDef.provider;
+      const modelId = modelDef.model;
+      setSelectedModel({ provider: provider as Provider, model: modelId });
+      setSelectedModels([{ provider: provider as Provider, model: modelId }]);
+      setCompareMode(false);
+      setModelMenuOpen(false);
     }
   };
 
@@ -349,20 +512,7 @@ export function ChatInput({
   const imageCount = attachments.filter((a) => a.type === 'image').length;
   const canAddFiles = fileCount + imageCount < MAX_FILES + MAX_IMAGES;
 
-  const renderMaxBadge = () => (
-    <div className="border-border flex h-[14px] items-center gap-1.5 rounded border px-1 py-0">
-      <span
-        className="text-[9px] font-bold uppercase"
-        style={{
-          background: 'linear-gradient(to right, rgb(129, 161, 193), rgb(125, 124, 155))',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-        }}
-      >
-        MAX
-      </span>
-    </div>
-  );
+
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -431,7 +581,7 @@ export function ChatInput({
               placeholder={placeholder}
               rows={1}
               disabled={disabled}
-              className="text-foreground placeholder:text-muted-foreground/60 min-h-[44px] w-full resize-none border-0 bg-transparent py-2.5 text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap shadow-none outline-none transition-[padding] duration-200 ease-in-out focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed"
+              className="text-foreground placeholder:text-muted-foreground/60 min-h-[44px] w-full resize-none border-0 bg-transparent py-2.5 text-base sm:text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap shadow-none outline-none transition-[padding] duration-200 ease-in-out focus-visible:ring-0 focus-visible:ring-offset-0 disabled:cursor-not-allowed"
               style={{ WebkitAppearance: 'none' }}
             />
           </div>
@@ -463,54 +613,355 @@ export function ChatInput({
           </div>
         </div>
 
+        {/* Selected model pills — shown above bottom bar when 2+ models */}
+        {selectedModels.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto px-3 pb-1.5 sm:px-4 scrollbar-none">
+            {selectedModels.map((sm) => {
+              const def = availableModels.find(
+                (m) => m.provider === sm.provider && m.model === sm.model
+              );
+              return (
+                <span
+                  key={`${sm.provider}:${sm.model}`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary"
+                >
+                  {def?.label || sm.model.split('/').pop()}
+                  <button
+                    type="button"
+                    onClick={() => toggleModelInComparison(sm)}
+                    className="hover:text-destructive -mr-1 rounded-full p-0.5 transition-colors"
+                  >
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
+
         {/* Bottom Bar - Model Selection, Web Search, Character Count */}
         <div className="flex items-center justify-between px-3 pb-2 sm:px-4">
           <div className="flex items-center gap-2 sm:gap-3">
-            <Select value={activeModelValue} onValueChange={handleModelChange}>
-              <SelectTrigger className="text-muted-foreground hover:text-foreground h-auto w-fit max-w-[55%] gap-1 border-none bg-transparent! p-0 text-[11px] font-medium shadow-none focus:ring-0 sm:max-w-none sm:gap-1.5 sm:text-xs [&>svg]:ml-0 [&>svg]:h-3 [&>svg]:w-3 sm:[&>svg]:h-3.5 sm:[&>svg]:w-3.5">
+            {/* Model Selection */}
+            <div className="relative" ref={modelMenuRef}>
+              <button
+                type="button"
+                onClick={() => setModelMenuOpen(!modelMenuOpen)}
+                className="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-1 text-[11px] font-medium sm:gap-1.5 sm:text-xs"
+              >
                 <BrainCircuit className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
-                <SelectValue>
-                  {activeModelDef?.max ? (
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      <span className="truncate">{activeModelDef.label}</span>
-                      <span className="hidden sm:inline-flex">{renderMaxBadge()}</span>
+                <span className="truncate max-w-[120px] sm:max-w-none">
+                  {selectedModels.length > 1
+                    ? `${selectedModels.length} models`
+                    : activeModelDef?.label || 'Select model'}
+                </span>
+                <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+              </button>
+
+              {/* Inline dropdown (non-fullscreen) */}
+              {modelMenuOpen && !modelFullscreen && (
+                <div className="absolute bottom-full left-0 mb-2 w-80 sm:w-96 max-h-[min(500px,60vh)] flex flex-col rounded-xl border border-border bg-popover shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-150 z-50">
+                  {/* Header */}
+                  <div className="flex items-center gap-2 border-b border-border px-3 py-2 shrink-0">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        ref={modelSearchRef}
+                        type="text"
+                        placeholder="Search models..."
+                        value={modelSearchQuery}
+                        onChange={(e) => setModelSearchQuery(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-sm outline-none focus:ring-1 focus:ring-ring"
+                      />
                     </div>
-                  ) : (
-                    <span className="truncate">{activeModelDef?.label}</span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {availableModels.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    <div className="flex flex-col gap-0.5">
-                      {model.max ? (
-                        <div className="flex items-center gap-1.5">
-                          <span>{model.label}</span>
-                          {renderMaxBadge()}
-                        </div>
-                      ) : (
-                        <span>{model.label}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (multiSelectMode) {
+                          if (selectedModels.length > 0) {
+                            const first = selectedModels[0]!;
+                            handleModelChange(`${first.provider}:${first.model}`);
+                          }
+                          setMultiSelectMode(false);
+                        } else {
+                          setMultiSelectMode(true);
+                        }
+                      }}
+                      className={cn(
+                        'shrink-0 rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold transition-colors',
+                        multiSelectMode
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
                       )}
-                      <span className="text-muted-foreground text-[10px] font-normal">
-                        {model.description}
-                      </span>
+                    >
+                      {multiSelectMode ? `Compare (${selectedModels.length}/4)` : 'Compare'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModelFullscreen(true)}
+                      className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Expand to fullscreen"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Model list — compact */}
+                  <div className="overflow-y-auto p-1 flex-1">
+                    {filteredGroupedModels.map((group, gi) => (
+                      <div key={group.provider}>
+                        {gi > 0 && <div className="my-1 border-t border-border/50" />}
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                          {group.label}
+                        </div>
+                        {group.models.map((model) => {
+                          const isActive = selectedModels.some(
+                            (sm) => sm.provider === model.provider && sm.model === model.model
+                          ) || (!multiSelectMode && activeModelValue === model.value);
+                          const isDisabled = multiSelectMode && !isActive && selectedModels.length >= 4;
+                          return (
+                            <button
+                              key={model.value}
+                              type="button"
+                              disabled={isDisabled}
+                              onClick={() => {
+                                const modelSel = { provider: model.provider as Provider, model: model.model };
+                                if (multiSelectMode) {
+                                  if (isActive && selectedModels.length <= 1) return;
+                                  if (isActive) {
+                                    toggleModelInComparison(modelSel);
+                                    if (selectedModels.length === 2) { setCompareMode(false); setMultiSelectMode(false); }
+                                  } else {
+                                    if (selectedModels.length === 0) { setSelectedModels([modelSel]); setSelectedModel(modelSel); }
+                                    else if (selectedModels.length === 1) { setSelectedModels([...selectedModels, modelSel]); setCompareMode(true); }
+                                    else { toggleModelInComparison(modelSel); }
+                                  }
+                                } else {
+                                  handleModelChange(model.value);
+                                  setModelMenuOpen(false);
+                                }
+                              }}
+                              className={cn(
+                                'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors',
+                                isActive ? 'bg-primary/10 text-primary' : isDisabled ? 'text-muted-foreground/30 cursor-not-allowed' : 'text-foreground hover:bg-muted'
+                              )}
+                            >
+                              {multiSelectMode ? (
+                                <div className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded border', isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30')}>
+                                  {isActive && <Check className="h-3 w-3" />}
+                                </div>
+                              ) : isActive ? (
+                                <div className="flex h-4 w-4 shrink-0 items-center justify-center"><div className="h-1.5 w-1.5 rounded-full bg-primary" /></div>
+                              ) : <div className="w-4 shrink-0" />}
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-[13px] font-medium">{model.label}</div>
+                                <div className="truncate text-[10px] text-muted-foreground">{model.description}</div>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-0.5">
+                                {model.supportsWebSearch && <span className="rounded bg-blue-500/10 px-1 py-px text-[8px] text-blue-600">search</span>}
+                                {model.supportsVision && <span className="rounded bg-purple-500/10 px-1 py-px text-[8px] text-purple-600">vision</span>}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ))}
+                    {filteredGroupedModels.length === 0 && (
+                      <div className="px-3 py-6 text-center text-sm text-muted-foreground">No models match &ldquo;{modelSearchQuery}&rdquo;</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fullscreen Model Toolbox — portaled to body */}
+              {modelMenuOpen && modelFullscreen && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-200">
+                  {/* Backdrop */}
+                  <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                  />
+                  {/* Panel */}
+                  <div className="relative z-10 flex h-[90vh] w-[95vw] max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-popover shadow-2xl animate-in zoom-in-95 duration-200">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 border-b border-border px-5 py-3.5 shrink-0">
+                      <BrainCircuit className="h-5 w-5 text-primary shrink-0" />
+                      <h2 className="text-lg font-semibold text-foreground">Model Toolbox</h2>
+                      <div className="flex-1" />
+                      <div className="relative w-64">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                          type="text"
+                          placeholder="Search models..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          autoFocus
+                          className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (multiSelectMode) {
+                            if (selectedModels.length > 0) {
+                              const first = selectedModels[0]!;
+                              handleModelChange(`${first.provider}:${first.model}`);
+                            }
+                            setMultiSelectMode(false);
+                          } else {
+                            setMultiSelectMode(true);
+                          }
+                        }}
+                        className={cn(
+                          'shrink-0 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors',
+                          multiSelectMode
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'
+                        )}
+                      >
+                        {multiSelectMode ? `Compare (${selectedModels.length}/4)` : 'Compare'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                        className="shrink-0 rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <XIcon className="h-4 w-4" />
+                      </button>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+                    {/* Model cards grid */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                      {filteredGroupedModels.map((group, gi) => (
+                        <div key={group.provider} className={gi > 0 ? 'mt-6' : ''}>
+                          <h3 className="mb-3 px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {group.label}
+                          </h3>
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {group.models.map((model) => {
+                              const isActive = selectedModels.some(
+                                (sm) => sm.provider === model.provider && sm.model === model.model
+                              ) || (!multiSelectMode && activeModelValue === model.value);
+                              const isDisabled = multiSelectMode && !isActive && selectedModels.length >= 4;
+                              return (
+                                <button
+                                  key={model.value}
+                                  type="button"
+                                  disabled={isDisabled}
+                                  onClick={() => {
+                                    const modelSel = { provider: model.provider as Provider, model: model.model };
+                                    if (multiSelectMode) {
+                                      if (isActive && selectedModels.length <= 1) return;
+                                      if (isActive) {
+                                        toggleModelInComparison(modelSel);
+                                        if (selectedModels.length === 2) { setCompareMode(false); setMultiSelectMode(false); }
+                                      } else {
+                                        if (selectedModels.length === 0) { setSelectedModels([modelSel]); setSelectedModel(modelSel); }
+                                        else if (selectedModels.length === 1) { setSelectedModels([...selectedModels, modelSel]); setCompareMode(true); }
+                                        else { toggleModelInComparison(modelSel); }
+                                      }
+                                    } else {
+                                      handleModelChange(model.value);
+                                      setModelFullscreen(false);
+                                      setModelMenuOpen(false);
+                                      setModelSearchQuery('');
+                                    }
+                                  }}
+                                  className={cn(
+                                    'group relative flex flex-col rounded-xl border p-4 text-left transition-all duration-150',
+                                    isActive
+                                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm'
+                                      : isDisabled
+                                        ? 'border-border/50 opacity-40 cursor-not-allowed'
+                                        : 'border-border hover:border-foreground/20 hover:bg-muted/50 hover:shadow-sm'
+                                  )}
+                                >
+                                  {/* Checkbox (compare mode) */}
+                                  {multiSelectMode && (
+                                    <div className={cn(
+                                      'absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded border transition-colors',
+                                      isActive ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30'
+                                    )}>
+                                      {isActive && <Check className="h-3.5 w-3.5" />}
+                                    </div>
+                                  )}
+                                  {/* Active dot (single mode) */}
+                                  {!multiSelectMode && isActive && (
+                                    <div className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-primary/20" />
+                                  )}
+
+                                  <div className="text-sm font-semibold text-foreground">{model.label}</div>
+                                  <div className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">{model.description}</div>
+
+                                  {/* Capability badges */}
+                                  <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {model.supportsWebSearch && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                        <Globe2 className="h-2.5 w-2.5" />Search
+                                      </span>
+                                    )}
+                                    {model.supportsVision && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-medium text-purple-600">
+                                        <Eye className="h-2.5 w-2.5" />Vision
+                                      </span>
+                                    )}
+                                    {model.supportsTools && (
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+                                        <Zap className="h-2.5 w-2.5" />Tools
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      {filteredGroupedModels.length === 0 && (
+                        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                          <Search className="mb-3 h-8 w-8 opacity-40" />
+                          <p className="text-sm">No models match &ldquo;{modelSearchQuery}&rdquo;</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between border-t border-border px-5 py-3 shrink-0">
+                      <div className="text-xs text-muted-foreground">
+                        {availableModels.length} models available
+                        {selectedModels.length > 1 && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                            {selectedModels.length} selected for comparison
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setModelFullscreen(false); setModelMenuOpen(false); setModelSearchQuery(''); }}
+                        className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
 
             <button
               type="button"
-              onClick={() => setWebSearchEnabled(!webSearchEnabled)}
+              onClick={() => modelSupportsSearch && setWebSearchEnabled(!webSearchEnabled)}
+              disabled={!modelSupportsSearch}
               className={cn(
                 'flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-all duration-150 outline-none sm:gap-1.5 sm:px-2.5 sm:text-xs',
-                webSearchEnabled
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                !modelSupportsSearch
+                  ? 'text-muted-foreground/40 cursor-not-allowed'
+                  : webSearchEnabled
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
-              title={webSearchEnabled ? 'Web Search enabled' : 'Enable Web Search'}
+              title={!modelSupportsSearch ? 'This model does not support web search' : webSearchEnabled ? 'Web Search enabled' : 'Enable Web Search'}
               aria-label="Toggle Web Search"
             >
               <Globe className={cn('h-3 w-3 sm:h-3.5 sm:w-3.5', webSearchEnabled && 'opacity-90')} />

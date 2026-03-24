@@ -18,6 +18,8 @@ import type { NextRequest } from 'next/server';
  * - / (landing page)
  * - /login - Sign in page
  * - /register - Registration page
+ * - /verify-email - Email verification page
+ * - /forgot-password - Password reset page
  */
 
 export function middleware(request: NextRequest) {
@@ -39,7 +41,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
   
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages (but not verify-email or forgot-password)
   if (isAuthenticated && (pathname === '/login' || pathname === '/register')) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

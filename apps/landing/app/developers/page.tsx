@@ -51,7 +51,7 @@ const platformGuides = [
     title: 'Data Delivery',
     description: 'Audit-ready evaluation data delivered to AI labs and enterprises. Every data point carries full provenance — who evaluated it, their credentials, behavioral verification, and quality scores.',
     features: ['RLHF-ready preference pairs', 'SFT-ready corrected completions', 'Rubric scores & improvement deltas', 'EU AI Act compliance artifacts'],
-    link: { label: 'Enterprise plans →', href: '/organizations' },
+    link: { label: 'Enterprise plans →', href: '/research' },
   },
 ];
 
@@ -426,7 +426,7 @@ export default function DevelopersPage() {
           </p>
           <div style={{ display: 'flex', gap: 'var(--space-4)', justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="https://chat.raweval.com" className="btn-primary">Try the Chat →</a>
-            <Link href="/organizations" className="btn-secondary">Enterprise plans</Link>
+            <Link href="/research" className="btn-secondary">Enterprise plans</Link>
             <Link href="/contact" className="btn-ghost">Contact us</Link>
           </div>
         </div>
