@@ -1296,93 +1296,127 @@ function VerdictBanner({ data }: { data: PipelineCallsResponse }) {
 
   const verdict = qc.verdict as Verdict | null;
   const colors = verdict ? VERDICT_COLORS[verdict] : null;
+  const isTrivialScreen = qc.pipeline_stage === 'trivial_screen';
 
   const langfuseUrl = qc.langfuse_trace_id
     ? `https://cloud.langfuse.com/trace/${qc.langfuse_trace_id}`
     : null;
 
   return (
-    <div
-      className={cn(
-        'rounded-xl border-2 p-5',
-        colors?.bg ?? 'bg-muted/50',
-        colors?.border ?? 'border-border'
-      )}
-    >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        {/* Left: Verdict + QC info */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            {verdict && colors ? (
-              <Badge className={cn('px-4 py-1.5 text-lg font-bold', colors.badge)}>{verdict}</Badge>
-            ) : (
-              <Badge variant="secondary" className="px-4 py-1.5 text-lg font-bold">
-                No Verdict
-              </Badge>
-            )}
-            <span className="text-muted-foreground text-sm">QC Case #{qc.id}</span>
+    <div className="space-y-3">
+      {/* Trivial screen banner */}
+      {isTrivialScreen && (
+        <div className="rounded-xl border-2 border-amber-500/30 bg-amber-500/5 p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1.5">
+              <h3 className="text-sm font-bold text-amber-700">Pre-Pipeline Screen: Non-Substantive Conversation</h3>
+              <p className="text-sm text-amber-600/90">
+                This conversation was classified as trivial (greeting, acknowledgment, or non-evaluable exchange) by a single screening LLM call
+                before the full QC pipeline was invoked. No stages were executed, no tokens were consumed, and no expert evaluation is needed.
+              </p>
+              {qc.verdict_reason && (
+                <div className="mt-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2">
+                  <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Reason: </span>
+                  <span className="text-sm text-amber-800">{qc.verdict_reason}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
-            {qc.domain && (
-              <span className="text-muted-foreground">
-                Domain: <span className="text-foreground font-semibold">{qc.domain}</span>
-              </span>
-            )}
-            {qc.process_score != null && (
-              <span className="text-muted-foreground">
-                Process:{' '}
-                <span className={cn('font-mono font-bold', scoreColor(qc.process_score))}>
-                  {qc.process_score.toFixed(3)}
-                </span>
-              </span>
-            )}
-            {qc.fraud_score != null && (
-              <span className="text-muted-foreground">
-                Fraud:{' '}
-                <span className={cn('font-mono font-bold', scoreColor(1 - qc.fraud_score))}>
-                  {qc.fraud_score.toFixed(3)}
-                </span>
-              </span>
-            )}
-            {qc.total_llm_cost_usd != null && (
-              <span className="text-muted-foreground">
-                Total Cost: <span className="text-foreground font-mono font-bold">{fmtCost(qc.total_llm_cost_usd)}</span>
-              </span>
-            )}
-          </div>
-          {qc.created_at && (
-            <p className="text-muted-foreground text-xs">Created: {fmtDate(qc.created_at)}</p>
-          )}
         </div>
+      )}
 
-        {/* Right: Summary stats + Langfuse */}
-        <div className="flex items-start gap-4">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
-            <div className="text-center">
-              <p className="text-muted-foreground text-[10px] font-semibold uppercase">Calls</p>
-              <p className="text-foreground font-mono text-lg font-bold">{fmtNumber(data.summary.total_calls)}</p>
+      {/* Main verdict card */}
+      <div
+        className={cn(
+          'rounded-xl border-2 p-5',
+          colors?.bg ?? 'bg-muted/50',
+          colors?.border ?? 'border-border'
+        )}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          {/* Left: Verdict + QC info */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              {verdict && colors ? (
+                <Badge className={cn('px-4 py-1.5 text-lg font-bold', colors.badge)}>{verdict}</Badge>
+              ) : (
+                <Badge variant="secondary" className="px-4 py-1.5 text-lg font-bold">
+                  No Verdict
+                </Badge>
+              )}
+              <span className="text-muted-foreground text-sm">QC Case #{qc.id}</span>
+              {isTrivialScreen && (
+                <Badge variant="outline" className="text-[10px] font-mono border-amber-500/40 text-amber-600 bg-amber-500/5">
+                  trivial_screen
+                </Badge>
+              )}
             </div>
-            <div className="text-center">
-              <p className="text-muted-foreground text-[10px] font-semibold uppercase">Tokens</p>
-              <p className="text-foreground font-mono text-lg font-bold">{fmtNumber(data.summary.total_tokens)}</p>
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
+              {qc.domain && (
+                <span className="text-muted-foreground">
+                  Domain: <span className="text-foreground font-semibold">{qc.domain}</span>
+                </span>
+              )}
+              {qc.process_score != null && (
+                <span className="text-muted-foreground">
+                  Process:{' '}
+                  <span className={cn('font-mono font-bold', scoreColor(qc.process_score))}>
+                    {qc.process_score.toFixed(3)}
+                  </span>
+                </span>
+              )}
+              {qc.fraud_score != null && (
+                <span className="text-muted-foreground">
+                  Fraud:{' '}
+                  <span className={cn('font-mono font-bold', scoreColor(1 - qc.fraud_score))}>
+                    {qc.fraud_score.toFixed(3)}
+                  </span>
+                </span>
+              )}
+              {qc.total_llm_cost_usd != null && (
+                <span className="text-muted-foreground">
+                  Total Cost: <span className="text-foreground font-mono font-bold">{fmtCost(qc.total_llm_cost_usd)}</span>
+                </span>
+              )}
             </div>
-            <div className="text-center">
-              <p className="text-muted-foreground text-[10px] font-semibold uppercase">Latency</p>
-              <p className="text-foreground font-mono text-lg font-bold">{fmtLatency(data.summary.total_latency_ms)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-muted-foreground text-[10px] font-semibold uppercase">Stages</p>
-              <p className="text-foreground font-mono text-lg font-bold">{data.summary.stages_count}</p>
-            </div>
+            {!isTrivialScreen && qc.verdict_reason && (
+              <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2 border border-border/50">{qc.verdict_reason}</p>
+            )}
+            {qc.created_at && (
+              <p className="text-muted-foreground text-xs">Created: {fmtDate(qc.created_at)}</p>
+            )}
           </div>
-          {langfuseUrl && (
-            <a href={langfuseUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <ExternalLink className="h-3.5 w-3.5" />
-                Langfuse
-              </Button>
-            </a>
-          )}
+
+          {/* Right: Summary stats + Langfuse */}
+          <div className="flex items-start gap-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
+              <div className="text-center">
+                <p className="text-muted-foreground text-[10px] font-semibold uppercase">Calls</p>
+                <p className="text-foreground font-mono text-lg font-bold">{isTrivialScreen ? '1' : fmtNumber(data.summary.total_calls)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-muted-foreground text-[10px] font-semibold uppercase">Tokens</p>
+                <p className="text-foreground font-mono text-lg font-bold">{fmtNumber(data.summary.total_tokens)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-muted-foreground text-[10px] font-semibold uppercase">Latency</p>
+                <p className="text-foreground font-mono text-lg font-bold">{isTrivialScreen ? '<1s' : fmtLatency(data.summary.total_latency_ms)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-muted-foreground text-[10px] font-semibold uppercase">Stages</p>
+                <p className="text-foreground font-mono text-lg font-bold">{isTrivialScreen ? 'Screen' : data.summary.stages_count}</p>
+              </div>
+            </div>
+            {langfuseUrl && (
+              <a href={langfuseUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Langfuse
+                </Button>
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -1591,10 +1625,28 @@ export default function QCInspectorPage() {
             <h2 className="text-muted-foreground mb-4 text-sm font-semibold tracking-wider uppercase">
               Pipeline Flow
             </h2>
-            {simpleFactual ? <SimpleFactualPath data={data} /> : <PipelineFlow data={data} />}
+            {data.qc_case?.pipeline_stage === 'trivial_screen' ? (
+              <Card className="border-amber-500/20 bg-amber-500/5">
+                <CardContent className="p-6 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-amber-700">Pipeline Skipped &mdash; Trivial Screen</p>
+                      <p className="text-xs text-amber-600/80 mt-1 max-w-md mx-auto">
+                        A single screening LLM call classified this conversation as non-substantive before the pipeline executed.
+                        Only 1 LLM call was made (gpt-4o-mini, ~$0.001). No stages, judges, rubrics, or fraud checks were run.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : simpleFactual ? <SimpleFactualPath data={data} /> : <PipelineFlow data={data} />}
           </div>
 
           {/* Raw Stages Summary Table */}
+          {data.qc_case?.pipeline_stage !== 'trivial_screen' && (
           <div>
             <h2 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wider uppercase">
               Stages Summary
@@ -1650,6 +1702,7 @@ export default function QCInspectorPage() {
               </CardContent>
             </Card>
           </div>
+          )}
         </div>
       )}
 

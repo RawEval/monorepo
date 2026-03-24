@@ -214,6 +214,8 @@ export interface PipelineCallsResponse {
   qc_case: {
     id: number;
     verdict: string | null;
+    verdict_reason: string | null;
+    pipeline_stage: string | null;
     domain: string | null;
     process_score: number | null;
     fraud_score: number | null;

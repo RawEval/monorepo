@@ -272,6 +272,11 @@ export default function ConversationDetailPage() {
 
              <div className="flex-1 overflow-y-auto p-6 bg-muted/10">
                 <div className="max-w-4xl mx-auto animate-in slide-in-from-bottom-2 fade-in duration-300">
+                  {qcCase?.pipeline_stage === 'trivial_screen' && tab !== 'overview' && (
+                    <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-center">
+                      <span className="text-xs text-amber-600">This conversation was screened as non-substantive. The full QC pipeline did not run &mdash; this tab has no data.</span>
+                    </div>
+                  )}
                   {tab === 'overview' && <OverviewTab qcCase={qcCase} qcVersions={qcVersionsData?.versions} />}
                   {tab === 'rubric' && (rubricLoading ? <LoadingTab /> : <RubricTab criteria={rubricData || activeModel?.qc_rubric} />)}
                   {tab === 'judges' && (judgesLoading ? <LoadingTab /> : <JudgesTab judges={judgesData || activeModel?.qc_judges} />)}
@@ -339,8 +344,30 @@ function MetricCard({ title, value, suffix, isPercent = false, tip }: { title: s
 function OverviewTab({ qcCase, qcVersions }: { qcCase: any; qcVersions?: QcVersionEntry[] }) {
   if (!qcCase) return <div className="p-4 border border-dashed rounded-lg text-center text-muted-foreground">QC Case still processing or unavailable.</div>;
 
+  const isTrivialScreen = qcCase.pipeline_stage === 'trivial_screen';
+
   return (
     <div className="space-y-6">
+      {isTrivialScreen && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <span className="text-amber-600 text-xs font-bold">!</span>
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-700">Trivial Conversation Detected</h4>
+              <p className="text-xs text-amber-600/80 mt-1">
+                This conversation was identified as non-substantive (greeting, acknowledgment, or trivial exchange) by the pre-pipeline screen.
+                The full QC pipeline was not executed. Rubric, judges, fraud, and entropy tabs are intentionally empty.
+              </p>
+              {qcCase.verdict_reason && (
+                <p className="text-xs text-amber-700 mt-2 font-medium">Reason: {qcCase.verdict_reason}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
          <MetricCard title="Process Score" value={qcCase.process_score} suffix="" tip="Aggregate process verification score from judges. Higher = more confident the response followed correct reasoning steps." />
          <MetricCard title="FP Score" value={qcCase.fp_score} suffix="" tip="False Positive score. Higher values suggest the failure marking may be incorrect (the response was actually fine)." />
