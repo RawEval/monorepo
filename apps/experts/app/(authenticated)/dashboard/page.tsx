@@ -213,7 +213,7 @@ export default function DashboardPage() {
 
             {onboarding?.interview?.status === 'in_progress' && onboarding.interview.session_id && (
               <div style={{ marginTop: 'var(--space-6)' }}>
-                <Link href={`/interview/${onboarding.interview.session_id}`} className="btn-primary">
+                <Link href={`/interview/${onboarding.interview.session_id}/v2`} className="btn-primary">
                   Continue Interview &rarr;
                 </Link>
               </div>

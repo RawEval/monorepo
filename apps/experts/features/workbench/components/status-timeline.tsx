@@ -200,10 +200,10 @@ export function StatusTimeline({ fpfId }: StatusTimelineProps) {
     return (
       <div
         className="flex items-center justify-center"
-        style={{ padding: 'var(--space-8)' }}
+        style={{ padding: 'var(--space-4)' }}
       >
         <Loader2
-          className="h-5 w-5 animate-spin"
+          className="h-4 w-4 animate-spin"
           style={{ color: 'var(--color-signal)' }}
         />
       </div>
@@ -215,15 +215,12 @@ export function StatusTimeline({ fpfId }: StatusTimelineProps) {
       <div
         className="flex items-center gap-2"
         style={{
-          padding: 'var(--space-4)',
-          background: 'var(--color-error-subtle)',
-          border: '1px solid rgba(192, 57, 43, 0.2)',
-          borderRadius: 'var(--radius-md)',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--color-error)',
+          padding: 'var(--space-3)',
+          fontSize: 'var(--text-xs)',
+          color: 'var(--color-text-faint)',
         }}
       >
-        <AlertCircle className="h-4 w-4 shrink-0" />
+        <AlertCircle className="h-3.5 w-3.5 shrink-0" />
         Failed to load timeline
       </div>
     );
@@ -251,31 +248,10 @@ export function StatusTimeline({ fpfId }: StatusTimelineProps) {
   }
 
   return (
-    <div
-      style={{
-        background: 'var(--color-bg-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-5)',
-      }}
-    >
-      {/* Header */}
-      <div
-        className="mb-4"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 'var(--text-xs)',
-          letterSpacing: 'var(--tracking-wider)',
-          textTransform: 'uppercase',
-          color: 'var(--color-text-muted)',
-        }}
-      >
-        Task Timeline
-      </div>
-
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
       {/* Current status badge */}
       <div
-        className="mb-5 inline-flex items-center gap-2"
+        className="inline-flex items-center gap-2"
         style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 'var(--text-xs)',
@@ -286,6 +262,7 @@ export function StatusTimeline({ fpfId }: StatusTimelineProps) {
           border: `1px solid ${getPhaseColor(data.current_status).border}`,
           letterSpacing: 'var(--tracking-wide)',
           textTransform: 'uppercase',
+          width: 'fit-content',
         }}
       >
         <span

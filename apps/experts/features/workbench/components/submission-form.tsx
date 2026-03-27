@@ -164,11 +164,11 @@ export function SubmissionForm({
 
   return (
     <>
-      <div className="flex flex-col gap-[var(--space-6)]">
+      <div className="flex flex-col gap-[var(--space-6)]" style={{ animation: 'fade-in-up 0.3s ease-out forwards' }}>
         {/* Timer */}
         <div className="flex items-center justify-between">
           <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-text-muted)]">
-            Annotation Submission
+            Submission
           </span>
           <div className="flex items-center gap-[var(--space-2)] rounded-[var(--radius-sm)] bg-[var(--color-bg-muted)] px-[var(--space-3)] py-[var(--space-1)]">
             <Clock size={12} className="text-[var(--color-text-faint)]" />

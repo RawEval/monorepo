@@ -105,7 +105,7 @@ function MessageBubble({
   return (
     <div
       className={cn(
-        'flex flex-col gap-[var(--space-2)] rounded-[var(--radius-lg)] border p-[var(--space-4)]',
+        'flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border',
         isFailed
           ? 'border-2 border-[var(--color-error)] bg-[var(--color-error-subtle)]'
           : message.role === 'user'
@@ -114,6 +114,7 @@ function MessageBubble({
               ? 'border-dashed border-[var(--color-border-strong)] bg-[var(--color-bg-muted)]'
               : 'border-[var(--color-border)] bg-[var(--color-bg-surface)]',
       )}
+      style={{ padding: 'var(--space-4) var(--space-5)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
@@ -234,17 +235,20 @@ export function ConversationView({
   }
 
   return (
-    <div className="flex flex-col gap-[var(--space-6)]">
+    <div className="flex flex-col gap-[var(--space-8)]" style={{ paddingBottom: 'var(--space-12)' }}>
       {/* Sticky original prompt */}
       {originalPrompt && (
-        <div className="sticky top-0 z-10 rounded-[var(--radius-lg)] border border-[var(--color-signal-border)] bg-[var(--color-bg-base)] p-[var(--space-4)] shadow-[var(--shadow-sm)]">
+        <div
+          className="sticky top-0 z-10 rounded-[var(--radius-lg)] border border-[var(--color-signal-border)] bg-[var(--color-bg-base)] shadow-[var(--shadow-sm)]"
+          style={{ padding: 'var(--space-4) var(--space-5)' }}
+        >
           <div className="mb-[var(--space-2)] flex items-center gap-2">
             <div className="h-[2px] w-4 bg-[var(--color-signal)]" />
             <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-signal)]">
               Original Prompt
             </span>
           </div>
-          <p className="text-[length:var(--text-base)] leading-[var(--leading-normal)] text-[var(--color-text-primary)]">
+          <p className="text-[length:var(--text-base)] leading-[var(--leading-relaxed)] text-[var(--color-text-primary)]" style={{ margin: 0 }}>
             {originalPrompt.content}
           </p>
         </div>
@@ -260,12 +264,12 @@ export function ConversationView({
         return (
           <div
             key={turnNumber}
-            className="flex flex-col gap-[var(--space-3)]"
+            className="flex flex-col gap-[var(--space-4)]"
           >
             {/* Turn label */}
-            <div className="flex items-center gap-2 text-[var(--color-text-faint)]">
+            <div className="flex items-center gap-3 text-[var(--color-text-faint)]" style={{ padding: '0 var(--space-1)' }}>
               <div className="h-px flex-1 bg-[var(--color-border)]" />
-              <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] tracking-[var(--tracking-wide)]">
+              <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-[var(--tracking-wider)]" style={{ whiteSpace: 'nowrap' }}>
                 TURN {turnNumber}
               </span>
               <div className="h-px flex-1 bg-[var(--color-border)]" />
@@ -334,13 +338,16 @@ export function ConversationView({
 
       {/* Failure summary bar */}
       {failedModel && (
-        <div className="flex items-center gap-[var(--space-3)] rounded-[var(--radius-md)] border border-[var(--color-error)] bg-[var(--color-error-subtle)] p-[var(--space-4)]">
-          <AlertTriangle size={16} className="shrink-0 text-[var(--color-error)]" />
+        <div
+          className="flex items-center gap-[var(--space-4)] rounded-[var(--radius-lg)] border border-[var(--color-error)] bg-[var(--color-error-subtle)]"
+          style={{ padding: 'var(--space-4) var(--space-5)' }}
+        >
+          <AlertTriangle size={18} className="shrink-0 text-[var(--color-error)]" />
           <div className="flex flex-col gap-0.5">
             <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-error)]">
               Failure Detected
             </span>
-            <span className="text-[length:var(--text-sm)] text-[var(--color-text-secondary)]">
+            <span className="text-[length:var(--text-sm)] leading-[var(--leading-normal)] text-[var(--color-text-secondary)]">
               Model <strong>{failedModel}</strong>
               {failedProvider && ` (${failedProvider})`}
               {failedTurnNumber !== undefined && ` at turn ${failedTurnNumber}`}

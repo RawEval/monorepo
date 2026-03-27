@@ -232,10 +232,10 @@ export function RubricPanel({ conversationId }: RubricPanelProps) {
     : null;
 
   return (
-    <div className="flex flex-col gap-[var(--space-5)]">
+    <div className="flex flex-col gap-[var(--space-5)]" style={{ animation: 'fade-in-up 0.3s ease-out forwards' }}>
       {/* ── Failure Summary Card ──────────────────────────────────── */}
       {rubric.overall_failure_summary && (
-        <div className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-[var(--space-4)]">
+        <div className="flex flex-col gap-[var(--space-3)] rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-base)]" style={{ padding: 'var(--space-4) var(--space-5)' }}>
           <div className="flex items-center gap-[var(--space-2)]">
             <ShieldAlert size={16} className="text-[var(--color-error)]" />
             <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-text-muted)]">
