@@ -20,9 +20,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: 'RawEval Research | Verified AI Evaluation Data Marketplace',
+  title: 'RawEval Research | Expert-Annotated Healthcare AI Evaluation Data',
   description:
-    'Access gold-standard, human-verified training data for your AI research. RLHF preference pairs, corrected completions, and rubric-scored evaluations via API or batch export.',
+    'The largest expert-annotated healthcare AI evaluation dataset. Multi-annotator consensus from credentialed medical professionals. Request pilot access for your research.',
 };
 
 export default function RootLayout({

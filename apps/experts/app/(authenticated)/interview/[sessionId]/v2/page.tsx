@@ -633,6 +633,20 @@ export default function InterviewV2Page({
               {questionsAsked >= 2 && phase !== 'complete' && !isProcessing && (
                 <button onClick={() => router.push(`/results/${rawId}?v2=true`)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '11px', borderColor: 'var(--color-success)', color: 'var(--color-success)' }}>End</button>
               )}
+              {phase !== 'complete' && process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+                <button
+                  onClick={() => {
+                    stopRec();
+                    window.speechSynthesis?.cancel();
+                    if (timerRef.current) clearInterval(timerRef.current);
+                    router.push(`/results/${rawId}?v2=true`);
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '6px 12px', fontSize: '11px', borderColor: 'var(--color-warning)', color: 'var(--color-warning)' }}
+                >
+                  Demo: Skip to Results
+                </button>
+              )}
             </div>
           </div>
         </div>

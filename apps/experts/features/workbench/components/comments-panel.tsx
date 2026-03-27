@@ -284,16 +284,9 @@ export function CommentsPanel({ fpfId }: CommentsPanelProps) {
     : null;
 
   return (
-    <div
-      style={{
-        background: 'var(--color-bg-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-5)',
-      }}
-    >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', animation: 'fade-in-up 0.3s ease-out forwards' }}>
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4" style={{ color: 'var(--color-signal)' }} />
           <span
@@ -314,6 +307,9 @@ export function CommentsPanel({ fpfId }: CommentsPanelProps) {
               fontFamily: 'var(--font-mono)',
               fontSize: 'var(--text-xs)',
               color: 'var(--color-text-faint)',
+              background: 'var(--color-bg-muted)',
+              padding: '0 6px',
+              borderRadius: 'var(--radius-sm)',
             }}
           >
             {data.total}
@@ -364,7 +360,7 @@ export function CommentsPanel({ fpfId }: CommentsPanelProps) {
       )}
 
       {data && topLevelComments.length > 0 && (
-        <div className="mb-5 flex flex-col gap-2">
+        <div className="flex flex-col gap-2">
           {topLevelComments.map((comment) => {
             const replies = allComments.filter((c) => c.parent_comment_id === comment.id);
             return (

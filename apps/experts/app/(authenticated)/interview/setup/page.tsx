@@ -183,7 +183,7 @@ function InterviewSetupContent() {
           });
         }
 
-        router.push(`/interview/${response.session_id}`);
+        router.push(`/interview/${response.session_id}/v2`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to start interview. Please try again.';

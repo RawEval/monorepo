@@ -3,10 +3,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Menu, X, LogOut } from 'lucide-react';
+import { clearToken } from '@raweval/auth';
 
 export function Navbar() {
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleSignOut = () => {
+    clearToken();
+    router.push('/login');
+  };
 
   return (
     <header
@@ -39,7 +47,7 @@ export function Navbar() {
             raweval.com
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.4 }}><path d="M3 1h6v6M9 1L1 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
           </Link>
-          <button className="btn-secondary" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button onClick={handleSignOut} className="btn-secondary" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <LogOut style={{ width: 12, height: 12 }} />
             Sign out
           </button>

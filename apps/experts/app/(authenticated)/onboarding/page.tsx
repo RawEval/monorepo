@@ -553,7 +553,7 @@ function InterviewStep({ status, checklist }: InterviewStepProps) {
         }}>
           You have an interview in progress.
         </p>
-        <Link href={`/interview/${interview.session_id}`} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+        <Link href={`/interview/${interview.session_id}/v2`} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           Continue Interview <ArrowRight style={{ width: 16, height: 16 }} />
         </Link>
       </div>

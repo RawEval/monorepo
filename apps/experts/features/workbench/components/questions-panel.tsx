@@ -485,24 +485,26 @@ export function QuestionsPanel({
   );
 
   return (
-    <div className="flex flex-col gap-[var(--space-4)]">
+    <div className="flex flex-col gap-[var(--space-4)]" style={{ animation: 'fade-in-up 0.3s ease-out forwards' }}>
       {/* Progress header */}
-      <div className="flex items-center justify-between">
-        <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-text-muted)]">
-          Questions
-        </span>
-        <div className="flex items-center gap-[var(--space-2)]">
-          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-bg-muted)]">
-            <div
-              className="h-full rounded-full bg-[var(--color-signal)] transition-all duration-300"
-              style={{
-                width: `${total_questions > 0 ? (answeredCount / total_questions) * 100 : 0}%`,
-              }}
-            />
-          </div>
-          <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] text-[var(--color-text-muted)]">
-            {answeredCount}/{total_questions} answered
+      <div className="flex flex-col gap-[var(--space-2)]">
+        <div className="flex items-center justify-between">
+          <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] uppercase tracking-[var(--tracking-wider)] text-[var(--color-text-muted)]">
+            Questions
           </span>
+          <span className="font-[family-name:var(--font-mono)] text-[length:var(--text-xs)] text-[var(--color-text-muted)]">
+            {answeredCount}/{total_questions}
+          </span>
+        </div>
+        {/* Full-width progress bar */}
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-bg-muted)]">
+          <div
+            className="h-full rounded-full transition-all duration-300"
+            style={{
+              width: `${total_questions > 0 ? (answeredCount / total_questions) * 100 : 0}%`,
+              background: answeredCount >= total_questions ? 'var(--color-success)' : 'var(--color-signal)',
+            }}
+          />
         </div>
       </div>
 

@@ -170,6 +170,10 @@ a { color: inherit; text-decoration: none; }
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 
 /* === BUTTONS === */
 .btn-primary {
@@ -241,6 +245,37 @@ a { color: inherit; text-decoration: none; }
 
 .grid-cols-4-md { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-6); }
 @media (min-width: 768px) { .grid-cols-4-md { grid-template-columns: repeat(4, 1fr); } }
+
+/* === FORM INPUT STATES === */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-signal-border) !important;
+  box-shadow: 0 0 0 2px var(--color-signal-subtle);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--color-text-faint);
+  opacity: 0.8;
+}
+select option {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+/* === STAT CARD HOVER === */
+.stat-card {
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.stat-card:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+/* === PIPELINE CARD MOBILE === */
+@media (max-width: 600px) {
+  .pipeline-card-inner {
+    flex-direction: column !important;
+    gap: var(--space-4) !important;
+  }
+}
 
 /* === RESPONSIVE === */
 @media (max-width: 900px) { :root { --section-x: 32px; --section-y: 64px; } }

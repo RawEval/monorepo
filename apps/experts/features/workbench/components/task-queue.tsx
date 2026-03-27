@@ -7,7 +7,6 @@ import {
   Loader2,
   Inbox,
 } from 'lucide-react';
-import { cn } from '@raweval/utils/cn';
 import type { TaskPrompt, TaskAllocation } from '@/features/workbench/types';
 
 interface TaskQueueProps {
@@ -181,190 +180,210 @@ export function TaskQueue({ onSelectTask, selectedPromptId }: TaskQueueProps) {
     );
   }
 
-  return (
-    <div
-      className="flex flex-col gap-1"
-      style={{ padding: 'var(--space-2)' }}
-    >
-      {/* Task count */}
-      <div
-        className="flex items-center justify-between"
+  // Split tasks into groups
+  const inProgressTasks = flatTasks.filter(({ prompt, allocation }) => {
+    const label = getStatusLabel(prompt, allocation);
+    return label === 'In Progress' || label === 'Started';
+  });
+  const pendingTasks = flatTasks.filter(({ prompt, allocation }) => getStatusLabel(prompt, allocation) === 'Pending');
+  const doneTasks = flatTasks.filter(({ prompt }) => prompt.all_answered);
+
+  function renderTaskCard({ allocation, prompt }: FlatTask) {
+    const isSelected = selectedPromptId === prompt.failed_prompt_final_id;
+    const statusColor = getStatusColor(prompt.status);
+    const statusLabel = getStatusLabel(prompt, allocation);
+    const progress =
+      prompt.total_questions > 0
+        ? (prompt.my_responses / prompt.total_questions) * 100
+        : 0;
+
+    return (
+      <button
+        key={`${allocation.allocation_id}-${prompt.failed_prompt_final_id}`}
+        onClick={() => onSelectTask(allocation.allocation_id, prompt)}
+        className="wb-task-card flex w-full flex-col text-left"
+        data-selected={isSelected}
         style={{
-          padding: 'var(--space-2) var(--space-2)',
-          marginBottom: 'var(--space-1)',
+          padding: 'var(--space-3) var(--space-3) var(--space-3) var(--space-4)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid transparent',
+          background: 'transparent',
+          cursor: 'pointer',
         }}
       >
-        <span
+        {/* Color-coded left border */}
+        <div
           style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            letterSpacing: 'var(--tracking-wider)',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-faint)',
+            position: 'absolute',
+            left: 0,
+            top: '6px',
+            bottom: '6px',
+            width: '3px',
+            background: statusColor,
+            borderRadius: '2px',
           }}
-        >
-          {flatTasks.length} task{flatTasks.length !== 1 ? 's' : ''}
-        </span>
-      </div>
+        />
 
-      {flatTasks.map(({ allocation, prompt }) => {
-        const isSelected = selectedPromptId === prompt.failed_prompt_final_id;
-        const statusColor = getStatusColor(prompt.status);
-        const statusLabel = getStatusLabel(prompt, allocation);
-        const progress =
-          prompt.total_questions > 0
-            ? (prompt.my_responses / prompt.total_questions) * 100
-            : 0;
-
-        return (
-          <button
-            key={`${allocation.allocation_id}-${prompt.failed_prompt_final_id}`}
-            onClick={() => onSelectTask(allocation.allocation_id, prompt)}
-            className={cn(
-              'flex w-full flex-col text-left transition-colors',
-            )}
+        {/* Top row: domain + tier + batch */}
+        <div className="mb-1.5 flex items-center gap-2">
+          <span
             style={{
-              padding: 'var(--space-3)',
-              borderRadius: 'var(--radius-md)',
-              border: isSelected
-                ? '1px solid var(--color-signal-border)'
-                : '1px solid transparent',
-              background: isSelected
-                ? 'var(--color-signal-subtle)'
-                : 'transparent',
-              cursor: 'pointer',
-              position: 'relative',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: 'var(--tracking-wide)',
+              textTransform: 'uppercase',
+              color: 'var(--color-signal)',
+              background: 'var(--color-signal-subtle)',
+              padding: '2px 7px',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--color-signal-border)',
+            }}
+          >
+            {prompt.domain}
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--color-text-faint)',
+              letterSpacing: 'var(--tracking-wide)',
+            }}
+          >
+            {getTierLabel(allocation.tier)}
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--color-text-faint)',
+              marginLeft: 'auto',
+            }}
+          >
+            #{allocation.batch_number}
+          </span>
+        </div>
+
+        {/* Failure reason */}
+        {prompt.failure_reason && (
+          <p
+            className="mb-2 line-clamp-2"
+            style={{
+              fontSize: 'var(--text-xs)',
+              color: 'var(--color-text-secondary)',
+              lineHeight: 'var(--leading-snug)',
+              margin: 0,
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            {prompt.failure_reason}
+          </p>
+        )}
+
+        {/* Bottom row: progress + status */}
+        <div className="flex items-center gap-2">
+          {/* Progress bar */}
+          <div
+            className="flex-1"
+            style={{
+              height: '3px',
+              background: 'var(--color-bg-muted)',
+              borderRadius: 'var(--radius-full)',
               overflow: 'hidden',
             }}
           >
-            {/* Color-coded left border */}
             <div
               style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '3px',
-                background: statusColor,
-                borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+                height: '100%',
+                width: `${progress}%`,
+                background:
+                  progress >= 100
+                    ? 'var(--color-success)'
+                    : 'var(--color-signal)',
+                borderRadius: 'var(--radius-full)',
+                transition: 'width 0.3s ease',
               }}
             />
+          </div>
 
-            {/* Top row: domain + tier */}
-            <div
-              className="mb-1.5 flex items-center gap-2"
-              style={{ paddingLeft: 'var(--space-2)' }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
-                  color: 'var(--color-signal)',
-                  background: 'var(--color-signal-subtle)',
-                  padding: '1px 6px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-signal-border)',
-                }}
-              >
-                {prompt.domain}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--color-text-faint)',
-                  letterSpacing: 'var(--tracking-wide)',
-                }}
-              >
-                {getTierLabel(allocation.tier)}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--color-text-faint)',
-                  marginLeft: 'auto',
-                }}
-              >
-                #{allocation.batch_number}
-              </span>
-            </div>
+          {/* Fraction */}
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--color-text-faint)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {prompt.my_responses}/{prompt.total_questions}
+          </span>
 
-            {/* Failure reason */}
-            {prompt.failure_reason && (
-              <p
-                className="mb-2 line-clamp-2"
-                style={{
-                  fontSize: 'var(--text-xs)',
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 'var(--leading-snug)',
-                  paddingLeft: 'var(--space-2)',
-                }}
-              >
-                {prompt.failure_reason}
-              </p>
-            )}
+          {/* Status */}
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: 'var(--tracking-wide)',
+              textTransform: 'uppercase',
+              color: statusColor,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {statusLabel}
+          </span>
+        </div>
+      </button>
+    );
+  }
 
-            {/* Bottom row: progress + status */}
-            <div
-              className="flex items-center gap-2"
-              style={{ paddingLeft: 'var(--space-2)' }}
-            >
-              {/* Progress bar */}
-              <div
-                className="flex-1"
-                style={{
-                  height: '4px',
-                  background: 'var(--color-bg-muted)',
-                  borderRadius: 'var(--radius-full)',
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${progress}%`,
-                    background:
-                      progress >= 100
-                        ? 'var(--color-success)'
-                        : 'var(--color-signal)',
-                    borderRadius: 'var(--radius-full)',
-                    transition: 'width 0.3s ease',
-                  }}
-                />
-              </div>
+  function renderSection(label: string, tasks: FlatTask[], count: number) {
+    if (tasks.length === 0) return null;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)' }}>
+        <div
+          style={{
+            padding: 'var(--space-1) var(--space-2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-2)',
+          }}
+        >
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              letterSpacing: 'var(--tracking-wider)',
+              textTransform: 'uppercase',
+              color: 'var(--color-text-faint)',
+            }}
+          >
+            {label}
+          </span>
+          <span
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '10px',
+              color: 'var(--color-text-faint)',
+              background: 'var(--color-bg-muted)',
+              padding: '0 5px',
+              borderRadius: 'var(--radius-sm)',
+            }}
+          >
+            {count}
+          </span>
+        </div>
+        {tasks.map(renderTaskCard)}
+      </div>
+    );
+  }
 
-              {/* Fraction */}
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  color: 'var(--color-text-faint)',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {prompt.my_responses}/{prompt.total_questions}
-              </span>
-
-              {/* Status */}
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '10px',
-                  letterSpacing: 'var(--tracking-wide)',
-                  textTransform: 'uppercase',
-                  color: statusColor,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {statusLabel}
-              </span>
-            </div>
-          </button>
-        );
-      })}
+  return (
+    <div
+      className="flex flex-col"
+      style={{ padding: 'var(--space-2)', gap: 'var(--space-3)' }}
+    >
+      {renderSection('In Progress', inProgressTasks, inProgressTasks.length)}
+      {renderSection('Pending', pendingTasks, pendingTasks.length)}
+      {renderSection('Completed', doneTasks, doneTasks.length)}
     </div>
   );
 }
