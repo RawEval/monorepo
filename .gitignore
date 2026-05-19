@@ -38,3 +38,21 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# AI tool configs
+.agents/
+.claude/
+.idea/
+skills-lock.json
+
+# One-off session docs
+CLAUDE.md
+VERCEL_*.md
+*_GUIDE.md
+*_SUMMARY.md
+*_COMPLETE.md
+*_FIX.md
+
+# OS
+.DS_Store
+Thumbs.db
